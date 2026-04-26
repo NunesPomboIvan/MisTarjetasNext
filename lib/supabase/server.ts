@@ -35,7 +35,6 @@ export async function createClient() {
     created_at: new Date().toISOString(),
   };
 
-  // @ts-expect-error - sobreescribiendo el método para mock auth
   client.auth.getUser = async () => ({
     data: { user: fakeUser },
     error: null,
