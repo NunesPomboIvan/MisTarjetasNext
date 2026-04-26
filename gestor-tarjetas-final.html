@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gestor inteligente de tarjetas de crédito">
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mis Tarjetas">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Gestor de Tarjetas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg: #fffbf5; --bg-card: #ffffff; --bg-secondary: #fef6ee;
+            --text: #292524; --text-secondary: #78716c;
+            --primary: #f97316; --secondary: #fb923c; --accent: #eab308;
+            --success: #22c55e; --border: #e7e5e4; --shadow: rgba(0, 0, 0, 0.05);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 16px calc(16px + env(safe-area-inset-left)); }
+        #app { max-width: 720px; margin: 0 auto; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding: 4px 0; }
+        .header h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg-card); padding: 4px; border-radius: 12px; box-shadow: 0 1px 4px var(--shadow); }
+        .tab { flex: 1; background: transparent; border: none; color: var(--text-secondary); padding: 10px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; font-weight: 600; border-radius: 9px; font-family: inherit; }
+        .tab.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3); }
+        
+        /* Cards list */
+        .cards-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px var(--shadow); display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 12px; }
+        .card:hover { border-color: var(--primary); box-shadow: 0 4px 14px rgba(249, 115, 22, 0.12); transform: translateX(2px); }
+        .card:active { transform: scale(0.99); }
+        .card-logo { width: 42px; height: 30px; flex-shrink: 0; border-radius: 6px; overflow: hidden; }
+        .card-info { min-width: 0; }
+        .card-name { font-size: 0.9rem; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
+        .card-number { font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; margin-top: 1px; }
+        .card-meta { text-align: right; flex-shrink: 0; }
+        .total-amount { font-size: 1.05rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; line-height: 1.3; }
+        .card-due { font-size: 0.7rem; color: var(--text-secondary); font-weight: 500; margin-top: 2px; white-space: nowrap; }
+        .card-actions { display: flex; gap: 2px; flex-shrink: 0; }
+        .icon-btn { background: transparent; border: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 7px; font-size: 14px; transition: all 0.15s; }
+        .icon-btn:hover { background: var(--bg-secondary); }
+        .icon-btn.delete:hover { background: #fee2e2; }
+        
+        /* Detail view */
+        .back-btn { background: transparent; border: none; color: var(--text-secondary); padding: 4px 0; cursor: pointer; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; font-family: inherit; }
+        .back-btn:hover { color: var(--primary); }
+        .detail-card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px var(--shadow); }
+        .detail-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .card-detail-logo { width: 48px; height: 34px; border-radius: 7px; overflow: hidden; flex-shrink: 0; }
+        .detail-top-info { flex: 1; }
+        .card-detail-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+        .card-detail-subtitle { font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; margin-top: 1px; }
+        .period-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+        .period-btn { background: transparent; border: none; color: var(--primary); font-size: 1.1rem; cursor: pointer; padding: 0 4px; font-weight: 700; transition: all 0.15s; }
+        .period-btn:hover { transform: scale(1.2); }
+        .period-center { text-align: center; }
+        .period-dates { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+        .period-status { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .period-status.current { background: #d1fae5; color: #065f46; }
+        .period-status.future { background: #ffedd5; color: #9a3412; }
+        .period-status.past { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+        .detail-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 0.68rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 3px; }
+        .stat-value { font-size: 1.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-value.sm { font-size: 0.95rem; }
+        
+        /* Expenses */
+        .expenses-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .expenses-title { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .expenses-list { display: flex; flex-direction: column; gap: 6px; }
+        .expense-item { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; }
+        .expense-info h4 { font-size: 0.88rem; color: var(--text); font-weight: 600; }
+        .expense-cat { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; margin-top: 4px; }
+        .expense-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .expense-amount { font-size: 0.9rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .installments-badge { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 700; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 0.9rem; }
+        .empty-state-icon { font-size: 2.5rem; margin-bottom: 8px; opacity: 0.3; }
+        
+        /* Modal */
+        .btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; padding: 18px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; font-family: inherit; transition: all 0.3s; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4); }
+        .btn-secondary { background: var(--bg-secondary); color: var(--text); box-shadow: none; }
+        .btn-secondary:hover { background: var(--border); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--bg-card); border-radius: 24px; padding: 32px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        .modal-header { font-size: 1.6rem; font-weight: 700; margin-bottom: 28px; color: var(--text); }
+        .warning-icon { font-size: 3rem; text-align: center; margin-bottom: 16px; }
+        .warning-text { text-align: center; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 8px; font-weight: 600; }
+        .form-input, .form-select { width: 100%; background: var(--bg-secondary); border: 2px solid var(--border); border-radius: 12px; padding: 14px 16px; color: var(--text); font-size: 1rem; font-family: inherit; transition: all 0.2s; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); background: white; }
+        .form-input.error, .form-select.error { border-color: #ef4444; background: #fef2f2; }
+        .form-error { color: #dc2626; font-size: 0.8rem; margin-top: 6px; display: none; font-weight: 500; }
+        .form-error.active { display: block; }
+        .form-input.clickable { cursor: pointer; user-select: none; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 28px; }
+        .checkbox-group { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-secondary); border-radius: 12px; margin-top: 8px; }
+        .checkbox-group input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); }
+        .checkbox-group label { font-size: 0.95rem; color: var(--text); cursor: pointer; font-weight: 600; }
+        
+        /* Calendar */
+        .calendar { background: var(--bg-card); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px var(--shadow); margin-top: 16px; border: 2px solid var(--border); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .calendar-nav { display: flex; gap: 8px; }
+        .calendar-nav button { background: var(--bg-secondary); border: none; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; transition: all 0.2s; color: var(--text); font-weight: bold; }
+        .calendar-nav button:hover { background: var(--primary); color: white; }
+        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
+        .calendar-weekday { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); padding: 8px 0; text-transform: uppercase; }
+        .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; background: transparent; border: 2px solid transparent; }
+        .calendar-day:not(.disabled):hover { background: var(--bg-secondary); }
+        .calendar-day.selected { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .calendar-day.today { border-color: var(--primary); color: var(--primary); }
+        .calendar-day.disabled { color: var(--border); cursor: not-allowed; }
+        .calendar-day.other-month { color: var(--text-secondary); opacity: 0.3; }
+        .hidden { display: none !important; }
+        
+        /* Bottom Bar - Diseño Moderno */
+        .bottom-bar { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 107, 53, 0.1);
+            padding: 16px 20px; 
+            display: flex; 
+            gap: 16px; 
+            justify-content: center; 
+            align-items: center;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
+            z-index: 999;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+        
+        .bottom-btn { 
+            flex: 1; 
+            max-width: 200px; 
+            height: 64px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 12px; 
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            border: none; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.25);
+        }
+        
+        .bottom-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .bottom-btn:hover::before {
+            left: 100%;
+        }
+        
+        .bottom-btn:hover { 
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .bottom-btn:active { 
+            transform: translateY(-2px) scale(0.98);
+        }
+        
+        .bottom-btn-icon { 
+            font-size: 1.75rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+        
+        .bottom-btn-text { 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.02em;
+        }
+        
+        /* Card Selector - Diseño Premium */
+        .card-selector-item { 
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+            padding: 20px; 
+            border-radius: 16px; 
+            margin-bottom: 12px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+            border: 2px solid transparent;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-selector-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 66, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .card-selector-item:hover::before {
+            opacity: 1;
+        }
+        
+        .card-selector-item:hover { 
+            border-color: #FF6B35;
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.15);
+        }
+        
+        .card-selector-item:active {
+            transform: translateX(4px) scale(0.98);
+        }
+        
+        .card-selector-logo { 
+            font-size: 2.5rem;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+        
+        .card-selector-info { 
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-selector-name { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        
+        .card-selector-number { 
+            font-size: 0.9rem; 
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Ajustar padding del body para el bottom bar (incluye safe-area del home indicator) */
+        body { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+        
+        @media (max-width: 768px) {
+            .form-row, .detail-stats { grid-template-columns: 1fr; }
+            .bottom-btn { height: 60px; }
+            .bottom-btn-icon { font-size: 1.5rem; }
+            .bottom-btn-text { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>Mis Tarjetas</h1>
+            <div style="display:flex;gap:8px;align-items:center">
+                <button class="icon-btn" id="menu-btn" title="Menú" style="width:38px;height:38px;font-size:1.2rem;background:var(--bg-secondary)" onclick="app.toggleMenu(event)">⋮</button>
+                <button class="btn" id="new-card-btn" style="width:auto;padding:10px 18px;font-size:0.85rem" onclick="app.openCardModal()">+ Nueva</button>
+            </div>
+        </div>
+
+        <!-- Menú desplegable de acciones (export/import) -->
+        <div id="actions-menu" class="hidden" style="position:fixed;top:64px;right:16px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:998;min-width:200px">
+            <button onclick="app.exportData()" style="display:block;width:100%;text-align:left;padding:10px 14px;background:transparent;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;color:var(--text);font-weight:500" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">📤 Exportar datos</button>
+            <button onclick="document.getElementById('import-file-input').click()" style="display:block;width:100%;text-align:left;padding:10px 14px;background:transparent;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;color:var(--text);font-weight:500" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">📥 Importar datos</button>
+        </div>
+        <input type="file" id="import-file-input" accept="application/json,.json" style="display:none" onchange="app.importData(event)">
+        
+        <div class="tabs">
+            <button class="tab active" onclick="app.switchTab('tarjetas', event)">Tarjetas</button>
+            <button class="tab" onclick="app.switchTab('consumos', event)">Consumos</button>
+        </div>
+        
+        <div id="tarjetas-view">
+            <div id="cards-container" class="cards-grid"></div>
+        </div>
+        
+        <div id="card-detail-view" class="hidden">
+            <button class="back-btn" onclick="app.backToCards()">← Volver a tarjetas</button>
+            <div id="card-detail-container"></div>
+        </div>
+        
+        <div id="consumos-view" class="hidden">
+            <div id="expenses-container"></div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modal-title">Nueva Tarjeta</h2>
+            <form id="modal-form">
+                <div id="card-form" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Entidad Emisora</label>
+                        <input type="text" class="form-input" id="cardName" placeholder="Ej: Galicia, BBVA, Santander">
+                        <div class="form-error" id="cardName-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" id="cardType">
+                            <option value="visa">Visa</option>
+                            <option value="mastercard">Mastercard</option>
+                            <option value="amex">American Express</option>
+                            <option value="other">Otra</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Últimos 4 Dígitos</label>
+                        <input type="text" class="form-input" id="cardNumber" placeholder="1234" maxlength="4" inputmode="numeric">
+                        <div class="form-error" id="cardNumber-error"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Fecha de Cierre</label>
+                            <div class="form-input clickable" id="closeDate" onclick="app.showCalendar('close')">
+                                <span id="closeDateText" style="color: var(--text-secondary);">Selecciona fecha</span>
+                            </div>
+                            <div class="form-error" id="closeDate-error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha de Vencimiento</label>
+                            <div class="form-input clickable" id="dueDate" onclick="app.showCalendar('due')">
+                                <span id="dueDateText" style="color: var(--text-secondary);">Selecciona fecha</span>
+                            </div>
+                            <div class="form-error" id="dueDate-error"></div>
+                        </div>
+                    </div>
+                    <div id="calendar-card-container" class="hidden"></div>
+                </div>
+                
+                <div id="expense-form" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Categoría</label>
+                        <select class="form-select" id="expenseCategory" onchange="app.toggleCustomCategory()">
+                            <option value="super">🛒 Supermercado</option>
+                            <option value="comida">🍔 Comida / Restaurante</option>
+                            <option value="transporte">🚗 Transporte</option>
+                            <option value="salud">💊 Salud</option>
+                            <option value="entretenimiento">🎬 Entretenimiento</option>
+                            <option value="ropa">👗 Ropa</option>
+                            <option value="servicios">💡 Servicios</option>
+                            <option value="otro">📦 Otro</option>
+                            <option value="custom">➕ Nueva categoría...</option>
+                        </select>
+                    </div>
+                    <div id="custom-category-section" class="hidden">
+                        <div class="form-group">
+                            <label class="form-label">Nombre de Categoría</label>
+                            <input type="text" class="form-input" id="customCategoryName" placeholder="Ej: Educación, Mascota, etc.">
+                            <div class="form-error" id="customCategoryName-error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Emoji</label>
+                            <input type="text" class="form-input" id="customCategoryEmoji" placeholder="Ej: 📚, 🐶, 🏠" maxlength="2">
+                            <div class="form-error" id="customCategoryEmoji-error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Color</label>
+                            <select class="form-select" id="customCategoryColor">
+                                <option value="#fef3c7-#92400e">Amarillo</option>
+                                <option value="#d1fae5-#065f46">Verde</option>
+                                <option value="#dbeafe-#1e40af">Azul</option>
+                                <option value="#fce7f3-#9d174d">Rosa</option>
+                                <option value="#ede9fe-#5b21b6">Violeta</option>
+                                <option value="#ffedd5-#9a3412">Naranja</option>
+                                <option value="#e0f2fe-#075985">Celeste</option>
+                                <option value="#f3f4f6-#4b5563">Gris</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" class="form-input" id="expenseName" placeholder="Supermercado">
+                        <div class="form-error" id="expenseName-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monto Total</label>
+                        <input type="number" step="0.01" class="form-input" id="expenseAmount" placeholder="100.00" inputmode="decimal">
+                        <div class="form-error" id="expenseAmount-error"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha del Consumo</label>
+                        <div class="form-input clickable" id="expenseDate" onclick="app.showCalendar('expense')">
+                            <span id="expenseDateText" style="color: var(--text-secondary);">Selecciona una fecha</span>
+                        </div>
+                        <div class="form-error" id="expenseDate-error"></div>
+                    </div>
+                    <div id="calendar-expense-container" class="hidden"></div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="hasInstallments" onchange="app.toggleInstallments()">
+                        <label for="hasInstallments">Pago en cuotas</label>
+                    </div>
+                    <div id="installments-section" class="hidden">
+                        <div class="form-group">
+                            <label class="form-label">Número de Cuotas</label>
+                            <input type="number" class="form-input" id="installmentsCount" placeholder="3" min="2" inputmode="numeric">
+                            <div class="form-error" id="installmentsCount-error"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="update-dates-modal" class="modal">
+        <div class="modal-content">
+            <div class="warning-icon">⚠️</div>
+            <h2 class="modal-header" style="text-align: center;">Actualizar Fechas</h2>
+            <p class="warning-text">Las fechas de cierre y vencimiento de esta tarjeta ya pasaron. Por favor, actualízalas para el próximo periodo.</p>
+            <form id="update-dates-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nueva Fecha de Cierre</label>
+                        <div class="form-input clickable" id="updateCloseDate" onclick="app.showCalendar('updateClose')">
+                            <span id="updateCloseDateText" style="color: var(--text-secondary);">Selecciona fecha</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nueva Fecha de Vencimiento</label>
+                        <div class="form-input clickable" id="updateDueDate" onclick="app.showCalendar('updateDue')">
+                            <span id="updateDueDateText" style="color: var(--text-secondary);">Selecciona fecha</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="calendar-update-container" class="hidden"></div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="app.skipDateUpdate()">Omitir</button>
+                    <button type="submit" class="btn">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="bottom-bar">
+        <button class="bottom-btn" onclick="app.openQuickExpenseModal()">
+            <span class="bottom-btn-icon">🛍️</span>
+            <span class="bottom-btn-text">Nuevo Consumo</span>
+        </button>
+        <button class="bottom-btn" onclick="app.openCardModal()">
+            <span class="bottom-btn-icon">💳</span>
+            <span class="bottom-btn-text">Nueva Tarjeta</span>
+        </button>
+    </div>
+
+    <!-- Modal selector de tarjeta para consumo rápido -->
+    <div id="card-selector-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">📋 Seleccionar Tarjeta</h2>
+            <div id="card-selector-list"></div>
+        </div>
+    </div>
+
+    <script>
+const app = {
+    cards: [],
+    currentTab: 'tarjetas',
+    modalType: '',
+    selectedCard: null,
+    selectedExpense: null,
+    detailCard: null,
+    currentPeriodIndex: 0,
+    periodIndexSet: false,
+    selectedDate: null,
+    selectedCloseDate: null,
+    selectedDueDate: null,
+    selectedUpdateCloseDate: null,
+    selectedUpdateDueDate: null,
+    cardToUpdate: null,
+    calendarType: '',
+    calendarMonth: new Date().getMonth(),
+    calendarYear: new Date().getFullYear(),
+    customCategories: {},
+
+    init() {
+        this.loadData();
+        this.render();
+        this.setupEventListeners();
+    },
+
+    // Genera un ID numérico único. Combina timestamp + random para evitar colisiones
+    // cuando se crean varios items en el mismo milisegundo. Devuelve number para
+    // mantener compatibilidad con onclick handlers que interpolan el ID sin comillas.
+    generateId() {
+        return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    },
+
+    showError(fieldId, message) {
+        const errorDiv = document.getElementById(fieldId + '-error');
+        const field = document.getElementById(fieldId);
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+        }
+        if (field) {
+            field.classList.add('error');
+        }
+    },
+
+    clearError(fieldId) {
+        const errorDiv = document.getElementById(fieldId + '-error');
+        const field = document.getElementById(fieldId);
+        if (errorDiv) {
+            errorDiv.classList.remove('active');
+        }
+        if (field) {
+            field.classList.remove('error');
+        }
+    },
+
+    clearAllErrors() {
+        ['cardName', 'cardNumber', 'closeDate', 'dueDate', 'expenseName', 'expenseAmount', 'expenseDate', 'installmentsCount', 'customCategoryName', 'customCategoryEmoji'].forEach(id => {
+            this.clearError(id);
+        });
+    },
+
+    setupEventListeners() {
+        document.getElementById('modal-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleSubmit();
+        });
+        
+        document.getElementById('update-dates-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleUpdateDates();
+        });
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                this.closeModal();
+            }
+        });
+
+        document.getElementById('card-selector-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'card-selector-modal') {
+                document.getElementById('card-selector-modal').classList.remove('active');
+            }
+        });
+    },
+
+    async loadData() {
+        try {
+            const data = localStorage.getItem('credit-cards-v7');
+            if (data) {
+                this.cards = JSON.parse(data);
+            }
+            const categories = localStorage.getItem('custom-categories');
+            if (categories) {
+                this.customCategories = JSON.parse(categories);
+            }
+        } catch (e) {
+            console.error('Error loading data:', e);
+        }
+    },
+
+    saveData() {
+        try {
+            localStorage.setItem('credit-cards-v7', JSON.stringify(this.cards));
+            localStorage.setItem('custom-categories', JSON.stringify(this.customCategories));
+        } catch (e) {
+            console.error('Error saving data:', e);
+        }
+    },
+
+    needsDateUpdate(card) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const closeDate = new Date(card.closeDate + 'T00:00:00');
+        return closeDate < today;
+    },
+
+    checkAndShowUpdateModal(card) {
+        if (this.needsDateUpdate(card)) {
+            this.cardToUpdate = card;
+            this.selectedUpdateCloseDate = null;
+            this.selectedUpdateDueDate = null;
+            document.getElementById('updateCloseDateText').textContent = 'Selecciona fecha';
+            document.getElementById('updateCloseDateText').style.color = 'var(--text-secondary)';
+            document.getElementById('updateDueDateText').textContent = 'Selecciona fecha';
+            document.getElementById('updateDueDateText').style.color = 'var(--text-secondary)';
+            document.getElementById('update-dates-modal').classList.add('active');
+            return true;
+        }
+        return false;
+    },
+
+    skipDateUpdate() {
+        document.getElementById('update-dates-modal').classList.remove('active');
+        this.hideCalendar();
+    },
+
+    handleUpdateDates() {
+        if (!this.selectedUpdateCloseDate) {
+            alert('❌ Campo "Nueva Fecha de Cierre" no seleccionado\nPor favor selecciona una nueva fecha de cierre');
+            return;
+        }
+        if (!this.selectedUpdateDueDate) {
+            alert('❌ Campo "Nueva Fecha de Vencimiento" no seleccionado\nPor favor selecciona una nueva fecha de vencimiento');
+            return;
+        }
+        
+        const closeDate = new Date(this.selectedUpdateCloseDate + 'T00:00:00');
+        const dueDate = new Date(this.selectedUpdateDueDate + 'T00:00:00');
+        
+        if (dueDate < closeDate) {
+            alert('❌ Error en las fechas\nLa "Nueva Fecha de Vencimiento" debe ser igual o posterior a la "Nueva Fecha de Cierre"');
+            return;
+        }
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (closeDate < today) {
+            alert('❌ Campo "Nueva Fecha de Cierre" es inválido\nLa fecha de cierre debe ser hoy o posterior (no puede estar en el pasado)');
+            return;
+        }
+
+        if (this.cardToUpdate) {
+            const index = this.cards.findIndex(c => c.id === this.cardToUpdate.id);
+            if (index !== -1) {
+                // GUARDAR PERIODO ANTERIOR EN HISTORIAL con las fechas CORRECTAS
+                if (!this.cards[index].periodsHistory) {
+                    this.cards[index].periodsHistory = [];
+                }
+                
+                // El periodo anterior tiene:
+                // - closeDate: la fecha de cierre ANTERIOR (la que estaba antes)
+                // - dueDate: la fecha de vencimiento ANTERIOR
+                // - expenses: los consumos que había
+                // El inicio se calcula automáticamente en getPeriods
+                this.cards[index].periodsHistory.push({
+                    closeDate: this.cards[index].closeDate,  // Cierre viejo
+                    dueDate: this.cards[index].dueDate,      // Vencimiento viejo
+                    expenses: [...(this.cards[index].expenses || [])]  // Consumos del periodo que cierra
+                });
+                
+                // ACTUALIZAR A NUEVO PERIODO
+                // El nuevo periodo tiene:
+                // - closeDate: la NUEVA fecha de cierre
+                // - dueDate: la NUEVA fecha de vencimiento
+                // - expenses: vacío (periodo limpio)
+                this.cards[index].closeDate = this.selectedUpdateCloseDate;
+                this.cards[index].dueDate = this.selectedUpdateDueDate;
+                this.cards[index].expenses = [];
+                
+                this.saveData();
+                
+                // Actualizar detailCard si está viendo esta tarjeta
+                if (this.detailCard && this.detailCard.id === this.cardToUpdate.id) {
+                    this.detailCard = this.cards[index];
+                    this.currentPeriodIndex = 0;
+                    this.periodIndexSet = false;
+                }
+            }
+        }
+        
+        document.getElementById('update-dates-modal').classList.remove('active');
+        this.hideCalendar();
+        this.render();
+    },
+
+    getCardLogo(type) {
+        const logos = {
+            visa: '<svg viewBox="0 0 64 48" width="100%" height="100%"><rect width="64" height="48" fill="#1434CB" rx="8"/><text x="32" y="30" fill="white" font-size="18" font-weight="bold" text-anchor="middle">VISA</text></svg>',
+            mastercard: '<svg viewBox="0 0 64 48" width="100%" height="100%"><rect width="64" height="48" fill="#0A0A0A" rx="8"/><circle cx="24" cy="24" r="13" fill="#EB001B"/><circle cx="40" cy="24" r="13" fill="#F79E1B"/></svg>',
+            amex: '<svg viewBox="0 0 64 48" width="100%" height="100%"><rect width="64" height="48" fill="#006FCF" rx="8"/><text x="32" y="28" fill="white" font-size="14" font-weight="bold" text-anchor="middle">AMEX</text></svg>',
+            other: '<svg viewBox="0 0 64 48" width="100%" height="100%"><rect width="64" height="48" fill="#9ca3af" rx="8"/><rect x="14" y="22" width="36" height="4" fill="white" opacity="0.8"/></svg>'
+        };
+        return logos[type] || logos.other;
+    },
+
+    showCalendar(type) {
+        this.calendarType = type;
+        let container;
+        if (type === 'expense') {
+            container = 'calendar-expense-container';
+        } else if (type === 'updateClose' || type === 'updateDue') {
+            container = 'calendar-update-container';
+        } else {
+            container = 'calendar-card-container';
+        }
+        document.getElementById(container).classList.remove('hidden');
+        this.renderCalendar(container);
+    },
+
+    hideCalendar() {
+        document.getElementById('calendar-card-container').classList.add('hidden');
+        document.getElementById('calendar-expense-container').classList.add('hidden');
+        document.getElementById('calendar-update-container').classList.add('hidden');
+    },
+
+    renderCalendar(container) {
+        const c = document.getElementById(container);
+        const today = new Date();
+        const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+        const lastDay = new Date(this.calendarYear, this.calendarMonth + 1, 0);
+        const prevLastDay = new Date(this.calendarYear, this.calendarMonth, 0);
+        
+        const firstDayWeek = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+        const daysInPrevMonth = prevLastDay.getDate();
+        
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        
+        let html = '<div class="calendar">';
+        html += '<div class="calendar-header">';
+        html += '<h3>' + monthNames[this.calendarMonth] + ' ' + this.calendarYear + '</h3>';
+        html += '<div class="calendar-nav">';
+        html += '<button type="button" onclick="app.prevMonth()">‹</button>';
+        html += '<button type="button" onclick="app.nextMonth()">›</button>';
+        html += '</div></div>';
+        
+        html += '<div class="calendar-weekdays">';
+        html += '<div class="calendar-weekday">Dom</div>';
+        html += '<div class="calendar-weekday">Lun</div>';
+        html += '<div class="calendar-weekday">Mar</div>';
+        html += '<div class="calendar-weekday">Mié</div>';
+        html += '<div class="calendar-weekday">Jue</div>';
+        html += '<div class="calendar-weekday">Vie</div>';
+        html += '<div class="calendar-weekday">Sáb</div>';
+        html += '</div>';
+        
+        html += '<div class="calendar-days">';
+        
+        for (let i = firstDayWeek - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            html += '<div class="calendar-day other-month disabled">' + day + '</div>';
+        }
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(this.calendarYear, this.calendarMonth, day);
+            const dateStr = date.toISOString().split('T')[0];
+            const isToday = date.toDateString() === today.toDateString();
+            
+            let selectedDate;
+            if (this.calendarType === 'expense') {
+                selectedDate = this.selectedDate;
+            } else if (this.calendarType === 'close') {
+                selectedDate = this.selectedCloseDate;
+            } else if (this.calendarType === 'due') {
+                selectedDate = this.selectedDueDate;
+            } else if (this.calendarType === 'updateClose') {
+                selectedDate = this.selectedUpdateCloseDate;
+            } else if (this.calendarType === 'updateDue') {
+                selectedDate = this.selectedUpdateDueDate;
+            }
+            
+            const isSelected = selectedDate === dateStr;
+            
+            let classes = 'calendar-day';
+            if (isToday) classes += ' today';
+            if (isSelected) classes += ' selected';
+            
+            html += '<div class="' + classes + '" onclick="app.selectDate(\'' + dateStr + '\')">' + day + '</div>';
+        }
+        
+        const totalCells = firstDayWeek + daysInMonth;
+        const remainingCells = 7 - (totalCells % 7);
+        if (remainingCells < 7) {
+            for (let day = 1; day <= remainingCells; day++) {
+                html += '<div class="calendar-day other-month disabled">' + day + '</div>';
+            }
+        }
+        
+        html += '</div></div>';
+        c.innerHTML = html;
+    },
+
+    prevMonth() {
+        this.calendarMonth--;
+        if (this.calendarMonth < 0) {
+            this.calendarMonth = 11;
+            this.calendarYear--;
+        }
+        
+        let container;
+        if (this.calendarType === 'expense') {
+            container = 'calendar-expense-container';
+        } else if (this.calendarType === 'updateClose' || this.calendarType === 'updateDue') {
+            container = 'calendar-update-container';
+        } else {
+            container = 'calendar-card-container';
+        }
+        this.renderCalendar(container);
+    },
+
+    nextMonth() {
+        this.calendarMonth++;
+        if (this.calendarMonth > 11) {
+            this.calendarMonth = 0;
+            this.calendarYear++;
+        }
+        
+        let container;
+        if (this.calendarType === 'expense') {
+            container = 'calendar-expense-container';
+        } else if (this.calendarType === 'updateClose' || this.calendarType === 'updateDue') {
+            container = 'calendar-update-container';
+        } else {
+            container = 'calendar-card-container';
+        }
+        this.renderCalendar(container);
+    },
+
+    selectDate(dateStr) {
+        const date = new Date(dateStr + 'T00:00:00');
+        const formatted = date.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+        
+        if (this.calendarType === 'expense') {
+            this.selectedDate = dateStr;
+            document.getElementById('expenseDateText').textContent = formatted;
+            document.getElementById('expenseDateText').style.color = 'var(--text)';
+        } else if (this.calendarType === 'close') {
+            this.selectedCloseDate = dateStr;
+            document.getElementById('closeDateText').textContent = formatted;
+            document.getElementById('closeDateText').style.color = 'var(--text)';
+        } else if (this.calendarType === 'due') {
+            this.selectedDueDate = dateStr;
+            document.getElementById('dueDateText').textContent = formatted;
+            document.getElementById('dueDateText').style.color = 'var(--text)';
+        } else if (this.calendarType === 'updateClose') {
+            this.selectedUpdateCloseDate = dateStr;
+            document.getElementById('updateCloseDateText').textContent = formatted;
+            document.getElementById('updateCloseDateText').style.color = 'var(--text)';
+        } else if (this.calendarType === 'updateDue') {
+            this.selectedUpdateDueDate = dateStr;
+            document.getElementById('updateDueDateText').textContent = formatted;
+            document.getElementById('updateDueDateText').style.color = 'var(--text)';
+        }
+        
+        this.hideCalendar();
+    },
+
+    toggleInstallments() {
+        const checkbox = document.getElementById('hasInstallments');
+        const section = document.getElementById('installments-section');
+        section.classList.toggle('hidden', !checkbox.checked);
+    },
+
+    toggleCustomCategory() {
+        const select = document.getElementById('expenseCategory');
+        const section = document.getElementById('custom-category-section');
+        section.classList.toggle('hidden', select.value !== 'custom');
+    },
+
+    switchTab(tab, ev) {
+        this.currentTab = tab;
+
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        // Si llega el evento, marcar el botón clickeado; si no, marcar por índice
+        if (ev && ev.target) {
+            ev.target.classList.add('active');
+        } else {
+            const idx = tab === 'tarjetas' ? 0 : 1;
+            const tabs = document.querySelectorAll('.tab');
+            if (tabs[idx]) tabs[idx].classList.add('active');
+        }
+
+        if (tab === 'tarjetas') {
+            document.getElementById('tarjetas-view').classList.remove('hidden');
+            document.getElementById('consumos-view').classList.add('hidden');
+        } else {
+            document.getElementById('tarjetas-view').classList.add('hidden');
+            document.getElementById('consumos-view').classList.remove('hidden');
+        }
+
+        this.render();
+    },
+
+    openCardModal(card = null) {
+        this.modalType = 'card';
+        this.selectedCard = card;
+        this.clearAllErrors();
+        
+        document.getElementById('modal-title').textContent = card ? 'Editar Tarjeta' : 'Nueva Tarjeta';
+        document.getElementById('card-form').classList.remove('hidden');
+        document.getElementById('expense-form').classList.add('hidden');
+
+        if (card) {
+            document.getElementById('cardName').value = card.name;
+            document.getElementById('cardType').value = card.type || 'visa';
+            document.getElementById('cardNumber').value = card.number;
+            this.selectedCloseDate = card.closeDate;
+            this.selectedDueDate = card.dueDate;
+            
+            const c = new Date(card.closeDate + 'T00:00:00');
+            const d = new Date(card.dueDate + 'T00:00:00');
+            document.getElementById('closeDateText').textContent = c.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('closeDateText').style.color = 'var(--text)';
+            document.getElementById('dueDateText').textContent = d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('dueDateText').style.color = 'var(--text)';
+        } else {
+            document.getElementById('modal-form').reset();
+            this.selectedCloseDate = null;
+            this.selectedDueDate = null;
+            document.getElementById('closeDateText').textContent = 'Selecciona fecha';
+            document.getElementById('closeDateText').style.color = 'var(--text-secondary)';
+            document.getElementById('dueDateText').textContent = 'Selecciona fecha';
+            document.getElementById('dueDateText').style.color = 'var(--text-secondary)';
+        }
+
+        this.hideCalendar();
+        document.getElementById('modal').classList.add('active');
+    },
+
+    openExpenseModal(card) {
+        this.clearAllErrors();
+        this.modalType = 'expense';
+        this.selectedCard = card;
+        this.selectedExpense = null;
+        
+        document.getElementById('modal-title').textContent = 'Nuevo Consumo';
+        document.getElementById('card-form').classList.add('hidden');
+        document.getElementById('expense-form').classList.remove('hidden');
+        document.getElementById('modal-form').reset();
+        
+        const today = new Date();
+        this.selectedDate = today.toISOString().split('T')[0];
+        this.calendarMonth = today.getMonth();
+        this.calendarYear = today.getFullYear();
+        document.getElementById('expenseDateText').textContent = today.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('expenseDateText').style.color = 'var(--text)';
+        
+        this.hideCalendar();
+        document.getElementById('installments-section').classList.add('hidden');
+        document.getElementById('custom-category-section').classList.add('hidden');
+        
+        const select = document.getElementById('expenseCategory');
+        const customOpts = Object.keys(this.customCategories).map(k => {
+            const c = this.customCategories[k];
+            return '<option value="' + k + '">' + c.emoji + ' ' + c.name + '</option>';
+        }).join('');
+        const customOptHtml = '<option value="custom">➕ Nueva categoría...</option>';
+        select.innerHTML = '<option value="super">🛒 Supermercado</option>' +
+            '<option value="comida">🍔 Comida / Restaurante</option>' +
+            '<option value="transporte">🚗 Transporte</option>' +
+            '<option value="salud">💊 Salud</option>' +
+            '<option value="entretenimiento">🎬 Entretenimiento</option>' +
+            '<option value="ropa">👗 Ropa</option>' +
+            '<option value="servicios">💡 Servicios</option>' +
+            '<option value="otro">📦 Otro</option>' +
+            customOpts + customOptHtml;
+        
+        document.getElementById('modal').classList.add('active');
+    },
+
+    openEditExpenseModal(cardId, expenseId) {
+        const card = this.cards.find(c => c.id === cardId);
+        if (!card) return;
+        
+        const expense = card.expenses.find(e => e.id === expenseId);
+        if (!expense) return;
+        
+        this.modalType = 'expense';
+        this.selectedCard = card;
+        this.selectedExpense = expense;
+        
+        document.getElementById('modal-title').textContent = 'Editar Consumo';
+        document.getElementById('card-form').classList.add('hidden');
+        document.getElementById('expense-form').classList.remove('hidden');
+        
+        document.getElementById('expenseName').value = expense.name;
+        document.getElementById('expenseAmount').value = expense.totalAmount;
+        
+        const select = document.getElementById('expenseCategory');
+        const customOpts = Object.keys(this.customCategories).map(k => {
+            const c = this.customCategories[k];
+            return '<option value="' + k + '">' + c.emoji + ' ' + c.name + '</option>';
+        }).join('');
+        const customOptHtml = '<option value="custom">➕ Nueva categoría...</option>';
+        select.innerHTML = '<option value="super">🛒 Supermercado</option>' +
+            '<option value="comida">🍔 Comida / Restaurante</option>' +
+            '<option value="transporte">🚗 Transporte</option>' +
+            '<option value="salud">💊 Salud</option>' +
+            '<option value="entretenimiento">🎬 Entretenimiento</option>' +
+            '<option value="ropa">👗 Ropa</option>' +
+            '<option value="servicios">💡 Servicios</option>' +
+            '<option value="otro">📦 Otro</option>' +
+            customOpts + customOptHtml;
+        select.value = expense.category || 'otro';
+        
+        this.selectedDate = expense.date;
+        const expDate = new Date(expense.date + 'T00:00:00');
+        this.calendarMonth = expDate.getMonth();
+        this.calendarYear = expDate.getFullYear();
+        document.getElementById('expenseDateText').textContent = expDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('expenseDateText').style.color = 'var(--text)';
+        
+        const hasInst = expense.installments > 1;
+        document.getElementById('hasInstallments').checked = hasInst;
+        if (hasInst) {
+            document.getElementById('installmentsCount').value = expense.installments;
+            document.getElementById('installments-section').classList.remove('hidden');
+        } else {
+            document.getElementById('installments-section').classList.add('hidden');
+        }
+        
+        this.hideCalendar();
+        document.getElementById('custom-category-section').classList.add('hidden');
+        document.getElementById('modal').classList.add('active');
+    },
+
+    closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        document.getElementById('modal-form').reset();
+        this.hideCalendar();
+    },
+
+    handleSubmit() {
+        if (this.modalType === 'card') {
+            this.clearAllErrors();
+            
+            const cardName = document.getElementById('cardName').value.trim();
+            const cardType = document.getElementById('cardType').value;
+            const cardNumber = document.getElementById('cardNumber').value.trim();
+
+            let hasErrors = false;
+
+            if (!cardName) {
+                this.showError('cardName', 'Por favor ingresa el nombre del banco');
+                hasErrors = true;
+            } else if (cardName.length < 2) {
+                this.showError('cardName', 'Debe tener al menos 2 caracteres');
+                hasErrors = true;
+            }
+            
+            if (!cardNumber) {
+                this.showError('cardNumber', 'Ingresa los últimos 4 dígitos');
+                hasErrors = true;
+            } else if (!/^\d{4}$/.test(cardNumber)) {
+                this.showError('cardNumber', 'Deben ser exactamente 4 números');
+                hasErrors = true;
+            }
+            
+            if (!this.selectedCloseDate) {
+                this.showError('closeDate', 'Selecciona la fecha de cierre');
+                hasErrors = true;
+            }
+            
+            if (!this.selectedDueDate) {
+                this.showError('dueDate', 'Selecciona la fecha de vencimiento');
+                hasErrors = true;
+            }
+            
+            if (this.selectedCloseDate && this.selectedDueDate) {
+                const closeDate = new Date(this.selectedCloseDate + 'T00:00:00');
+                const dueDate = new Date(this.selectedDueDate + 'T00:00:00');
+
+                if (dueDate < closeDate) {
+                    this.showError('dueDate', 'Debe ser igual o posterior al cierre');
+                    hasErrors = true;
+                }
+            }
+
+            // Validar duplicados (mismo nombre + últimos 4 dígitos)
+            // Permite editar la misma tarjeta sin que se marque como duplicada de sí misma.
+            if (cardName && cardNumber) {
+                const duplicate = this.cards.find(c =>
+                    c.name.trim().toLowerCase() === cardName.toLowerCase() &&
+                    c.number === cardNumber &&
+                    (!this.selectedCard || c.id !== this.selectedCard.id)
+                );
+                if (duplicate) {
+                    this.showError('cardNumber', 'Ya existe una tarjeta con este nombre y número');
+                    hasErrors = true;
+                }
+            }
+
+            if (hasErrors) {
+                return;
+            }
+
+            const cardData = {
+                name: cardName,
+                type: cardType,
+                number: cardNumber,
+                closeDate: this.selectedCloseDate,
+                dueDate: this.selectedDueDate,
+            };
+
+            if (this.selectedCard) {
+                const index = this.cards.findIndex(c => c.id === this.selectedCard.id);
+                this.cards[index] = { ...this.selectedCard, ...cardData };
+            } else {
+                this.cards.push({
+                    id: this.generateId(),
+                    ...cardData,
+                    expenses: []
+                });
+            }
+        } else if (this.modalType === 'expense') {
+            this.clearAllErrors();
+            
+            const expenseName = document.getElementById('expenseName').value.trim();
+            let expenseCategory = document.getElementById('expenseCategory').value;
+            const expenseAmount = parseFloat(document.getElementById('expenseAmount').value);
+            const hasInstallments = document.getElementById('hasInstallments').checked;
+            const installmentsCount = hasInstallments ? parseInt(document.getElementById('installmentsCount').value) : 1;
+
+            let hasErrors = false;
+
+            if (expenseCategory === 'custom') {
+                const customName = document.getElementById('customCategoryName').value.trim();
+                const customEmoji = document.getElementById('customCategoryEmoji').value.trim();
+                const customColor = document.getElementById('customCategoryColor').value;
+                
+                if (!customName) {
+                    this.showError('customCategoryName', 'Ingresa un nombre para tu categoría');
+                    hasErrors = true;
+                } else if (customName.length < 2) {
+                    this.showError('customCategoryName', 'Mínimo 2 caracteres');
+                    hasErrors = true;
+                }
+                
+                if (!customEmoji) {
+                    this.showError('customCategoryEmoji', 'Elige un emoji');
+                    hasErrors = true;
+                }
+                
+                if (hasErrors) return;
+                
+                const catId = 'custom_' + this.generateId();
+                this.customCategories[catId] = {
+                    name: customName,
+                    emoji: customEmoji,
+                    color: customColor
+                };
+                expenseCategory = catId;
+            }
+
+            if (!expenseName) {
+                this.showError('expenseName', 'Ingresa una descripción');
+                hasErrors = true;
+            } else if (expenseName.length < 2) {
+                this.showError('expenseName', 'Mínimo 2 caracteres');
+                hasErrors = true;
+            }
+            
+            if (!expenseAmount || isNaN(expenseAmount)) {
+                this.showError('expenseAmount', 'Ingresa un monto válido');
+                hasErrors = true;
+            } else if (expenseAmount <= 0) {
+                this.showError('expenseAmount', 'Debe ser mayor a cero');
+                hasErrors = true;
+            } else if (expenseAmount > 99999999) {
+                this.showError('expenseAmount', 'Máximo $99.999.999');
+                hasErrors = true;
+            }
+            
+            if (!this.selectedDate) {
+                this.showError('expenseDate', 'Selecciona la fecha');
+                hasErrors = true;
+            }
+            
+            if (hasInstallments) {
+                if (!installmentsCount || installmentsCount < 2) {
+                    this.showError('installmentsCount', 'Mínimo 2 cuotas');
+                    hasErrors = true;
+                } else if (installmentsCount > 120) {
+                    this.showError('installmentsCount', 'Máximo 120 cuotas');
+                    hasErrors = true;
+                }
+            }
+
+            if (hasErrors) return;
+
+            const expense = {
+                id: this.selectedExpense ? this.selectedExpense.id : this.generateId(),
+                name: expenseName,
+                category: expenseCategory,
+                totalAmount: expenseAmount,
+                date: this.selectedDate,
+                installments: installmentsCount,
+                installmentAmount: expenseAmount / installmentsCount
+            };
+
+            const card = this.cards.find(c => c.id === this.selectedCard.id);
+            if (card) {
+                if (this.selectedExpense) {
+                    const idx = card.expenses.findIndex(e => e.id === this.selectedExpense.id);
+                    if (idx !== -1) {
+                        card.expenses[idx] = expense;
+                    }
+                } else {
+                    card.expenses.push(expense);
+                }
+            }
+        }
+
+        this.saveData();
+        this.closeModal();
+        
+        if (this.detailCard) {
+            this.detailCard = this.cards.find(c => c.id === this.detailCard.id);
+        }
+        
+        this.render();
+    },
+
+    deleteCard(cardId) {
+        if (confirm('¿Estás seguro de eliminar esta tarjeta?')) {
+            this.cards = this.cards.filter(c => c.id !== cardId);
+            this.saveData();
+            this.render();
+        }
+    },
+
+    deleteExpense(cardId, expenseId) {
+        if (confirm('¿Eliminar este consumo?')) {
+            const card = this.cards.find(c => c.id === cardId);
+            if (card) {
+                card.expenses = card.expenses.filter(e => e.id !== expenseId);
+                this.saveData();
+                
+                if (this.detailCard && this.detailCard.id === cardId) {
+                    this.detailCard = card;
+                }
+                
+                this.render();
+            }
+        }
+    },
+
+    getCurrentPeriod(card) {
+        const today = new Date();
+        const closeDate = new Date(card.closeDate + 'T00:00:00');
+        const closeDayOfMonth = closeDate.getDate();
+        
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+        
+        if (today.getDate() > closeDayOfMonth) {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+        }
+        
+        return { month: currentMonth, year: currentYear };
+    },
+
+    getPeriod(card, monthOffset = 0) {
+        const currentPeriod = this.getCurrentPeriod(card);
+        let month = currentPeriod.month + monthOffset;
+        let year = currentPeriod.year;
+        
+        while (month < 0) {
+            month += 12;
+            year--;
+        }
+        while (month > 11) {
+            month -= 12;
+            year++;
+        }
+        
+        const closeDate = new Date(card.closeDate + 'T00:00:00');
+        const dueDate = new Date(card.dueDate + 'T00:00:00');
+        const closeDayOfMonth = closeDate.getDate();
+        const dueDayOfMonth = dueDate.getDate();
+        
+        let startMonth = month - 1;
+        let startYear = year;
+        if (startMonth < 0) {
+            startMonth = 11;
+            startYear--;
+        }
+        
+        const startDate = new Date(startYear, startMonth, closeDayOfMonth + 1);
+        const endDate = new Date(year, month, closeDayOfMonth);
+        const periodDueDate = new Date(year, month, dueDayOfMonth);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let status = 'future';
+        if (endDate < today) {
+            status = 'past';
+        } else if (startDate <= today && today <= endDate) {
+            status = 'current';
+        }
+        
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        
+        return {
+            startDate,
+            endDate,
+            dueDate: periodDueDate,
+            status,
+            month,
+            year,
+            monthName: monthNames[month]
+        };
+    },
+
+    getPeriods(card) {
+        // Devuelve array con todos los periodos: históricos + actual + futuros
+        const periods = [];
+        let lastHistoricalClose = null;
+        
+        // Agregar periodos históricos si existen
+        if (card.periodsHistory && card.periodsHistory.length > 0) {
+            card.periodsHistory.forEach(histPeriod => {
+                const closeDate = new Date(histPeriod.closeDate + 'T00:00:00');
+                const dueDate = new Date(histPeriod.dueDate + 'T00:00:00');
+                const closeDayOfMonth = closeDate.getDate();
+                
+                const month = closeDate.getMonth();
+                const year = closeDate.getFullYear();
+                
+                // El inicio es el día siguiente al cierre del mes anterior
+                let startMonth = month - 1;
+                let startYear = year;
+                if (startMonth < 0) {
+                    startMonth = 11;
+                    startYear--;
+                }
+                
+                const startDate = new Date(startYear, startMonth, closeDayOfMonth + 1);
+                const endDate = closeDate;  // El fin es exactamente la fecha de cierre
+                
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                
+                periods.push({
+                    startDate,
+                    endDate,
+                    dueDate,
+                    status: 'past',
+                    month,
+                    year,
+                    monthName: monthNames[month],
+                    expenses: histPeriod.expenses || [],
+                    isHistorical: true
+                });
+                
+                // Guardar el último cierre para saber dónde empieza el siguiente
+                if (!lastHistoricalClose || closeDate > lastHistoricalClose) {
+                    lastHistoricalClose = closeDate;
+                }
+            });
+        }
+        
+        // Si hay periodos históricos, el periodo actual empieza después del último cierre
+        if (lastHistoricalClose) {
+            const currentCloseDate = new Date(card.closeDate + 'T00:00:00');
+            const currentDueDate = new Date(card.dueDate + 'T00:00:00');
+            const closeDayOfMonth = currentCloseDate.getDate();
+            
+            // El periodo actual empieza el día DESPUÉS del último cierre histórico
+            const startDate = new Date(lastHistoricalClose);
+            startDate.setDate(startDate.getDate() + 1);
+            
+            const endDate = currentCloseDate;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let status = 'future';
+            if (endDate < today) {
+                status = 'past';
+            } else if (startDate <= today && today <= endDate) {
+                status = 'current';
+            }
+            
+            const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            
+            periods.push({
+                startDate,
+                endDate,
+                dueDate: currentDueDate,
+                status,
+                month: endDate.getMonth(),
+                year: endDate.getFullYear(),
+                monthName: monthNames[endDate.getMonth()],
+                isHistorical: false
+            });
+            
+            // Agregar periodos futuros (próximos 12 meses)
+            for (let i = 1; i <= 12; i++) {
+                periods.push(this.getPeriod(card, i));
+            }
+        } else {
+            // Si NO hay historial, usar la lógica normal
+            for (let i = -3; i <= 12; i++) {
+                periods.push(this.getPeriod(card, i));
+            }
+        }
+        
+        // Ordenar por fecha (más antiguos primero)
+        periods.sort((a, b) => a.startDate - b.startDate);
+        
+        return periods;
+    },
+
+    getPeriodExpenses(card, period) {
+        const allExpenses = [];
+        
+        // Si el periodo es histórico, usar sus expenses guardados
+        if (period.isHistorical && period.expenses) {
+            period.expenses.forEach(expense => {
+                if (expense.installments > 1) {
+                    const expenseDate = new Date(expense.date + 'T00:00:00');
+                    
+                    for (let i = 0; i < expense.installments; i++) {
+                        const installmentDate = new Date(expenseDate);
+                        installmentDate.setMonth(installmentDate.getMonth() + i);
+                        
+                        if (installmentDate >= period.startDate && installmentDate <= period.endDate) {
+                            allExpenses.push({
+                                ...expense,
+                                currentInstallment: i + 1,
+                                isInstallment: true,
+                                amount: expense.installmentAmount
+                            });
+                        }
+                    }
+                } else {
+                    const expenseDate = new Date(expense.date + 'T00:00:00');
+                    if (expenseDate >= period.startDate && expenseDate <= period.endDate) {
+                        allExpenses.push({
+                            ...expense,
+                            amount: expense.totalAmount,
+                            isInstallment: false
+                        });
+                    }
+                }
+            });
+            return allExpenses;
+        }
+        
+        // Si NO es histórico, usar expenses actuales de la tarjeta
+        card.expenses.forEach(expense => {
+            if (expense.installments > 1) {
+                const expenseDate = new Date(expense.date + 'T00:00:00');
+                
+                for (let i = 0; i < expense.installments; i++) {
+                    const installmentDate = new Date(expenseDate);
+                    installmentDate.setMonth(installmentDate.getMonth() + i);
+                    
+                    if (installmentDate >= period.startDate && installmentDate <= period.endDate) {
+                        allExpenses.push({
+                            ...expense,
+                            currentInstallment: i + 1,
+                            isInstallment: true,
+                            amount: expense.installmentAmount
+                        });
+                    }
+                }
+            } else {
+                const expenseDate = new Date(expense.date + 'T00:00:00');
+                if (expenseDate >= period.startDate && expenseDate <= period.endDate) {
+                    allExpenses.push({
+                        ...expense,
+                        amount: expense.totalAmount,
+                        isInstallment: false
+                    });
+                }
+            }
+        });
+
+        return allExpenses;
+    },
+
+    openCardDetail(cardId) {
+        const card = this.cards.find(c => c.id === cardId);
+        if (!card) return;
+        
+        if (this.checkAndShowUpdateModal(card)) return;
+        
+        this.detailCard = card;
+        this.currentPeriodIndex = 0;
+        this.periodIndexSet = false;
+        
+        document.getElementById('tarjetas-view').classList.add('hidden');
+        document.getElementById('consumos-view').classList.add('hidden');
+        document.getElementById('card-detail-view').classList.remove('hidden');
+        document.getElementById('new-card-btn').classList.add('hidden');
+        
+        this.renderCardDetail();
+    },
+
+    backToCards() {
+        this.detailCard = null;
+        document.getElementById('card-detail-view').classList.add('hidden');
+        document.getElementById('tarjetas-view').classList.remove('hidden');
+        document.getElementById('new-card-btn').classList.remove('hidden');
+    },
+
+    changePeriod(offset) {
+        this.currentPeriodIndex += offset;
+        this.renderCardDetail();
+        
+        // NOTIFICACIÓN DE VENCIMIENTO
+        const period = this.getPeriods(this.detailCard)[this.currentPeriodIndex];
+        if (period && period.dueDate) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(period.dueDate + 'T00:00:00');
+            
+            // Si el vencimiento está en este periodo y ya pasó
+            if (dueDate >= period.startDate && dueDate <= period.endDate && dueDate < today) {
+                const dueDateFormatted = dueDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+                const periodName = period.monthName + ' ' + period.year;
+                
+                setTimeout(() => {
+                    const msg = `⚠️ Vencimiento del periodo ${periodName}\n\nLa tarjeta venció el ${dueDateFormatted}`;
+                    if (confirm(msg + '\n\n¿Deseas actualizar las fechas ahora?')) {
+                        this.checkAndShowUpdateModal(this.detailCard);
+                    }
+                }, 300);
+            }
+        }
+    },
+
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            minimumFractionDigits: 2
+        }).format(amount);
+    },
+
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+    },
+
+    renderCardDetail() {
+        if (!this.detailCard) return;
+        
+        const container = document.getElementById('card-detail-container');
+        const allPeriods = this.getPeriods(this.detailCard);
+        
+        // Encontrar el índice del periodo actual (status === 'current')
+        let currentIndex = allPeriods.findIndex(p => p.status === 'current');
+        if (currentIndex === -1) currentIndex = 0;
+        
+        // Ajustar currentPeriodIndex si es la primera vez
+        if (this.currentPeriodIndex === 0 && !this.periodIndexSet) {
+            this.currentPeriodIndex = currentIndex;
+            this.periodIndexSet = true;
+        }
+        
+        // Limitar índice dentro del rango
+        if (this.currentPeriodIndex < 0) this.currentPeriodIndex = 0;
+        if (this.currentPeriodIndex >= allPeriods.length) this.currentPeriodIndex = allPeriods.length - 1;
+        
+        const period = allPeriods[this.currentPeriodIndex];
+        const expenses = this.getPeriodExpenses(this.detailCard, period);
+        const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        
+        const fd = (date) => date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+        const sl = { current: 'Actual', past: 'Cerrado', future: 'Próximo' };
+        
+        const catEmoji = {
+            super: '🛒',
+            comida: '🍔',
+            transporte: '🚗',
+            salud: '💊',
+            entretenimiento: '🎬',
+            ropa: '👗',
+            servicios: '💡',
+            otro: '📦'
+        };
+        
+        const getCatInfo = (cat) => {
+            if (this.customCategories[cat]) {
+                const c = this.customCategories[cat];
+                const colors = c.color.split('-');
+                return {
+                    emoji: c.emoji,
+                    name: c.name,
+                    bg: colors[0],
+                    text: colors[1]
+                };
+            }
+            
+            const defaults = {
+                super: { bg: '#d1fae5', text: '#065f46' },
+                comida: { bg: '#fef3c7', text: '#92400e' },
+                transporte: { bg: '#dbeafe', text: '#1e40af' },
+                salud: { bg: '#fce7f3', text: '#9d174d' },
+                entretenimiento: { bg: '#ede9fe', text: '#5b21b6' },
+                ropa: { bg: '#ffedd5', text: '#9a3412' },
+                servicios: { bg: '#e0f2fe', text: '#075985' },
+                otro: { bg: '#f3f4f6', text: '#4b5563' }
+            };
+            
+            const d = defaults[cat] || defaults.otro;
+            return {
+                emoji: catEmoji[cat] || '📦',
+                name: cat,
+                bg: d.bg,
+                text: d.text
+            };
+        };
+        
+        const addBtn = period.status !== 'past' && !period.isHistorical ? '<button class="btn" style="width:auto;padding:8px 16px;font-size:0.8rem;border-radius:10px" onclick="app.openExpenseModal(app.detailCard)">+ Agregar</button>' : '';
+        
+        const emptyHtml = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>Sin consumos en este periodo</p></div>';
+        
+        const expensesHtml = expenses.map(e => {
+            const cat = e.category || 'otro';
+            const info = getCatInfo(cat);
+            const badge = '<span class="expense-cat" style="background:' + info.bg + ';color:' + info.text + '">' + info.emoji + ' ' + info.name + '</span>';
+            const instBadge = e.isInstallment ? '<span class="installments-badge">' + e.currentInstallment + '/' + e.installments + '</span>' : '';
+            const dateText = '<p style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px">' + this.formatDate(e.date) + '</p>';
+            const editBtn = period.status !== 'past' && !e.isInstallment ? '<button class="icon-btn" onclick="app.openEditExpenseModal(' + this.detailCard.id + ',' + e.id + ')">✏️</button>' : '';
+            const delBtn = period.status !== 'past' && !e.isInstallment ? '<button class="icon-btn delete" onclick="app.deleteExpense(' + this.detailCard.id + ',' + e.id + ')">🗑️</button>' : '';
+            
+            return '<div class="expense-item"><div class="expense-info"><h4>' + e.name + '</h4>' + dateText + badge + '</div><div class="expense-right">' + instBadge + '<div class="expense-amount">' + this.formatCurrency(e.amount) + '</div>' + editBtn + delBtn + '</div></div>';
+        }).join('');
+        
+        const listHtml = expenses.length === 0 ? emptyHtml : '<div class="expenses-list">' + expensesHtml + '</div>';
+        
+        container.innerHTML = '<div class="detail-card">' +
+            '<div class="detail-top">' +
+                '<div class="card-detail-logo">' + this.getCardLogo(this.detailCard.type) + '</div>' +
+                '<div class="detail-top-info">' +
+                    '<div class="card-detail-title">' + this.detailCard.name + '</div>' +
+                    '<div class="card-detail-subtitle">•••• ' + this.detailCard.number + '</div>' +
+                '</div>' +
+                addBtn +
+            '</div>' +
+            '<div class="period-row">' +
+                '<button class="period-btn" onclick="app.changePeriod(-1)">‹</button>' +
+                '<div class="period-center">' +
+                    '<div class="period-dates">' + fd(period.startDate) + ' — ' + fd(period.endDate) + '</div>' +
+                    '<div class="period-status ' + period.status + '">' + sl[period.status] + '</div>' +
+                '</div>' +
+                '<button class="period-btn" onclick="app.changePeriod(1)">›</button>' +
+            '</div>' +
+            '<div style="margin-bottom:12px"><div class="stat-item" style="text-align:center"><div class="stat-label">Total</div><div class="stat-value" style="font-size:1.6rem">' + this.formatCurrency(totalSpent) + '</div></div></div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+                '<div class="stat-item" style="text-align:center"><div class="stat-label">Cierre</div><div class="stat-value sm">' + fd(period.endDate) + '</div></div>' +
+                '<div class="stat-item" style="text-align:center"><div class="stat-label">Vence</div><div class="stat-value sm">' + fd(period.dueDate) + '</div></div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="expenses-header"><span class="expenses-title">Consumos</span></div>' +
+        listHtml;
+    },
+
+    renderCards() {
+        const container = document.getElementById('cards-container');
+        
+        if (this.cards.length === 0) {
+            container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">💳</div><p>No tienes tarjetas agregadas</p></div>';
+            return;
+        }
+
+        container.innerHTML = this.cards.map(card => {
+            const currentPeriod = this.getPeriod(card, 0);
+            const currentExpenses = this.getPeriodExpenses(card, currentPeriod);
+            const currentTotal = currentExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            
+            const closeDate = new Date(card.closeDate + 'T00:00:00');
+            const dueDate = new Date(card.dueDate + 'T00:00:00');
+            
+            return '<div class="card" onclick="app.openCardDetail(' + card.id + ')">' +
+                '<div class="card-logo">' + this.getCardLogo(card.type) + '</div>' +
+                '<div class="card-info">' +
+                    '<div class="card-name">' + card.name + '</div>' +
+                    '<div class="card-number">•••• ' + card.number + '</div>' +
+                '</div>' +
+                '<div class="card-meta">' +
+                    '<div class="total-amount">' + this.formatCurrency(currentTotal) + '</div>' +
+                    '<div class="card-due">Cierra ' + closeDate.getDate() + '/' + (closeDate.getMonth() + 1) + ' · Vence ' + dueDate.getDate() + '/' + (dueDate.getMonth() + 1) + '</div>' +
+                '</div>' +
+                '<div class="card-actions">' +
+                    '<button class="icon-btn" onclick="event.stopPropagation();app.openCardModal(app.cards.find(c=>c.id===' + card.id + '))">✏️</button>' +
+                    '<button class="icon-btn delete" onclick="event.stopPropagation();app.deleteCard(' + card.id + ')">🗑️</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    },
+
+    renderExpenses() {
+        const container = document.getElementById('expenses-container');
+        
+        if (this.cards.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💳</div><p>No tienes tarjetas agregadas</p></div>';
+            return;
+        }
+
+        container.innerHTML = this.cards.map(card => {
+            const catEmoji = {
+                super: '🛒',
+                comida: '🍔',
+                transporte: '🚗',
+                salud: '💊',
+                entretenimiento: '🎬',
+                ropa: '👗',
+                servicios: '💡',
+                otro: '📦'
+            };
+            
+            const getCatInfo = (cat) => {
+                if (this.customCategories[cat]) {
+                    const c = this.customCategories[cat];
+                    const colors = c.color.split('-');
+                    return {
+                        emoji: c.emoji,
+                        name: c.name,
+                        bg: colors[0],
+                        text: colors[1]
+                    };
+                }
+                
+                const defaults = {
+                    super: { bg: '#d1fae5', text: '#065f46' },
+                    comida: { bg: '#fef3c7', text: '#92400e' },
+                    transporte: { bg: '#dbeafe', text: '#1e40af' },
+                    salud: { bg: '#fce7f3', text: '#9d174d' },
+                    entretenimiento: { bg: '#ede9fe', text: '#5b21b6' },
+                    ropa: { bg: '#ffedd5', text: '#9a3412' },
+                    servicios: { bg: '#e0f2fe', text: '#075985' },
+                    otro: { bg: '#f3f4f6', text: '#4b5563' }
+                };
+                
+                const d = defaults[cat] || defaults.otro;
+                return {
+                    emoji: catEmoji[cat] || '📦',
+                    name: cat,
+                    bg: d.bg,
+                    text: d.text
+                };
+            };
+            
+            return '<div style="margin-bottom:36px">' +
+                '<h3 class="expenses-title">' + card.name + '</h3>' +
+                (card.expenses.length === 0 ?
+                    '<div class="empty-state"><p>No hay consumos registrados</p></div>' :
+                    '<div class="expenses-list">' +
+                        card.expenses.map(expense => {
+                            const cat = expense.category || 'otro';
+                            const info = getCatInfo(cat);
+                            const badge = '<span class="expense-cat" style="background:' + info.bg + ';color:' + info.text + '">' + info.emoji + ' ' + info.name + '</span>';
+                            
+                            return '<div class="expense-item">' +
+                                '<div class="expense-info">' +
+                                    '<h4>' + expense.name + '</h4>' +
+                                    '<p>' + this.formatDate(expense.date) + '</p>' +
+                                    badge +
+                                '</div>' +
+                                '<div class="expense-right">' +
+                                    '<div class="expense-amount">' + this.formatCurrency(expense.totalAmount) + '</div>' +
+                                    (expense.installments > 1 ? '<span class="installments-badge">' + expense.installments + 'x</span>' : '') +
+                                    '<button class="icon-btn delete" onclick="app.deleteExpense(' + card.id + ',' + expense.id + ')">🗑️</button>' +
+                                '</div>' +
+                            '</div>';
+                        }).join('') +
+                    '</div>'
+                ) +
+            '</div>';
+        }).join('');
+    },
+
+    render() {
+        if (this.detailCard) {
+            this.renderCardDetail();
+        } else if (this.currentTab === 'tarjetas') {
+            this.renderCards();
+        } else {
+            this.renderExpenses();
+        }
+    },
+
+    openQuickExpenseModal() {
+        console.log('🔍 openQuickExpenseModal llamado');
+        console.log('📊 Número de tarjetas:', this.cards.length);
+        
+        // Si no hay tarjetas, mostrar mensaje
+        if (this.cards.length === 0) {
+            alert('⚠️ Primero debes crear una tarjeta');
+            return;
+        }
+        
+        // Si solo hay 1 tarjeta, abrir directamente el modal de consumo
+        if (this.cards.length === 1) {
+            console.log('✅ Abriendo modal para tarjeta única');
+            this.openExpenseModal(this.cards[0]);
+            return;
+        }
+        
+        // Si hay múltiples tarjetas, mostrar selector
+        console.log('📋 Mostrando selector de tarjetas');
+        this.renderCardSelector();
+        document.getElementById('card-selector-modal').classList.add('active');
+    },
+
+    renderCardSelector() {
+        const container = document.getElementById('card-selector-list');
+        const logos = { visa: '💳', mastercard: '💳', amex: '💳', naranja: '🍊', cabal: '💳' };
+        
+        container.innerHTML = this.cards.map(card => {
+            const logo = logos[card.type] || '💳';
+            return `
+                <div class="card-selector-item" onclick="app.selectCardForExpense(${card.id})">
+                    <div class="card-selector-logo">${logo}</div>
+                    <div class="card-selector-info">
+                        <div class="card-selector-name">${card.name}</div>
+                        <div class="card-selector-number">•••• ${card.number}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    selectCardForExpense(cardId) {
+        const card = this.cards.find(c => c.id === cardId);
+        if (card) {
+            // Cerrar modal de selector
+            document.getElementById('card-selector-modal').classList.remove('active');
+
+            // Abrir modal de consumo para esta tarjeta
+            this.openExpenseModal(card);
+        }
+    },
+
+    // ============================================
+    // Menú desplegable + Export / Import de datos
+    // ============================================
+
+    toggleMenu(ev) {
+        if (ev) ev.stopPropagation();
+        const menu = document.getElementById('actions-menu');
+        const isHidden = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+
+        // Cerrar el menú al clickear fuera
+        if (isHidden) {
+            const closeOnClickOutside = (e) => {
+                if (!menu.contains(e.target) && e.target.id !== 'menu-btn') {
+                    menu.classList.add('hidden');
+                    document.removeEventListener('click', closeOnClickOutside);
+                }
+            };
+            // Defer para que el click actual no lo cierre
+            setTimeout(() => document.addEventListener('click', closeOnClickOutside), 0);
+        }
+    },
+
+    exportData() {
+        try {
+            const payload = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                cards: this.cards,
+                customCategories: this.customCategories
+            };
+            const json = JSON.stringify(payload, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `mis-tarjetas-backup-${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            document.getElementById('actions-menu').classList.add('hidden');
+            alert('✅ Backup descargado correctamente');
+        } catch (e) {
+            console.error('Error exportando:', e);
+            alert('❌ Error al exportar los datos: ' + e.message);
+        }
+    },
+
+    importData(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+
+                // Validar estructura mínima
+                if (!data || !Array.isArray(data.cards)) {
+                    alert('❌ Archivo inválido. Debe contener al menos un array "cards".');
+                    return;
+                }
+
+                const cardCount = data.cards.length;
+                const catCount = data.customCategories ? Object.keys(data.customCategories).length : 0;
+
+                const confirmMsg = `¿Reemplazar todos los datos actuales?\n\n` +
+                    `Tarjetas: ${this.cards.length} → ${cardCount}\n` +
+                    `Categorías personalizadas: ${Object.keys(this.customCategories).length} → ${catCount}\n\n` +
+                    `Se sobrescribirán los datos actuales. Esta acción no se puede deshacer.`;
+
+                if (!confirm(confirmMsg)) return;
+
+                this.cards = data.cards;
+                this.customCategories = data.customCategories || {};
+                this.saveData();
+                this.detailCard = null;
+                this.render();
+
+                document.getElementById('actions-menu').classList.add('hidden');
+                alert('✅ Datos importados correctamente');
+            } catch (err) {
+                console.error('Error importando:', err);
+                alert('❌ Error al leer el archivo: ' + err.message);
+            } finally {
+                // Limpiar el input para permitir re-importar el mismo archivo
+                ev.target.value = '';
+            }
+        };
+        reader.onerror = () => {
+            alert('❌ No se pudo leer el archivo');
+            ev.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+
+    // Registrar Service Worker para PWA
+    // Solo registra si estamos en HTTPS o localhost (requerimiento del navegador)
+    // y si el archivo sw.js existe (evita errores ruidosos en consola).
+    if ('serviceWorker' in navigator) {
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (isSecure) {
+            // Ruta relativa al HTML actual para que funcione sin importar el subdirectorio
+            // (Cloudflare Pages, Vercel, GitHub Pages todos lo soportan).
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then(reg => {
+                        console.log('[PWA] Service Worker registrado:', reg.scope);
+                    })
+                    .catch(err => {
+                        // No bloquear la app si el SW falla; la app sigue funcionando online.
+                        console.warn('[PWA] No se pudo registrar el Service Worker:', err.message);
+                    });
+            });
+        } else {
+            console.info('[PWA] SW deshabilitado (requiere HTTPS). Funciona en file:// pero sin caché offline.');
+        }
+    }
+});
+    </script>
+</body>
+</html>

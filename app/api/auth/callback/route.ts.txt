@@ -1,0 +1,55 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/";
+  const redirectTo = searchParams.get("redirectTo") ?? next;
+
+  if (code) {
+    const cookieStore = await cookies();
+
+    const pendingCookies: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            pendingCookies.push(...cookiesToSet);
+          },
+        },
+      }
+    );
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      const forwardedHost = request.headers.get("x-forwarded-host");
+      const isLocalEnv = process.env.NODE_ENV === "development";
+
+      let redirectResponse: NextResponse;
+      if (isLocalEnv) {
+        redirectResponse = NextResponse.redirect(`${origin}${redirectTo}`);
+      } else if (forwardedHost) {
+        redirectResponse = NextResponse.redirect(`https://${forwardedHost}${redirectTo}`);
+      } else {
+        redirectResponse = NextResponse.redirect(`${origin}${redirectTo}`);
+      }
+
+      pendingCookies.forEach(({ name, value, options }) => {
+        redirectResponse.cookies.set(name, value, options as any);
+      });
+
+      return redirectResponse;
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
+}

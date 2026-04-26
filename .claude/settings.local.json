@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm create *)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(npx --version 2>&1)",
+      "PowerShell(Get-ChildItem \"C:\\\\\" -Recurse -ErrorAction SilentlyContinue -Depth 3 | Where-Object { $_.Name -eq \"node.exe\" } 2>&1 | Select-Object -First 5)",
+      "Bash(gh auth *)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
