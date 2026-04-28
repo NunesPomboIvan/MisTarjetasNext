@@ -141,13 +141,21 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
           />
         ) : (
           <div className="space-y-2">
-            {periodExpenses.map((expense) => (
-              <ExpenseItem
-                key={expense.id}
-                expense={expense}
-                installmentIndex={getInstallmentIndexInPeriod(expense, period)}
-              />
-            ))}
+            {periodExpenses.map((expense) => {
+              const instIdx = getInstallmentIndexInPeriod(expense, period);
+              return (
+                <ExpenseItem
+                  key={expense.id}
+                  expense={expense}
+                  installmentIndex={instIdx}
+                  onEdit={(expenseId) => {
+                    const params = new URLSearchParams({ card_id: id });
+                    if (instIdx >= 0) params.set("installment", String(instIdx));
+                    window.location.href = `/expenses/${expenseId}/edit?${params}`;
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>

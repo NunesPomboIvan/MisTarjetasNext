@@ -96,6 +96,8 @@ export interface Database {
           total_amount_with_interest: number | null;
           installments: number;
           installment_amount: number;
+          /** Montos individuales por cuota. Clave = índice 0-based (string). null = todas usan installment_amount */
+          installment_amounts: Record<string, number> | null;
           discount_percentage: number | null;
           discount_cap: number | null;
           expense_date: string;
@@ -115,6 +117,7 @@ export interface Database {
           total_amount_with_interest?: number | null;
           installments?: number;
           installment_amount: number;
+          installment_amounts?: Record<string, number> | null;
           discount_percentage?: number | null;
           discount_cap?: number | null;
           expense_date: string;
@@ -134,6 +137,7 @@ export interface Database {
           total_amount_with_interest?: number | null;
           installments?: number;
           installment_amount?: number;
+          installment_amounts?: Record<string, number> | null;
           discount_percentage?: number | null;
           discount_cap?: number | null;
           expense_date?: string;

@@ -7,12 +7,21 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
-import { createExpense, updateExpense } from "@/actions/expenses";
+import { createExpense, updateExpense, updateInstallmentAmount, updateAllInstallmentAmounts } from "@/actions/expenses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { CategoryPicker } from "./category-picker";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Card, Category, Expense } from "@/lib/supabase/database.types";
@@ -23,14 +32,18 @@ interface ExpenseFormProps {
   categories: Category[];
   expense?: Expense;
   defaultCardId?: string;
+  /** Índice 0-based de la cuota que se estaba viendo. Undefined = edición desde lista global */
+  installmentIndex?: number;
 }
 
-export function ExpenseForm({ cards, categories, expense, defaultCardId }: ExpenseFormProps) {
+export function ExpenseForm({ cards, categories, expense, defaultCardId, installmentIndex }: ExpenseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [discountActive, setDiscountActive] = useState<boolean>(
     !!expense?.discount_percentage
   );
+  // Estado para el dialog de elección de cuotas
+  const [installmentChoiceData, setInstallmentChoiceData] = useState<ExpenseFormData | null>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -102,13 +115,26 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
   }
 
   function onSubmit(data: ExpenseFormData) {
-    // Si el descuento no está activo, asegurarse de enviar null
     const payload: ExpenseFormData = {
       ...data,
       discount_percentage: discountActive ? data.discount_percentage : null,
       discount_cap: discountActive ? data.discount_cap : null,
     };
 
+    // Si es edición con múltiples cuotas, preguntar antes de guardar
+    const amountChanged = expense && payload.installment_amount !== expense.installment_amount;
+    const isMultiInstallment = expense && expense.installments > 1;
+    const hasInstallmentContext = installmentIndex !== undefined;
+
+    if (isMultiInstallment && amountChanged && hasInstallmentContext) {
+      setInstallmentChoiceData(payload);
+      return;
+    }
+
+    saveExpense(payload);
+  }
+
+  function saveExpense(payload: ExpenseFormData) {
     startTransition(async () => {
       const result = expense
         ? await updateExpense(expense.id, payload)
@@ -116,7 +142,7 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
 
       if (result.success) {
         toast.success(expense ? "Consumo actualizado" : "Consumo registrado");
-        router.push(data.card_id ? `/cards/${data.card_id}` : "/expenses");
+        router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
       } else {
         toast.error(result.error);
@@ -124,7 +150,47 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
     });
   }
 
+  function handleOnlyThisInstallment() {
+    if (!installmentChoiceData || !expense || installmentIndex === undefined) return;
+    startTransition(async () => {
+      const result = await updateInstallmentAmount(
+        expense.id,
+        installmentIndex,
+        installmentChoiceData.installment_amount,
+        expense.card_id
+      );
+      if (result.success) {
+        toast.success(`Cuota ${installmentIndex + 1}/${expense.installments} actualizada`);
+        router.push(installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+      setInstallmentChoiceData(null);
+    });
+  }
+
+  function handleAllInstallments() {
+    if (!installmentChoiceData || !expense) return;
+    startTransition(async () => {
+      const result = await updateAllInstallmentAmounts(
+        expense.id,
+        installmentChoiceData.installment_amount,
+        expense.card_id
+      );
+      if (result.success) {
+        toast.success("Todas las cuotas actualizadas");
+        router.push(installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+      setInstallmentChoiceData(null);
+    });
+  }
+
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Tarjeta */}
       <div className="space-y-1.5">
@@ -385,5 +451,50 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
         )}
       </Button>
     </form>
+
+    {/* Dialog: ¿modificar solo esta cuota o todas? */}
+    <AlertDialog
+      open={!!installmentChoiceData}
+      onOpenChange={(open) => { if (!open) setInstallmentChoiceData(null); }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Qué cuotas querés modificar?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Este consumo tiene{" "}
+            <strong>{expense?.installments} cuotas</strong>. Podés cambiar
+            solo la cuota{" "}
+            <strong>
+              {installmentIndex !== undefined ? installmentIndex + 1 : "—"}/
+              {expense?.installments}
+            </strong>{" "}
+            o actualizar todas al nuevo monto de{" "}
+            <strong>{formatCurrency(installmentChoiceData?.installment_amount ?? 0)}</strong>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+          <Button
+            onClick={handleOnlyThisInstallment}
+            disabled={isPending}
+            className="w-full"
+          >
+            Solo la cuota {installmentIndex !== undefined ? installmentIndex + 1 : "—"}/
+            {expense?.installments}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleAllInstallments}
+            disabled={isPending}
+            className="w-full"
+          >
+            Todas las cuotas ({expense?.installments})
+          </Button>
+          <AlertDialogCancel className="w-full" disabled={isPending}>
+            Cancelar
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

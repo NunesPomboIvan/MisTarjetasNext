@@ -44,6 +44,8 @@ export interface CardForPeriod {
 export interface ExpenseForPeriod {
   expense_date: string | Date;
   installments: number;
+  /** Montos individuales por cuota. Clave = índice 0-based (string). null = todas usan installment_amount */
+  installment_amounts?: Record<string, number> | null;
 }
 
 export type PeriodStatus = "past" | "current" | "future";
@@ -294,15 +296,33 @@ export function parseLocalDate(dateStr: string): Date {
 }
 
 /**
+ * Retorna el monto de una cuota específica (índice 0-based).
+ * Si existe un override en installment_amounts lo usa; si no, usa installment_amount.
+ */
+export function getInstallmentAmountForIndex(
+  expense: ExpenseForPeriod & { installment_amount: number },
+  index: number
+): number {
+  if (expense.installment_amounts) {
+    const override = expense.installment_amounts[String(index)];
+    if (override !== undefined) return override;
+  }
+  return expense.installment_amount;
+}
+
+/**
  * Calcula el monto de cuotas que caen en un período específico.
+ * Respeta montos individuales (installment_amounts) si existen.
  */
 export function getAmountInPeriod(
   expense: ExpenseForPeriod & { installment_amount: number },
   period: Period
 ): number {
   const dates = getInstallmentDates(expense);
-  const count = dates.filter((d) =>
-    isWithinInterval(startOfDay(d), { start: period.start, end: period.end })
-  ).length;
-  return count * expense.installment_amount;
+  return dates.reduce((sum, d, index) => {
+    if (isWithinInterval(startOfDay(d), { start: period.start, end: period.end })) {
+      return sum + getInstallmentAmountForIndex(expense, index);
+    }
+    return sum;
+  }, 0);
 }
