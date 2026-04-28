@@ -32,7 +32,6 @@ export const expenseSchema = z.object({
     .optional(),
   expense_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (YYYY-MM-DD)"),
   currency: z.enum(["ARS", "USD"]).default("ARS"),
-  paid: z.boolean().default(false),
   notes: z.string().max(500, "Máximo 500 caracteres").nullable().optional(),
   tags: z.array(z.string().max(30)).max(10, "Máximo 10 tags").default([]),
 });

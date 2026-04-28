@@ -2,9 +2,8 @@
 
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Check, Trash2, Pencil, MoreVertical, CheckCircle2, Circle } from "lucide-react";
+import { Trash2, Pencil, MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
-import { toggleExpensePaid, deleteExpense } from "@/actions/expenses";
+import { deleteExpense } from "@/actions/expenses";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -40,13 +39,6 @@ export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: Exp
   const [isPending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const cat = expense.category;
-
-  function handleTogglePaid() {
-    startTransition(async () => {
-      const result = await toggleExpensePaid(expense.id, !expense.paid);
-      if (!result.success) toast.error(result.error);
-    });
-  }
 
   function handleDelete() {
     startTransition(async () => {
@@ -65,39 +57,24 @@ export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: Exp
       <div
         className={cn(
           "flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-opacity",
-          expense.paid && "opacity-60",
           isPending && "opacity-40"
         )}
       >
-        {/* Paid toggle */}
-        <button
-          onClick={handleTogglePaid}
-          disabled={isPending}
-          className="flex-shrink-0 text-muted-foreground hover:text-primary transition-colors tap-target flex items-center justify-center"
-          title={expense.paid ? "Marcar como no pagado" : "Marcar como pagado"}
-        >
-          {expense.paid ? (
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-          ) : (
-            <Circle className="h-5 w-5" />
-          )}
-        </button>
-
         {/* Category emoji */}
-        {cat && (
+        {cat ? (
           <div
             className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-lg"
             style={{ backgroundColor: cat.color_bg }}
           >
             {cat.emoji}
           </div>
+        ) : (
+          <div className="h-9 w-9 flex-shrink-0" />
         )}
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <p className={cn("truncate text-sm font-medium", expense.paid && "line-through")}>
-            {expense.description}
-          </p>
+          <p className="truncate text-sm font-medium">{expense.description}</p>
           <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
             <span className="text-xs text-muted-foreground">
               {formatDate(expense.expense_date + "T00:00:00")}
@@ -160,16 +137,14 @@ export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: Exp
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {onEdit && (
-              <DropdownMenuItem onClick={() => onEdit(expense.id)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onClick={() => onEdit(expense.id)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
             )}
-            <DropdownMenuItem onClick={handleTogglePaid}>
-              <Check className="mr-2 h-4 w-4" />
-              {expense.paid ? "Desmarcar pagado" : "Marcar pagado"}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => setDeleteOpen(true)}

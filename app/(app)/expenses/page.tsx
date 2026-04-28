@@ -16,7 +16,6 @@ export default async function ExpensesPage({
     card_id?: string;
     category_id?: string;
     q?: string;
-    unpaid?: string;
   }>;
 }) {
   const filters = await searchParams;
@@ -33,7 +32,6 @@ export default async function ExpensesPage({
 
   if (filters.card_id) query = query.eq("card_id", filters.card_id);
   if (filters.category_id) query = query.eq("category_id", filters.category_id);
-  if (filters.unpaid === "1") query = query.eq("paid", false);
   if (filters.q) query = query.ilike("description", `%${filters.q}%`);
 
   const { data: expensesData } = await query;

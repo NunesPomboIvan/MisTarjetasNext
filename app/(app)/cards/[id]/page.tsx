@@ -7,8 +7,6 @@ import { ExpenseItem } from "@/components/expenses/expense-item";
 import { CardLogo } from "@/components/cards/card-logo";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   getPeriodByOffset,
   expenseFallsInPeriod,
@@ -39,10 +37,8 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
 
   if (!card) notFound();
 
-  // Período a mostrar (offset desde el actual)
   const period = getPeriodByOffset(card, offset);
 
-  // Consumos de la tarjeta con sus categorías
   const { data: expenses } = await supabase
     .from("expenses")
     .select("*, category:categories(*)")
@@ -50,19 +46,11 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
     .eq("user_id", user!.id)
     .order("expense_date", { ascending: false });
 
-  // Filtrar consumos que tienen al menos una cuota en este período
   const periodExpenses = (expenses ?? []).filter((e) =>
     expenseFallsInPeriod(e, period)
   ) as ExpenseWithCategory[];
 
-  // Total del período (suma de cuotas que caen en este período)
-  const periodTotal = periodExpenses.reduce((sum, e) => {
-    return sum + e.installment_amount;
-  }, 0);
-
-  const paidTotal = periodExpenses
-    .filter((e) => e.paid)
-    .reduce((sum, e) => sum + e.installment_amount, 0);
+  const periodTotal = periodExpenses.reduce((sum, e) => sum + e.installment_amount, 0);
 
   return (
     <div className="space-y-4">
@@ -98,21 +86,12 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
       <PeriodNavigator card={card} currentPeriod={period} />
 
       {/* Resumen del período */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Total del período</p>
-          <Money amount={periodTotal} gradient className="mt-1 block text-2xl" />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Vence {formatDate(period.due, "d 'de' MMMM")}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Pagado</p>
-          <Money amount={paidTotal} className="mt-1 block text-2xl text-green-600 dark:text-green-400" />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Resta <Money amount={periodTotal - paidTotal} className="text-xs" />
-          </p>
-        </div>
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-xs text-muted-foreground">Total del período</p>
+        <Money amount={periodTotal} gradient className="mt-1 block text-2xl" />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Vence {formatDate(period.due, "d 'de' MMMM")}
+        </p>
       </div>
 
       {/* Lista de consumos */}

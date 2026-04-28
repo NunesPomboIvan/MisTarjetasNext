@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save, Tag } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import { createExpense, updateExpense } from "@/actions/expenses";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,6 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
           discount_cap: expense.discount_cap ?? undefined,
           expense_date: expense.expense_date,
           currency: expense.currency,
-          paid: expense.paid,
           notes: expense.notes ?? "",
           tags: expense.tags ?? [],
         }
@@ -64,7 +63,6 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
           card_id: defaultCardId ?? cards[0]?.id ?? "",
           currency: "ARS",
           installments: 1,
-          paid: false,
           tags: [],
           expense_date: today,
         },

@@ -100,8 +100,6 @@ export interface Database {
           discount_cap: number | null;
           expense_date: string;
           currency: Currency;
-          paid: boolean;
-          paid_at: string | null;
           notes: string | null;
           tags: string[];
           created_at: string;
@@ -121,8 +119,6 @@ export interface Database {
           discount_cap?: number | null;
           expense_date: string;
           currency?: Currency;
-          paid?: boolean;
-          paid_at?: string | null;
           notes?: string | null;
           tags?: string[];
           created_at?: string;
@@ -142,8 +138,6 @@ export interface Database {
           discount_cap?: number | null;
           expense_date?: string;
           currency?: Currency;
-          paid?: boolean;
-          paid_at?: string | null;
           notes?: string | null;
           tags?: string[];
           updated_at?: string;
