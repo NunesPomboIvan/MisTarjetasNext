@@ -7,7 +7,7 @@ import type { CategoryFormData } from "@/lib/schemas/category";
 import type { ActionResult } from "./cards";
 
 /** Crea una categoría personalizada del usuario */
-export async function createCategory(formData: CategoryFormData): Promise<ActionResult> {
+export async function createCategory(formData: CategoryFormData): Promise<ActionResult & { category?: { id: string; name: string; emoji: string; color_bg: string; color_text: string; is_preset: boolean; user_id: string | null; created_at: string } }> {
   const parsed = categorySchema.safeParse(formData);
   if (!parsed.success) {
     return {
@@ -21,10 +21,22 @@ export async function createCategory(formData: CategoryFormData): Promise<Action
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // Validar nombre único case-insensitive
+  const { data: existing } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", user.id)
+    .ilike("name", parsed.data.name)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: false, error: "Ya tenés una categoría con ese nombre" };
+  }
+
   const { data, error } = await supabase
     .from("categories")
     .insert({ ...parsed.data, user_id: user.id, is_preset: false })
-    .select("id")
+    .select("*")
     .single();
 
   if (error) {
@@ -35,7 +47,9 @@ export async function createCategory(formData: CategoryFormData): Promise<Action
   }
 
   revalidatePath("/settings");
-  return { success: true, id: data.id };
+  revalidatePath("/expenses");
+  revalidatePath("/expenses/new");
+  return { success: true, id: data.id, category: data };
 }
 
 /** Actualiza una categoría personalizada del usuario */
@@ -53,6 +67,19 @@ export async function updateCategory(id: string, formData: CategoryFormData): Pr
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // Validar nombre único case-insensitive (excluyendo la categoría actual)
+  const { data: existing } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("user_id", user.id)
+    .ilike("name", parsed.data.name)
+    .neq("id", id)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: false, error: "Ya tenés una categoría con ese nombre" };
+  }
+
   // Solo puede editar sus propias (is_preset = false)
   const { error } = await supabase
     .from("categories")
@@ -69,10 +96,13 @@ export async function updateCategory(id: string, formData: CategoryFormData): Pr
   }
 
   revalidatePath("/settings");
+  revalidatePath("/expenses");
   return { success: true };
 }
 
-/** Elimina una categoría personalizada del usuario */
+/** Elimina una categoría personalizada del usuario.
+ * Los consumos que la usaban quedan automáticamente sin categoría (ON DELETE SET NULL).
+ */
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
