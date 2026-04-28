@@ -132,10 +132,14 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
         <Controller
           control={control}
           name="card_id"
-          render={({ field }) => (
+          render={({ field }) => {
+            const selectedCard = cards.find((c) => c.id === field.value);
+            return (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className={cn(errors.card_id && "border-destructive")}>
-                <SelectValue placeholder="Seleccioná la tarjeta" />
+                <SelectValue placeholder="Seleccioná la tarjeta">
+                  {selectedCard ? `${selectedCard.name} •••• ${selectedCard.last_four}` : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {cards.map((card) => (
@@ -145,7 +149,8 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
                 ))}
               </SelectContent>
             </Select>
-          )}
+            );
+          }}
         />
         {errors.card_id && <p className="text-xs text-destructive">{errors.card_id.message}</p>}
       </div>
