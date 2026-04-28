@@ -24,16 +24,16 @@ import {
 // ─── Tarjetas de prueba ───────────────────────────────────────
 
 /** Tarjeta estándar: cierra el 23, vence el 10 del mes siguiente */
-const CARD_23_10: CardForPeriod = { close_day: 23, due_day: 10 };
+const CARD_23_10: CardForPeriod = { close_date: "2026-01-23", due_date: "2026-01-10" };
 
 /** Tarjeta que cierra el 28, vence el 5 (vencimiento antes que el cierre del siguiente) */
-const CARD_28_5: CardForPeriod = { close_day: 28, due_day: 5 };
+const CARD_28_5: CardForPeriod = { close_date: "2026-01-28", due_date: "2026-01-05" };
 
 /** Tarjeta que cierra el 31 (caso borde: meses cortos) */
-const CARD_31_15: CardForPeriod = { close_day: 31, due_day: 15 };
+const CARD_31_15: CardForPeriod = { close_date: "2026-01-31", due_date: "2026-01-15" };
 
 /** Tarjeta que cierra el 1 (borde inferior) */
-const CARD_1_20: CardForPeriod = { close_day: 1, due_day: 20 };
+const CARD_1_20: CardForPeriod = { close_date: "2026-01-01", due_date: "2026-01-20" };
 
 // ─── Helper ──────────────────────────────────────────────────
 

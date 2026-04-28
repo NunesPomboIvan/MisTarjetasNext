@@ -103,7 +103,7 @@ function CardItem({ card, archived }: { card: CardWithTotal; archived?: boolean 
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          •••• {card.last_four} · cierra el {card.close_day}
+          •••• {card.last_four} · cierra el {parseInt(card.close_date.split("-")[2], 10)}
         </p>
         <div className="mt-1 flex items-center gap-2">
           <Badge

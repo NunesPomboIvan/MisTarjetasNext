@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   for (const exp of allExpenses) {
     if (!exp.category) continue;
     const period = getCurrentPeriod(
-      cards.find((c) => c.id === exp.card_id) ?? { close_day: 1, due_day: 1 }
+      cards.find((c) => c.id === exp.card_id) ?? { close_date: "2026-01-01", due_date: "2026-01-01" }
     );
     if (!expenseFallsInPeriod(exp, period)) continue;
     const cid = exp.category_id!;

@@ -12,16 +12,14 @@ export const cardSchema = z.object({
     .string()
     .length(4, "Deben ser exactamente 4 dígitos")
     .regex(/^\d{4}$/, "Solo se permiten números"),
-  close_day: z
-    .number()
-    .int()
-    .min(1, "Mínimo 1")
-    .max(31, "Máximo 31"),
-  due_day: z
-    .number()
-    .int()
-    .min(1, "Mínimo 1")
-    .max(31, "Máximo 31"),
+  // TODO: re-habilitar validación de fecha pasada antes de release
+  // (actualmente sin restricción para poder testear alertas de períodos vencidos)
+  close_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de cierre inválida"),
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de vencimiento inválida"),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido").default("#f97316"),
   archived: z.boolean().default(false),
 });

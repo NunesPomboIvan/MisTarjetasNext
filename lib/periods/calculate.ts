@@ -6,9 +6,11 @@
  *
  * Conceptos:
  * - Un período se identifica por el mes/año en que CIERRA.
- * - Ej: tarjeta con close_day=23, due_day=10:
+ * - Ej: tarjeta con close_date=2026-01-23, due_date=2026-01-10:
  *   - "Marzo 2026" = desde 24/feb/2026 (00:00) hasta 23/mar/2026 (23:59:59.999)
  *   - Vence el 10/abr/2026
+ * - Solo se usa el día del mes de close_date y due_date; el mes/año almacenado
+ *   es solo una referencia visual para el selector de fecha.
  *
  * Timezone: Los cálculos usan new Date() local. En producción en Argentina
  * (UTC-3 sin DST) esto es correcto. En tests se usa vi.setSystemTime() con
@@ -34,8 +36,8 @@ import { es } from "date-fns/locale";
 
 /** Subconjunto de Card necesario para calcular períodos */
 export interface CardForPeriod {
-  close_day: number; // 1-31
-  due_day: number;   // 1-31
+  close_date: string; // YYYY-MM-DD — solo se usa el día del mes
+  due_date: string;   // YYYY-MM-DD — solo se usa el día del mes
 }
 
 /** Subconjunto de Expense necesario para cálculos */
@@ -106,18 +108,21 @@ function buildPeriod(
   closeMonth: number, // 1-based
   now: Date
 ): Period {
+  const closeDay = parseLocalDate(card.close_date).getDate();
+  const dueDay = parseLocalDate(card.due_date).getDate();
+
   // Fecha de cierre
-  const closeDate = setDayOfMonth(closeYear, closeMonth, card.close_day);
+  const closeDate = setDayOfMonth(closeYear, closeMonth, closeDay);
   const end = endOfDay(closeDate);
 
   // start = día siguiente al cierre del mes anterior
   const prev = prevYearMonth(closeYear, closeMonth);
-  const prevClose = setDayOfMonth(prev.year, prev.month, card.close_day);
+  const prevClose = setDayOfMonth(prev.year, prev.month, closeDay);
   const start = startOfDay(addDays(prevClose, 1));
 
   // due = due_day del mes siguiente al cierre
   const next = nextYearMonth(closeYear, closeMonth);
-  const due = setDayOfMonth(next.year, next.month, card.due_day);
+  const due = setDayOfMonth(next.year, next.month, dueDay);
 
   // Status (comparamos inicio del día para consistencia)
   const nowDay = startOfDay(now);
@@ -156,7 +161,8 @@ export function getPeriodForDate(card: CardForPeriod, date: Date): Period {
   const year = d.getFullYear();
   const month = d.getMonth() + 1; // 1-based
 
-  const closeDateThisMonth = setDayOfMonth(year, month, card.close_day);
+  const closeDay = parseLocalDate(card.close_date).getDate();
+  const closeDateThisMonth = setDayOfMonth(year, month, closeDay);
 
   let closeYear: number;
   let closeMonth: number;
@@ -232,6 +238,20 @@ export function expenseFallsInPeriod(
   }
 
   return dates.some((d) =>
+    isWithinInterval(startOfDay(d), { start: period.start, end: period.end })
+  );
+}
+
+/**
+ * Retorna el índice (0-based) de la cuota que cae en el período dado.
+ * Retorna -1 si ninguna cuota cae en el período.
+ */
+export function getInstallmentIndexInPeriod(
+  expense: ExpenseForPeriod,
+  period: Period
+): number {
+  const dates = getInstallmentDates(expense);
+  return dates.findIndex((d) =>
     isWithinInterval(startOfDay(d), { start: period.start, end: period.end })
   );
 }

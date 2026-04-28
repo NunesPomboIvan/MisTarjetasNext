@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition, useState } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
@@ -57,15 +57,14 @@ export function CardForm({ card }: CardFormProps) {
           name: card.name,
           type: card.type,
           last_four: card.last_four,
-          close_day: card.close_day,
-          due_day: card.due_day,
+          close_date: card.close_date,
+          due_date: card.due_date,
           color: card.color,
           archived: card.archived,
         }
       : {
           color: "#f97316",
           archived: false,
-          installments: 1,
         } as Partial<CardFormData>,
   });
 
@@ -140,43 +139,36 @@ export function CardForm({ card }: CardFormProps) {
         )}
       </div>
 
-      {/* Días */}
+      {/* Fechas de cierre y vencimiento */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="close_day">Día de cierre</Label>
+          <Label htmlFor="close_date">Fecha de cierre</Label>
           <Input
-            id="close_day"
-            type="number"
-            min={1}
-            max={31}
-            placeholder="23"
-            inputMode="numeric"
-            className={cn(errors.close_day && "border-destructive")}
-            {...register("close_day", { valueAsNumber: true })}
+            id="close_date"
+            type="date"
+            className={cn(errors.close_date && "border-destructive")}
+            {...register("close_date")}
           />
-          {errors.close_day && (
-            <p className="text-xs text-destructive">{errors.close_day.message}</p>
+          {errors.close_date && (
+            <p className="text-xs text-destructive">{errors.close_date.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="due_day">Día de vencimiento</Label>
+          <Label htmlFor="due_date">Fecha de vencimiento</Label>
           <Input
-            id="due_day"
-            type="number"
-            min={1}
-            max={31}
-            placeholder="10"
-            inputMode="numeric"
-            className={cn(errors.due_day && "border-destructive")}
-            {...register("due_day", { valueAsNumber: true })}
+            id="due_date"
+            type="date"
+            className={cn(errors.due_date && "border-destructive")}
+            {...register("due_date")}
           />
-          {errors.due_day && (
-            <p className="text-xs text-destructive">{errors.due_day.message}</p>
+          {errors.due_date && (
+            <p className="text-xs text-destructive">{errors.due_date.message}</p>
           )}
         </div>
       </div>
       <p className="text-xs text-muted-foreground -mt-3">
-        Si la tarjeta cierra el 23 y vence el 10, el período de marzo cubre del 24/feb al 23/mar y vence el 10/abr.
+        Solo importa el <strong>día del mes</strong>. Si elegís el 23 de cierre y el 10 de vencimiento,
+        cada mes el período cierra el 23 y vence el 10 del mes siguiente.
       </p>
 
       {/* Color */}
