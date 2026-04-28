@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { CardLogo } from "./card-logo";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getCurrentPeriod } from "@/lib/periods/calculate";
+import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
+import { isSameDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
 interface CardWithTotal extends Card {
@@ -74,6 +75,7 @@ export function CardList({ cards }: CardListProps) {
 function CardItem({ card, archived }: { card: CardWithTotal; archived?: boolean }) {
   const period = getCurrentPeriod(card);
   const total = getCardTotal(card);
+  const dueToday = isSameDay(parseLocalDate(card.due_date), new Date());
 
   return (
     <Link
@@ -116,9 +118,15 @@ function CardItem({ card, archived }: { card: CardWithTotal; archived?: boolean 
           >
             {period.label}
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            vence {formatDate(period.due, "d/M")}
-          </span>
+          {dueToday ? (
+            <Badge className="border-amber-300 bg-amber-100 text-amber-700 text-xs dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+              Vence hoy
+            </Badge>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              vence {formatDate(period.due, "d/M")}
+            </span>
+          )}
         </div>
       </div>
 

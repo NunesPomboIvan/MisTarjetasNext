@@ -11,7 +11,10 @@ import {
   getPeriodByOffset,
   expenseFallsInPeriod,
   getInstallmentIndexInPeriod,
+  isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
+import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
+import { PeriodEditDialog } from "@/components/cards/period-edit-dialog";
 import { formatDate } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -37,6 +40,7 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
 
   if (!card) notFound();
 
+  const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
 
   const { data: expenses } = await supabase
@@ -54,6 +58,15 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
 
   return (
     <div className="space-y-4">
+      {periodExpired && (
+        <PeriodRenewalDialog
+          cardId={card.id}
+          cardName={card.name}
+          oldCloseDate={card.close_date}
+          oldDueDate={card.due_date}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link
@@ -89,9 +102,16 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="text-xs text-muted-foreground">Total del período</p>
         <Money amount={periodTotal} gradient className="mt-1 block text-2xl" />
-        <p className="mt-1 text-xs text-muted-foreground">
-          Vence {formatDate(period.due, "d 'de' MMMM")}
-        </p>
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Vence {formatDate(period.due, "d 'de' MMMM")}
+          </p>
+          <PeriodEditDialog
+            cardId={card.id}
+            currentCloseDate={card.close_date}
+            currentDueDate={card.due_date}
+          />
+        </div>
       </div>
 
       {/* Lista de consumos */}

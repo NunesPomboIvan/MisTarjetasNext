@@ -276,6 +276,16 @@ export function getInstallmentDates(expense: ExpenseForPeriod): Date[] {
 }
 
 /**
+ * Retorna true si la fecha de cierre almacenada en la tarjeta ya pasó.
+ * Se compara la fecha completa (no solo el día del mes) contra hoy.
+ * Cuando esto es true, el usuario debe ingresar un nuevo período.
+ */
+export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
+  const closeDate = parseLocalDate(card.close_date);
+  return isBefore(closeDate, startOfDay(new Date()));
+}
+
+/**
  * Parsea "YYYY-MM-DD" como fecha local (medianoche) sin conversión TZ.
  */
 export function parseLocalDate(dateStr: string): Date {

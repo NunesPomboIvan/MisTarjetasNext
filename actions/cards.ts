@@ -96,6 +96,34 @@ export async function toggleCardArchived(id: string, archived: boolean): Promise
   return { success: true };
 }
 
+/** Actualiza solo las fechas de cierre y vencimiento del período vigente */
+export async function updateCardPeriod(
+  id: string,
+  closeDate: string,
+  dueDate: string
+): Promise<ActionResult> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(closeDate) || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    return { success: false, error: "Formato de fecha inválido" };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase
+    .from("cards")
+    .update({ close_date: closeDate, due_date: dueDate })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/cards/${id}`);
+  revalidatePath("/cards");
+  revalidatePath("/");
+  return { success: true };
+}
+
 /** Elimina una tarjeta y todos sus consumos (cascade) */
 export async function deleteCard(id: string): Promise<ActionResult> {
   const supabase = await createClient();
