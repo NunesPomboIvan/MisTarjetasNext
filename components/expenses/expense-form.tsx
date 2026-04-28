@@ -2,10 +2,10 @@
 
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition, useEffect } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Tag } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import { createExpense, updateExpense } from "@/actions/expenses";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { CategoryPicker } from "./category-picker";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Card, Category, Expense } from "@/lib/supabase/database.types";
 import { format } from "date-fns";
 
@@ -28,6 +28,9 @@ interface ExpenseFormProps {
 export function ExpenseForm({ cards, categories, expense, defaultCardId }: ExpenseFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [discountActive, setDiscountActive] = useState<boolean>(
+    !!expense?.discount_percentage
+  );
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -47,9 +50,10 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
           category_id: expense.category_id ?? null,
           description: expense.description,
           total_amount: expense.total_amount,
-          total_amount_with_interest: expense.total_amount_with_interest ?? undefined,
           installments: expense.installments,
           installment_amount: expense.installment_amount,
+          discount_percentage: expense.discount_percentage ?? undefined,
+          discount_cap: expense.discount_cap ?? undefined,
           expense_date: expense.expense_date,
           currency: expense.currency,
           paid: expense.paid,
@@ -67,23 +71,50 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
   });
 
   const totalAmount = watch("total_amount");
-  const totalWithInterest = watch("total_amount_with_interest");
   const installments = watch("installments");
+  const discountPct = watch("discount_percentage") ?? 0;
+  const discountCap = watch("discount_cap");
 
-  // Auto-calcular cuota cuando cambia monto o cuotas
+  // Descuento calculado: min(monto * %, tope)
+  const discountCalculado =
+    discountActive && totalAmount
+      ? discountCap != null && discountCap >= 0
+        ? Math.min(totalAmount * (discountPct / 100), discountCap)
+        : totalAmount * (discountPct / 100)
+      : 0;
+  const precioFinal = totalAmount ? Math.max(0, totalAmount - discountCalculado) : 0;
+
+  // Auto-calcular cuota cuando cambia monto, descuento o cuotas
   useEffect(() => {
-    const base = totalWithInterest ?? totalAmount;
+    const base = discountActive ? precioFinal : totalAmount;
     if (base && installments && installments >= 1) {
       const cuota = parseFloat((base / installments).toFixed(2));
       setValue("installment_amount", cuota);
     }
-  }, [totalAmount, totalWithInterest, installments, setValue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalAmount, installments, discountActive, discountPct, discountCap, setValue]);
+
+  // Al desactivar descuento, limpiar los campos
+  function toggleDiscount(active: boolean) {
+    setDiscountActive(active);
+    if (!active) {
+      setValue("discount_percentage", undefined);
+      setValue("discount_cap", undefined);
+    }
+  }
 
   function onSubmit(data: ExpenseFormData) {
+    // Si el descuento no está activo, asegurarse de enviar null
+    const payload: ExpenseFormData = {
+      ...data,
+      discount_percentage: discountActive ? data.discount_percentage : null,
+      discount_cap: discountActive ? data.discount_cap : null,
+    };
+
     startTransition(async () => {
       const result = expense
-        ? await updateExpense(expense.id, data)
-        : await createExpense(data);
+        ? await updateExpense(expense.id, payload)
+        : await createExpense(payload);
 
       if (result.success) {
         toast.success(expense ? "Consumo actualizado" : "Consumo registrado");
@@ -184,31 +215,82 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
           </div>
         </div>
 
-        {/* Monto con intereses (opcional) */}
-        <div className="space-y-1.5">
-          <Label htmlFor="total_amount_with_interest">
-            Monto con intereses{" "}
-            <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-          </Label>
-          <Input
-            id="total_amount_with_interest"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="Solo si financiaste con intereses"
-            inputMode="decimal"
-            className={cn(errors.total_amount_with_interest && "border-destructive")}
-            {...register("total_amount_with_interest", {
-              valueAsNumber: true,
-              setValueAs: (v) => (v === "" || isNaN(v) ? null : Number(v)),
-            })}
+        {/* Toggle descuento */}
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={discountActive}
+            onChange={(e) => toggleDiscount(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
           />
-          {errors.total_amount_with_interest && (
-            <p className="text-xs text-destructive">
-              {errors.total_amount_with_interest.message}
-            </p>
-          )}
-        </div>
+          <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
+        </label>
+
+        {discountActive && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="discount_percentage">% de descuento</Label>
+                <Input
+                  id="discount_percentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="10"
+                  inputMode="decimal"
+                  className={cn(errors.discount_percentage && "border-destructive")}
+                  {...register("discount_percentage", {
+                    valueAsNumber: true,
+                    setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                  })}
+                />
+                {errors.discount_percentage && (
+                  <p className="text-xs text-destructive">{errors.discount_percentage.message}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="discount_cap">
+                  Tope reintegro{" "}
+                  <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="discount_cap"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Sin tope"
+                  inputMode="decimal"
+                  className={cn(errors.discount_cap && "border-destructive")}
+                  {...register("discount_cap", {
+                    valueAsNumber: true,
+                    setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                  })}
+                />
+              </div>
+            </div>
+
+            {/* Resumen del descuento */}
+            {totalAmount > 0 && (
+              <div className="rounded-lg bg-card border border-border p-2.5 space-y-1 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Monto original</span>
+                  <span>{formatCurrency(totalAmount)}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Descuento calculado</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    -{formatCurrency(discountCalculado)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-border pt-1">
+                  <span>Precio final</span>
+                  <span>{formatCurrency(precioFinal)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Cuota calculada */}
         <div className="space-y-1.5">
@@ -224,7 +306,7 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId }: Expen
             {...register("installment_amount", { valueAsNumber: true })}
           />
           <p className="text-xs text-muted-foreground">
-            Se calcula automáticamente. Podés ajustarlo manualmente.
+            Se calcula automáticamente{discountActive ? " sobre el precio con descuento" : ""}. Podés ajustarlo manualmente.
           </p>
         </div>
       </div>

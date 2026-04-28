@@ -96,6 +96,8 @@ export interface Database {
           total_amount_with_interest: number | null;
           installments: number;
           installment_amount: number;
+          discount_percentage: number | null;
+          discount_cap: number | null;
           expense_date: string;
           currency: Currency;
           paid: boolean;
@@ -115,6 +117,8 @@ export interface Database {
           total_amount_with_interest?: number | null;
           installments?: number;
           installment_amount: number;
+          discount_percentage?: number | null;
+          discount_cap?: number | null;
           expense_date: string;
           currency?: Currency;
           paid?: boolean;
@@ -134,6 +138,8 @@ export interface Database {
           total_amount_with_interest?: number | null;
           installments?: number;
           installment_amount?: number;
+          discount_percentage?: number | null;
+          discount_cap?: number | null;
           expense_date?: string;
           currency?: Currency;
           paid?: boolean;

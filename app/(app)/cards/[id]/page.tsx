@@ -9,7 +9,11 @@ import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getPeriodByOffset, expenseFallsInPeriod, getCurrentPeriod } from "@/lib/periods/calculate";
+import {
+  getPeriodByOffset,
+  expenseFallsInPeriod,
+  getInstallmentIndexInPeriod,
+} from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -139,7 +143,11 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
         ) : (
           <div className="space-y-2">
             {periodExpenses.map((expense) => (
-              <ExpenseItem key={expense.id} expense={expense} />
+              <ExpenseItem
+                key={expense.id}
+                expense={expense}
+                installmentIndex={getInstallmentIndexInPeriod(expense, period)}
+              />
             ))}
           </div>
         )}

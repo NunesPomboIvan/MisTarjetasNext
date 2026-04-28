@@ -3,10 +3,9 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ExpenseItem } from "@/components/expenses/expense-item";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
 import { Money } from "@/components/shared/money";
 import { formatDate } from "@/lib/utils";
-import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
+import type { ExpenseWithAll } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Consumos" };
 
@@ -24,10 +23,10 @@ export default async function ExpensesPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Build query con filtros
+  // Build query con filtros — incluye datos de tarjeta para mostrar el nombre
   let query = supabase
     .from("expenses")
-    .select("*, category:categories(*)")
+    .select("*, category:categories(*), card:cards(*)")
     .eq("user_id", user!.id)
     .order("expense_date", { ascending: false })
     .limit(100);
@@ -37,16 +36,13 @@ export default async function ExpensesPage({
   if (filters.unpaid === "1") query = query.eq("paid", false);
   if (filters.q) query = query.ilike("description", `%${filters.q}%`);
 
-  const [expensesResult, cardsResult] = await Promise.all([
-    query,
-    supabase.from("cards").select("id, name, last_four").eq("user_id", user!.id).eq("archived", false),
-  ]);
+  const { data: expensesData } = await query;
 
-  const expenses = (expensesResult.data ?? []) as ExpenseWithCategory[];
+  const expenses = (expensesData ?? []) as ExpenseWithAll[];
   const total = expenses.reduce((s, e) => s + e.installment_amount, 0);
 
   // Agrupar por fecha
-  const grouped = expenses.reduce<Record<string, ExpenseWithCategory[]>>((acc, e) => {
+  const grouped = expenses.reduce<Record<string, ExpenseWithAll[]>>((acc, e) => {
     const key = e.expense_date;
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
@@ -88,7 +84,11 @@ export default async function ExpensesPage({
               </p>
               <div className="space-y-2">
                 {items.map((e) => (
-                  <ExpenseItem key={e.id} expense={e} />
+                  <ExpenseItem
+                    key={e.id}
+                    expense={e}
+                    cardName={e.card?.name}
+                  />
                 ))}
               </div>
             </div>

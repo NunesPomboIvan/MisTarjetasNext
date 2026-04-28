@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
 import { toggleExpensePaid, deleteExpense } from "@/actions/expenses";
@@ -31,9 +30,13 @@ import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 interface ExpenseItemProps {
   expense: ExpenseWithCategory;
   onEdit?: (id: string) => void;
+  /** Índice 0-based de la cuota que cae en el período visualizado. Undefined = no mostrar */
+  installmentIndex?: number;
+  /** Nombre de la tarjeta, para mostrar en listas globales */
+  cardName?: string;
 }
 
-export function ExpenseItem({ expense, onEdit }: ExpenseItemProps) {
+export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: ExpenseItemProps) {
   const [isPending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const cat = expense.category;
@@ -53,6 +56,9 @@ export function ExpenseItem({ expense, onEdit }: ExpenseItemProps) {
       setDeleteOpen(false);
     });
   }
+
+  const showInstallmentBadge =
+    expense.installments > 1 && installmentIndex !== undefined && installmentIndex >= 0;
 
   return (
     <>
@@ -96,14 +102,24 @@ export function ExpenseItem({ expense, onEdit }: ExpenseItemProps) {
             <span className="text-xs text-muted-foreground">
               {formatDate(expense.expense_date + "T00:00:00")}
             </span>
-            {expense.installments > 1 && (
+
+            {/* Cuota N/Total cuando se visualiza en el contexto de un período */}
+            {showInstallmentBadge ? (
+              <Badge
+                variant="secondary"
+                className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              >
+                Cuota {installmentIndex! + 1}/{expense.installments}
+              </Badge>
+            ) : expense.installments > 1 ? (
               <Badge
                 variant="secondary"
                 className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
               >
                 {expense.installments} cuotas
               </Badge>
-            )}
+            ) : null}
+
             {cat && (
               <span
                 className="rounded-full px-1.5 py-0 text-[10px] font-medium"
@@ -112,6 +128,12 @@ export function ExpenseItem({ expense, onEdit }: ExpenseItemProps) {
                 {cat.name}
               </span>
             )}
+
+            {/* Tarjeta (visible solo en listas globales) */}
+            {cardName && (
+              <span className="text-[10px] text-muted-foreground">💳 {cardName}</span>
+            )}
+
             {expense.tags?.map((tag) => (
               <span key={tag} className="text-[10px] text-muted-foreground">
                 #{tag}
@@ -123,7 +145,7 @@ export function ExpenseItem({ expense, onEdit }: ExpenseItemProps) {
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
           <Money amount={expense.installment_amount} size="md" />
-          {expense.installments > 1 && (
+          {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}
         </div>
