@@ -29,13 +29,15 @@ import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 interface ExpenseItemProps {
   expense: ExpenseWithCategory;
   onEdit?: (id: string) => void;
+  /** URL directa para editar (alternativa a onEdit, usada desde Server Components) */
+  editHref?: string;
   /** Índice 0-based de la cuota que cae en el período visualizado. Undefined = no mostrar */
   installmentIndex?: number;
   /** Nombre de la tarjeta, para mostrar en listas globales */
   cardName?: string;
 }
 
-export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: ExpenseItemProps) {
+export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardName }: ExpenseItemProps) {
   const [isPending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const cat = expense.category;
@@ -136,9 +138,14 @@ export function ExpenseItem({ expense, onEdit, installmentIndex, cardName }: Exp
             <MoreVertical className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {onEdit && (
+            {(onEdit || editHref) && (
               <>
-                <DropdownMenuItem onClick={() => onEdit(expense.id)}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (editHref) window.location.href = editHref;
+                    else onEdit?.(expense.id);
+                  }}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
