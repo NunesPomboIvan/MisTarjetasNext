@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
-import { InstallmentAmountEditor } from "./installment-amount-editor";
 import { deleteExpense } from "@/actions/expenses";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -126,19 +125,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
 
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
-          <div className="flex items-center gap-1">
-            <Money amount={expense.installment_amount} size="md" />
-            {showInstallmentBadge && cardId && (
-              <InstallmentAmountEditor
-                expenseId={expense.id}
-                cardId={cardId}
-                installmentIndex={installmentIndex!}
-                totalInstallments={expense.installments}
-                currentAmount={expense.installment_amount}
-                description={expense.description}
-              />
-            )}
-          </div>
+          <Money amount={expense.installment_amount} size="md" />
           {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}
