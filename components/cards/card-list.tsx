@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardLogo } from "./card-logo";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
+import { getCurrentPeriod, parseLocalDate, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import { isSameDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
@@ -20,18 +20,8 @@ interface CardListProps {
 
 function getCardTotal(card: CardWithTotal): number {
   const period = getCurrentPeriod(card);
-  return card.expenses
-    .filter((e) => {
-      // Sumar la cuota correspondiente al período actual
-      const expDate = new Date(e.expense_date + "T00:00:00");
-      const { getInstallmentDates } = require("@/lib/periods/calculate");
-      const dates: Date[] = getInstallmentDates(e);
-      return dates.some(
-        (d: Date) =>
-          d >= period.start && d <= period.end
-      );
-    })
-    .reduce((sum, e) => sum + e.installment_amount, 0);
+  // Suma usando getAmountInPeriod que respeta montos individuales por cuota
+  return card.expenses.reduce((sum, e) => sum + getAmountInPeriod(e, period), 0);
 }
 
 export function CardList({ cards }: CardListProps) {

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
 import { deleteExpense } from "@/actions/expenses";
+import { getInstallmentAmountForIndex } from "@/lib/periods/calculate";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -55,6 +56,14 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
 
   const showInstallmentBadge =
     expense.installments > 1 && installmentIndex !== undefined && installmentIndex >= 0;
+
+  // Si estamos en contexto de un período (installmentIndex definido), usamos el monto
+  // específico de esa cuota (puede tener override en installment_amounts).
+  // Si no, mostramos el monto base (installment_amount).
+  const displayAmount =
+    installmentIndex !== undefined && installmentIndex >= 0
+      ? getInstallmentAmountForIndex(expense, installmentIndex)
+      : expense.installment_amount;
 
   return (
     <>
@@ -125,7 +134,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
 
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
-          <Money amount={expense.installment_amount} size="md" />
+          <Money amount={displayAmount} size="md" />
           {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}

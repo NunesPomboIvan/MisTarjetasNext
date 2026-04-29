@@ -11,6 +11,7 @@ import {
   getPeriodByOffset,
   expenseFallsInPeriod,
   getInstallmentIndexInPeriod,
+  getAmountInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
 import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
@@ -54,7 +55,7 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
     expenseFallsInPeriod(e, period)
   ) as ExpenseWithCategory[];
 
-  const periodTotal = periodExpenses.reduce((sum, e) => sum + e.installment_amount, 0);
+  const periodTotal = periodExpenses.reduce((sum, e) => sum + getAmountInPeriod(e, period), 0);
 
   return (
     <div className="space-y-4">
