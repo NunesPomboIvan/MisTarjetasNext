@@ -37,6 +37,7 @@ export function PeriodRenewalDialog({
   oldCloseDate,
   oldDueDate,
 }: PeriodRenewalDialogProps) {
+  const [open, setOpen] = useState(true);
   const [newCloseDate, setNewCloseDate] = useState(addOneMonth(oldCloseDate));
   const [newDueDate, setNewDueDate] = useState(addOneMonth(oldDueDate));
   const [isPending, startTransition] = useTransition();
@@ -60,7 +61,7 @@ export function PeriodRenewalDialog({
   }
 
   return (
-    <Dialog open>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent showCloseButton={false} className="sm:max-w-sm">
         <DialogHeader>
           <div className="mx-auto mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
@@ -113,6 +114,15 @@ export function PeriodRenewalDialog({
 
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "Guardando..." : "Confirmar nuevo período"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-muted-foreground"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
+            Cargar después
           </Button>
         </form>
       </DialogContent>
