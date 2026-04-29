@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
+import { InstallmentAmountEditor } from "./installment-amount-editor";
 import { deleteExpense } from "@/actions/expenses";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -33,11 +34,13 @@ interface ExpenseItemProps {
   editHref?: string;
   /** Índice 0-based de la cuota que cae en el período visualizado. Undefined = no mostrar */
   installmentIndex?: number;
+  /** ID de la tarjeta, necesario para el editor de importe inline */
+  cardId?: string;
   /** Nombre de la tarjeta, para mostrar en listas globales */
   cardName?: string;
 }
 
-export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardName }: ExpenseItemProps) {
+export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardId, cardName }: ExpenseItemProps) {
   const [isPending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const cat = expense.category;
@@ -58,7 +61,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardN
     <>
       <div
         className={cn(
-          "flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-opacity",
+          "group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-opacity",
           isPending && "opacity-40"
         )}
       >
@@ -123,7 +126,19 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardN
 
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
-          <Money amount={expense.installment_amount} size="md" />
+          <div className="flex items-center gap-1">
+            <Money amount={expense.installment_amount} size="md" />
+            {showInstallmentBadge && cardId && (
+              <InstallmentAmountEditor
+                expenseId={expense.id}
+                cardId={cardId}
+                installmentIndex={installmentIndex!}
+                totalInstallments={expense.installments}
+                currentAmount={expense.installment_amount}
+                description={expense.description}
+              />
+            )}
+          </div>
           {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}

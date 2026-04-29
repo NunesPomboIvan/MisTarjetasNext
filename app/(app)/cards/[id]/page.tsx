@@ -150,6 +150,7 @@ export default async function CardDetailPage({ params, searchParams }: CardDetai
                   key={expense.id}
                   expense={expense}
                   installmentIndex={instIdx}
+                  cardId={id}
                   editHref={`/expenses/${expense.id}/edit?${params}`}
                 />
               );
