@@ -53,6 +53,10 @@ export default async function EditExpensePage({
   const expense = expenseResult.data;
   const backHref = card_id ? `/cards/${card_id}` : "/expenses";
 
+  // Estamos editando una cuota específica
+  const isInstallmentEdit =
+    installmentIndex !== undefined && expense.installments > 1;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -63,12 +67,28 @@ export default async function EditExpensePage({
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold">Editar consumo</h1>
-          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+          <h1 className="text-xl font-bold">
+            {isInstallmentEdit
+              ? `Editar cuota ${installmentIndex! + 1}/${expense.installments}`
+              : "Editar consumo"}
+          </h1>
+          <p className="text-sm text-muted-foreground truncate max-w-[220px]">
             {expense.description}
           </p>
         </div>
       </div>
+
+      {/* Aviso visible cuando se edita una cuota específica */}
+      {isInstallmentEdit && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
+          Estás editando la cuota{" "}
+          <strong>
+            {installmentIndex! + 1}/{expense.installments}
+          </strong>{" "}
+          de este consumo. Al guardar podrás elegir si el cambio de importe aplica
+          solo a esta cuota o a todas.
+        </div>
+      )}
 
       <div className="rounded-2xl border border-border bg-card p-5">
         <ExpenseForm

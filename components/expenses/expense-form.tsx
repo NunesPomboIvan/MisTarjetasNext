@@ -459,17 +459,26 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Qué cuotas querés modificar?</AlertDialogTitle>
+          <AlertDialogTitle>¿A qué cuotas aplicás el cambio?</AlertDialogTitle>
           <AlertDialogDescription>
-            Este consumo tiene{" "}
-            <strong>{expense?.installments} cuotas</strong>. Podés cambiar
-            solo la cuota{" "}
-            <strong>
-              {installmentIndex !== undefined ? installmentIndex + 1 : "—"}/
-              {expense?.installments}
-            </strong>{" "}
-            o actualizar todas al nuevo monto de{" "}
-            <strong>{formatCurrency(installmentChoiceData?.installment_amount ?? 0)}</strong>.
+            <div className="space-y-3">
+              {/* Resumen del cambio */}
+              <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                  Nuevo importe
+                </p>
+                <p className="font-semibold text-foreground text-base">
+                  {formatCurrency(installmentChoiceData?.installment_amount ?? 0)}
+                  <span className="ml-2 text-xs font-normal text-muted-foreground line-through">
+                    {formatCurrency(expense?.installment_amount ?? 0)}
+                  </span>
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Este consumo tiene <strong>{expense?.installments} cuotas</strong>.
+                Elegí si el nuevo importe aplica solo a la cuota que estás viendo o a todas.
+              </p>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col sm:flex-col gap-2">
@@ -478,8 +487,7 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
             disabled={isPending}
             className="w-full"
           >
-            Solo la cuota {installmentIndex !== undefined ? installmentIndex + 1 : "—"}/
-            {expense?.installments}
+            {isPending ? "Guardando..." : `Solo cuota ${installmentIndex !== undefined ? installmentIndex + 1 : "—"}/${expense?.installments}`}
           </Button>
           <Button
             variant="outline"
@@ -487,7 +495,7 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
             disabled={isPending}
             className="w-full"
           >
-            Todas las cuotas ({expense?.installments})
+            {isPending ? "Guardando..." : `Todas las cuotas (${expense?.installments})`}
           </Button>
           <AlertDialogCancel className="w-full" disabled={isPending}>
             Cancelar
