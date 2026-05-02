@@ -92,7 +92,11 @@ export async function getDescriptionSuggestions(query: string): Promise<string[]
 }
 
 /** Actualiza un consumo existente */
-export async function updateExpense(id: string, formData: ExpenseFormData): Promise<ActionResult> {
+export async function updateExpense(
+  id: string,
+  formData: ExpenseFormData,
+  options?: { skipDuplicateCheck?: boolean }
+): Promise<ActionResult & { duplicate?: { id: string; description: string; total_amount: number } }> {
   const parsed = expenseSchema.safeParse(formData);
   if (!parsed.success) {
     return {
@@ -105,6 +109,29 @@ export async function updateExpense(id: string, formData: ExpenseFormData): Prom
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
+
+  // Detección de duplicados: buscar otro consumo (distinto ID) con mismos datos
+  if (!options?.skipDuplicateCheck) {
+    const { data: dup } = await supabase
+      .from("expenses")
+      .select("id, description, total_amount")
+      .eq("user_id", user.id)
+      .eq("card_id", parsed.data.card_id)
+      .eq("expense_date", parsed.data.expense_date)
+      .ilike("description", parsed.data.description)
+      .eq("total_amount", parsed.data.total_amount)
+      .neq("id", id)           // excluir el propio consumo que se está editando
+      .limit(1)
+      .maybeSingle();
+
+    if (dup) {
+      return {
+        success: false,
+        error: "Posible duplicado detectado",
+        duplicate: dup as { id: string; description: string; total_amount: number },
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("expenses")

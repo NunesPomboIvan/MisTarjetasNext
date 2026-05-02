@@ -171,7 +171,7 @@ export function ExpenseForm({
   function saveExpense(payload: ExpenseFormData, skipDuplicateCheck: boolean) {
     startTransition(async () => {
       const result = expense
-        ? await updateExpense(expense.id, payload)
+        ? await updateExpense(expense.id, payload, { skipDuplicateCheck })
         : await createExpense(payload, { skipDuplicateCheck });
 
       if (result.success) {
@@ -182,10 +182,10 @@ export function ExpenseForm({
         return;
       }
 
-      // Solo en createExpense puede aparecer 'duplicate'
+      // Tanto createExpense como updateExpense pueden devolver 'duplicate'
       const dup = (result as { duplicate?: { description: string; total_amount: number } })
         .duplicate;
-      if (!expense && dup) {
+      if (dup) {
         setDuplicate({
           description: dup.description,
           total_amount: dup.total_amount,
