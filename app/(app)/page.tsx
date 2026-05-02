@@ -44,10 +44,14 @@ export default async function DashboardPage() {
 
   const grandTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
 
-  // Próximo vencimiento
-  const nextDue = cardSummaries
+  // Próximo vencimiento — todas las tarjetas que comparten la fecha más próxima
+  const cardsSortedByDue = cardSummaries
     .filter((c) => c.total > 0)
-    .sort((a, b) => a.period.due.getTime() - b.period.due.getTime())[0];
+    .sort((a, b) => a.period.due.getTime() - b.period.due.getTime());
+  const soonestDueTime = cardsSortedByDue[0]?.period.due.getTime();
+  const nextDueGroup = soonestDueTime
+    ? cardsSortedByDue.filter((c) => c.period.due.getTime() === soonestDueTime)
+    : [];
 
   // Top 3 categorías del mes
   const catTotals: Record<string, { name: string; emoji: string; colorBg: string; colorText: string; total: number }> = {};
@@ -96,11 +100,12 @@ export default async function DashboardPage() {
             <p className="mt-1 text-4xl font-bold tabular-nums">
               {new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(grandTotal)}
             </p>
-            {nextDue && (
+            {nextDueGroup.length > 0 && (
               <div className="mt-3 text-right">
                 <p className="text-xs opacity-70">Próximo vencimiento</p>
                 <p className="text-sm font-semibold">
-                  {nextDue.card.name} · {formatDate(nextDue.period.due, "d/M")}
+                  {nextDueGroup.map((c) => c.card.name).join(" · ")}{" "}
+                  · {formatDate(nextDueGroup[0].period.due, "d/M")}
                 </p>
               </div>
             )}
