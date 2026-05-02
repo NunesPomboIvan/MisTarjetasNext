@@ -20,12 +20,12 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 pb-safe"
       style={{
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
         backgroundColor: "oklch(from var(--background) l c h / 0.85)",
       }}
     >
-      <div className="mx-auto flex max-w-lg items-center justify-around px-2 pt-2">
+      <div className="mx-auto flex max-w-lg items-center justify-around px-3 pt-2.5">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -35,24 +35,24 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "tap-target flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-150",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                "tap-target flex flex-col items-center justify-center gap-1 px-2.5 py-1 text-[10.5px] font-semibold tracking-[0.01em] transition-colors duration-200",
+                isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
               <span
                 className={cn(
-                  "flex items-center justify-center rounded-lg p-1.5 transition-spring",
-                  isActive && "gradient-primary shadow-brand scale-110"
+                  "flex items-center justify-center rounded-2xl px-3.5 py-1.5 transition-all duration-200",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-transparent"
                 )}
               >
                 <Icon
-                  className={cn("h-5 w-5", isActive && "text-white")}
-                  strokeWidth={isActive ? 2.5 : 2}
+                  className="h-5 w-5"
+                  strokeWidth={isActive ? 2.2 : 1.8}
                 />
               </span>
-              <span className={cn(isActive && "font-semibold")}>{label}</span>
+              <span style={{ opacity: isActive ? 1 : 0.85 }}>{label}</span>
             </Link>
           );
         })}

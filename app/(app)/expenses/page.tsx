@@ -49,19 +49,21 @@ export default async function ExpensesPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-bold">Consumos</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
+            Consumos
+          </h1>
+          <p className="text-[13px] text-muted-foreground">
             {expenses.length} consumo{expenses.length !== 1 ? "s" : ""} ·{" "}
-            <Money amount={total} className="text-sm" />
+            <Money amount={total} className="text-[13px]" />
           </p>
         </div>
         <Link
           href="/expenses/new"
-          className="inline-flex h-7 items-center gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-medium text-white gradient-primary shadow-brand"
+          className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-white gradient-primary shadow-brand"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
           Nuevo
         </Link>
       </div>

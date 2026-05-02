@@ -145,17 +145,49 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
     router.push("/login");
   }
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">Ajustes</h1>
+  // Iniciales para el avatar del card de perfil
+  const initials = userEmail
+    .split("@")[0]
+    .split(/[._-]/)
+    .map((s) => s.charAt(0).toUpperCase())
+    .slice(0, 2)
+    .join("");
 
-      {/* Perfil */}
-      <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
-        <h2 className="font-semibold">Cuenta</h2>
-        <p className="text-sm text-muted-foreground">{userEmail}</p>
-        <Button variant="outline" size="sm" className="text-destructive border-destructive/50 hover:bg-destructive/10" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Cerrar sesión
+  return (
+    <div className="space-y-5">
+      <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
+        Ajustes
+      </h1>
+
+      {/* Profile card — gradiente cálido */}
+      <section
+        className="relative flex items-center gap-4 overflow-hidden rounded-[26px] p-5 text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.62 0.16 35) 0%, oklch(0.55 0.18 25) 100%)",
+          boxShadow: "0 8px 24px oklch(0.55 0.18 25 / 0.3)",
+        }}
+      >
+        <div
+          className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full font-display text-[22px] font-semibold"
+          style={{
+            background: "rgba(255,255,255,0.25)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          {initials || "•"}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">{userEmail}</p>
+          <p className="text-[13px] opacity-85">Plan personal</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white hover:bg-white/15"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
         </Button>
       </section>
 

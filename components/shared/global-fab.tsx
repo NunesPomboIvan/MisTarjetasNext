@@ -13,15 +13,8 @@ interface GlobalFabProps {
 }
 
 /**
- * Botón flotante global ("+") que abre el bottom sheet de ingreso rápido.
- *
- * Se oculta en las rutas que ya tienen el formulario completo en pantalla
- * o donde la acción "+" no aplica:
- *  - /expenses/new
- *  - /expenses/[id]/edit
- *  - /cards/new
- *  - /cards/[id]/edit
- *  - /login y rutas de auth (no aplica: ya están fuera del layout protegido)
+ * Botón flotante global ("+ Agregar") tipo pill, gradiente cálido + halo difuso.
+ * Se oculta en rutas que ya tienen formulario completo en pantalla.
  */
 export function GlobalFab({ cards, categories }: GlobalFabProps) {
   const pathname = usePathname();
@@ -33,7 +26,6 @@ export function GlobalFab({ cards, categories }: GlobalFabProps) {
     pathname?.startsWith("/cards/new") ||
     pathname?.match(/^\/cards\/[^/]+\/edit/);
 
-  // Detectar si estamos en /cards/[id] para pre-seleccionar esa tarjeta
   const cardDetailMatch = pathname?.match(/^\/cards\/([^/]+)$/);
   const defaultCardId = cardDetailMatch ? cardDetailMatch[1] : undefined;
 
@@ -46,15 +38,42 @@ export function GlobalFab({ cards, categories }: GlobalFabProps) {
         aria-label="Nuevo consumo"
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed z-40 flex h-14 w-14 items-center justify-center rounded-full",
-          "gradient-primary text-white shadow-brand transition-all",
-          "active:scale-95 hover:scale-105",
-          // Posicionado por encima del BottomNav (4rem alto + safe area)
+          "group fixed z-40 flex items-center justify-center rounded-full",
           "right-5 bottom-[calc(4.5rem+env(safe-area-inset-bottom))]",
-          "ring-4 ring-background/40"
+          "transition-all active:scale-95"
         )}
       >
-        <Plus className="h-6 w-6" strokeWidth={2.5} />
+        {/* Halo difuso detrás */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-[-8px] rounded-full"
+          style={{
+            background: "oklch(0.62 0.16 35)",
+            filter: "blur(18px)",
+            opacity: 0.45,
+          }}
+        />
+
+        {/* Pill principal */}
+        <span
+          className={cn(
+            "relative flex items-center gap-2 rounded-full px-5 py-3.5",
+            "gradient-primary shadow-brand-glow text-white"
+          )}
+        >
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-full"
+            style={{
+              background: "rgba(255,255,255,0.22)",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.3) inset",
+            }}
+          >
+            <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} />
+          </span>
+          <span className="text-[15px] font-semibold tracking-tight">
+            Agregar
+          </span>
+        </span>
       </button>
 
       <QuickExpenseSheet

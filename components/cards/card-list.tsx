@@ -1,11 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, Plus, Archive } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CardLogo } from "./card-logo";
-import { Money } from "@/components/shared/money";
+import { Archive } from "lucide-react";
+import { WalletCard } from "./wallet-card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getCurrentPeriod, parseLocalDate, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import { isSameDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
@@ -20,7 +17,6 @@ interface CardListProps {
 
 function getCardTotal(card: CardWithTotal): number {
   const period = getCurrentPeriod(card);
-  // Suma usando getAmountInPeriod que respeta montos individuales por cuota
   return card.expenses.reduce((sum, e) => sum + getAmountInPeriod(e, period), 0);
 }
 
@@ -49,9 +45,13 @@ export function CardList({ cards }: CardListProps) {
         <details className="group">
           <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm text-muted-foreground">
             <Archive className="h-4 w-4" />
-            <span>{archivedCards.length} tarjeta{archivedCards.length !== 1 ? "s" : ""} archivada{archivedCards.length !== 1 ? "s" : ""}</span>
+            <span>
+              {archivedCards.length} tarjeta
+              {archivedCards.length !== 1 ? "s" : ""} archivada
+              {archivedCards.length !== 1 ? "s" : ""}
+            </span>
           </summary>
-          <div className="mt-2 space-y-2 opacity-60">
+          <div className="mt-2 space-y-3 opacity-60">
             {archivedCards.map((card) => (
               <CardItem key={card.id} card={card} archived />
             ))}
@@ -62,68 +62,37 @@ export function CardList({ cards }: CardListProps) {
   );
 }
 
-function CardItem({ card, archived }: { card: CardWithTotal; archived?: boolean }) {
+function CardItem({
+  card,
+  archived,
+}: {
+  card: CardWithTotal;
+  archived?: boolean;
+}) {
   const period = getCurrentPeriod(card);
   const total = getCardTotal(card);
-  const dueToday = isSameDay(parseLocalDate(card.due_date), new Date());
+  const dueToday = isSameDay(period.due, new Date());
 
   return (
     <Link
       href={`/cards/${card.id}`}
-      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all duration-150 active:scale-[0.98] hover:shadow-md"
+      className="block transition-all active:scale-[0.99]"
     >
-      {/* Color dot + logo */}
-      <div className="relative flex-shrink-0">
-        <div
-          className="flex h-12 w-12 items-center justify-center rounded-xl"
-          style={{ backgroundColor: card.color + "20" }}
-        >
-          <CardLogo type={card.type} size="sm" />
-        </div>
-        <div
-          className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-card"
-          style={{ backgroundColor: card.color }}
-        />
-      </div>
-
-      {/* Info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate font-semibold text-foreground">{card.name}</p>
-          {archived && (
-            <Badge variant="secondary" className="text-xs">Archivada</Badge>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          •••• {card.last_four} · cierra el {parseInt(card.close_date.split("-")[2], 10)}
-        </p>
-        <div className="mt-1 flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="text-xs"
-            style={{
-              borderColor: period.status === "current" ? "#22c55e" : "#e7e5e4",
-              color: period.status === "current" ? "#22c55e" : undefined,
-            }}
-          >
-            {period.label}
-          </Badge>
-          {dueToday ? (
-            <Badge className="border-amber-300 bg-amber-100 text-amber-700 text-xs dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
-              Vence hoy
-            </Badge>
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              vence {formatDate(period.due, "d/M")}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Total del período */}
-      <div className="flex flex-shrink-0 flex-col items-end gap-1">
-        <Money amount={total} gradient={total > 0} size="lg" />
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      <WalletCard card={card} total={total} compact />
+      {/* Pie textual debajo de la tarjeta */}
+      <div className="mt-2 flex items-center justify-between px-1 text-xs text-muted-foreground">
+        <span>{period.label}</span>
+        {archived ? (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold">
+            Archivada
+          </span>
+        ) : dueToday ? (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            Vence hoy
+          </span>
+        ) : (
+          <span>vence {formatDate(period.due, "d/M")}</span>
+        )}
       </div>
     </Link>
   );
