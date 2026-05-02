@@ -5,24 +5,40 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save } from "lucide-react";
+import { ChevronDown, Loader2, Save } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
-import { createExpense, updateExpense, updateInstallmentAmount, updateAllInstallmentAmounts } from "@/actions/expenses";
+import {
+  createExpense,
+  updateExpense,
+  updateInstallmentAmount,
+  updateAllInstallmentAmounts,
+} from "@/actions/expenses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { CategoryPicker } from "./category-picker";
+import { AmountInput } from "./amount-input";
+import { InstallmentPresets } from "./installment-presets";
+import { DescriptionAutocomplete } from "./description-autocomplete";
+import { useLastCard } from "@/lib/hooks/use-last-card";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Card, Category, Expense } from "@/lib/supabase/database.types";
 import { format } from "date-fns";
@@ -36,16 +52,34 @@ interface ExpenseFormProps {
   installmentIndex?: number;
 }
 
-export function ExpenseForm({ cards, categories, expense, defaultCardId, installmentIndex }: ExpenseFormProps) {
+export function ExpenseForm({
+  cards,
+  categories,
+  expense,
+  defaultCardId,
+  installmentIndex,
+}: ExpenseFormProps) {
   const router = useRouter();
+  const { lastCardId, setLastCardId } = useLastCard();
   const [isPending, startTransition] = useTransition();
   const [discountActive, setDiscountActive] = useState<boolean>(
     !!expense?.discount_percentage
   );
-  // Estado para el dialog de elección de cuotas
-  const [installmentChoiceData, setInstallmentChoiceData] = useState<ExpenseFormData | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(!!expense);
+  const [installmentChoiceData, setInstallmentChoiceData] =
+    useState<ExpenseFormData | null>(null);
+  const [duplicate, setDuplicate] = useState<{
+    description: string;
+    total_amount: number;
+    payload: ExpenseFormData;
+  } | null>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
+
+  // En modo creación, sugerir la última tarjeta usada si no hay defaultCardId
+  const initialCard =
+    defaultCardId ??
+    (lastCardId && cards.some((c) => c.id === lastCardId) ? lastCardId : cards[0]?.id ?? "");
 
   const {
     register,
@@ -73,11 +107,12 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
           tags: expense.tags ?? [],
         }
       : {
-          card_id: defaultCardId ?? cards[0]?.id ?? "",
+          card_id: initialCard,
           currency: "ARS",
           installments: 1,
           tags: [],
           expense_date: today,
+          description: "",
         },
   });
 
@@ -95,7 +130,7 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
       : 0;
   const precioFinal = totalAmount ? Math.max(0, totalAmount - discountCalculado) : 0;
 
-  // Auto-calcular cuota cuando cambia monto, descuento o cuotas
+  // Auto-calcular cuota
   useEffect(() => {
     const base = discountActive ? precioFinal : totalAmount;
     if (base && installments && installments >= 1) {
@@ -105,7 +140,6 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalAmount, installments, discountActive, discountPct, discountCap, setValue]);
 
-  // Al desactivar descuento, limpiar los campos
   function toggleDiscount(active: boolean) {
     setDiscountActive(active);
     if (!active) {
@@ -121,8 +155,8 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
       discount_cap: discountActive ? data.discount_cap : null,
     };
 
-    // Si es edición con múltiples cuotas, preguntar antes de guardar
-    const amountChanged = expense && payload.installment_amount !== expense.installment_amount;
+    const amountChanged =
+      expense && payload.installment_amount !== expense.installment_amount;
     const isMultiInstallment = expense && expense.installments > 1;
     const hasInstallmentContext = installmentIndex !== undefined;
 
@@ -131,22 +165,36 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
       return;
     }
 
-    saveExpense(payload);
+    saveExpense(payload, false);
   }
 
-  function saveExpense(payload: ExpenseFormData) {
+  function saveExpense(payload: ExpenseFormData, skipDuplicateCheck: boolean) {
     startTransition(async () => {
       const result = expense
         ? await updateExpense(expense.id, payload)
-        : await createExpense(payload);
+        : await createExpense(payload, { skipDuplicateCheck });
 
       if (result.success) {
+        if (!expense) setLastCardId(payload.card_id);
         toast.success(expense ? "Consumo actualizado" : "Consumo registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
-      } else {
-        toast.error(result.error);
+        return;
       }
+
+      // Solo en createExpense puede aparecer 'duplicate'
+      const dup = (result as { duplicate?: { description: string; total_amount: number } })
+        .duplicate;
+      if (!expense && dup) {
+        setDuplicate({
+          description: dup.description,
+          total_amount: dup.total_amount,
+          payload,
+        });
+        return;
+      }
+
+      toast.error(result.error ?? "No se pudo guardar");
     });
   }
 
@@ -161,7 +209,9 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
       );
       if (result.success) {
         toast.success(`Cuota ${installmentIndex + 1}/${expense.installments} actualizada`);
-        router.push(installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses");
+        router.push(
+          installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses"
+        );
         router.refresh();
       } else {
         toast.error(result.error);
@@ -180,7 +230,9 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
       );
       if (result.success) {
         toast.success("Todas las cuotas actualizadas");
-        router.push(installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses");
+        router.push(
+          installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses"
+        );
         router.refresh();
       } else {
         toast.error(result.error);
@@ -191,318 +243,404 @@ export function ExpenseForm({ cards, categories, expense, defaultCardId, install
 
   return (
     <>
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Tarjeta */}
-      <div className="space-y-1.5">
-        <Label>Tarjeta</Label>
-        <Controller
-          control={control}
-          name="card_id"
-          render={({ field }) => {
-            const selectedCard = cards.find((c) => c.id === field.value);
-            return (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className={cn(errors.card_id && "border-destructive")}>
-                <SelectValue placeholder="Seleccioná la tarjeta">
-                  {selectedCard ? `${selectedCard.name} •••• ${selectedCard.last_four}` : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {cards.map((card) => (
-                  <SelectItem key={card.id} value={card.id}>
-                    {card.name} •••• {card.last_four}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            );
-          }}
-        />
-        {errors.card_id && <p className="text-xs text-destructive">{errors.card_id.message}</p>}
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Tarjeta */}
+        <div className="space-y-1.5">
+          <Label>Tarjeta</Label>
+          <Controller
+            control={control}
+            name="card_id"
+            render={({ field }) => {
+              const selectedCard = cards.find((c) => c.id === field.value);
+              return (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className={cn(errors.card_id && "border-destructive")}>
+                    <SelectValue placeholder="Seleccioná la tarjeta">
+                      {selectedCard
+                        ? `${selectedCard.name} •••• ${selectedCard.last_four}`
+                        : undefined}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cards.map((card) => (
+                      <SelectItem key={card.id} value={card.id}>
+                        {card.name} •••• {card.last_four}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            }}
+          />
+          {errors.card_id && (
+            <p className="text-xs text-destructive">{errors.card_id.message}</p>
+          )}
+        </div>
 
-      {/* Descripción */}
-      <div className="space-y-1.5">
-        <Label htmlFor="description">Descripción</Label>
-        <Input
-          id="description"
-          placeholder="Ej: Supermercado Coto"
-          autoFocus={!expense}
-          className={cn(errors.description && "border-destructive")}
-          {...register("description")}
-        />
-        {errors.description && (
-          <p className="text-xs text-destructive">{errors.description.message}</p>
-        )}
-      </div>
+        {/* Descripción */}
+        <div className="space-y-1.5">
+          <Label htmlFor="description">Descripción</Label>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <DescriptionAutocomplete
+                id="description"
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                placeholder="Ej: Supermercado Coto"
+                invalid={!!errors.description}
+                autoFocus={!expense}
+              />
+            )}
+          />
+          {errors.description && (
+            <p className="text-xs text-destructive">{errors.description.message}</p>
+          )}
+        </div>
 
-      {/* Fecha */}
-      <div className="space-y-1.5">
-        <Label htmlFor="expense_date">Fecha del consumo</Label>
-        <Input
-          id="expense_date"
-          type="date"
-          className={cn(errors.expense_date && "border-destructive")}
-          {...register("expense_date")}
-        />
-        {errors.expense_date && (
-          <p className="text-xs text-destructive">{errors.expense_date.message}</p>
-        )}
-      </div>
-
-      {/* Montos */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+        {/* Monto + Cuotas */}
+        <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="total_amount">Monto total</Label>
-            <Input
-              id="total_amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              inputMode="decimal"
-              className={cn(errors.total_amount && "border-destructive")}
-              {...register("total_amount", { valueAsNumber: true })}
+            <Controller
+              control={control}
+              name="total_amount"
+              render={({ field }) => (
+                <AmountInput
+                  id="total_amount"
+                  value={field.value}
+                  onChange={(v) => field.onChange(v ?? 0)}
+                  invalid={!!errors.total_amount}
+                  size="lg"
+                />
+              )}
             />
             {errors.total_amount && (
               <p className="text-xs text-destructive">{errors.total_amount.message}</p>
             )}
           </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="installments">Cuotas</Label>
-            <Input
-              id="installments"
-              type="number"
-              min={1}
-              max={120}
-              placeholder="1"
-              inputMode="numeric"
-              className={cn(errors.installments && "border-destructive")}
-              {...register("installments", { valueAsNumber: true })}
+            <Label>Cuotas</Label>
+            <Controller
+              control={control}
+              name="installments"
+              render={({ field }) => (
+                <InstallmentPresets
+                  value={field.value ?? 1}
+                  onChange={field.onChange}
+                  invalid={!!errors.installments}
+                />
+              )}
             />
-          </div>
-        </div>
-
-        {/* Toggle descuento */}
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={discountActive}
-            onChange={(e) => toggleDiscount(e.target.checked)}
-            className="h-4 w-4 rounded border-border accent-primary"
-          />
-          <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
-        </label>
-
-        {discountActive && (
-          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="discount_percentage">% de descuento</Label>
-                <Input
-                  id="discount_percentage"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  placeholder="10"
-                  inputMode="decimal"
-                  className={cn(errors.discount_percentage && "border-destructive")}
-                  {...register("discount_percentage", {
-                    valueAsNumber: true,
-                    setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                  })}
-                />
-                {errors.discount_percentage && (
-                  <p className="text-xs text-destructive">{errors.discount_percentage.message}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="discount_cap">
-                  Tope reintegro{" "}
-                  <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-                </Label>
-                <Input
-                  id="discount_cap"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Sin tope"
-                  inputMode="decimal"
-                  className={cn(errors.discount_cap && "border-destructive")}
-                  {...register("discount_cap", {
-                    valueAsNumber: true,
-                    setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                  })}
-                />
-              </div>
-            </div>
-
-            {/* Resumen del descuento */}
-            {totalAmount > 0 && (
-              <div className="rounded-lg bg-card border border-border p-2.5 space-y-1 text-sm">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Monto original</span>
-                  <span>{formatCurrency(totalAmount)}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Descuento calculado</span>
-                  <span className="text-green-600 dark:text-green-400">
-                    -{formatCurrency(discountCalculado)}
-                  </span>
-                </div>
-                <div className="flex justify-between font-semibold border-t border-border pt-1">
-                  <span>Precio final</span>
-                  <span>{formatCurrency(precioFinal)}</span>
-                </div>
-              </div>
+            {totalAmount > 0 && installments > 1 && (
+              <p className="text-xs text-muted-foreground">
+                {installments} cuotas de{" "}
+                <span className="font-medium text-foreground">
+                  {formatCurrency((discountActive ? precioFinal : totalAmount) / installments)}
+                </span>
+              </p>
             )}
           </div>
-        )}
 
-        {/* Cuota calculada */}
-        <div className="space-y-1.5">
-          <Label htmlFor="installment_amount">Monto por cuota</Label>
-          <Input
-            id="installment_amount"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            inputMode="decimal"
-            className={cn(errors.installment_amount && "border-destructive")}
-            {...register("installment_amount", { valueAsNumber: true })}
-          />
-          <p className="text-xs text-muted-foreground">
-            Se calcula automáticamente{discountActive ? " sobre el precio con descuento" : ""}. Podés ajustarlo manualmente.
-          </p>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Categoría */}
-      <div className="space-y-2">
-        <Label>Categoría</Label>
-        <Controller
-          control={control}
-          name="category_id"
-          render={({ field }) => (
-            <CategoryPicker
-              categories={categories}
-              value={field.value ?? null}
-              onChange={field.onChange}
+          {/* Toggle descuento */}
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={discountActive}
+              onChange={(e) => toggleDiscount(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
             />
-          )}
-        />
-      </div>
+            <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
+          </label>
 
-      <Separator />
-
-      {/* Notas */}
-      <div className="space-y-1.5">
-        <Label htmlFor="notes">
-          Notas <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
-        </Label>
-        <Input
-          id="notes"
-          placeholder="Cualquier detalle adicional..."
-          {...register("notes")}
-        />
-      </div>
-
-      {/* Tags */}
-      <div className="space-y-1.5">
-        <Label htmlFor="tags">
-          Tags <span className="text-xs font-normal text-muted-foreground">(separados por coma)</span>
-        </Label>
-        <Input
-          id="tags"
-          placeholder="Ej: viaje, trabajo, familia"
-          defaultValue={(expense?.tags ?? []).join(", ")}
-          onChange={(e) => {
-            const raw = e.target.value;
-            const tags = raw
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean);
-            setValue("tags", tags);
-          }}
-        />
-      </div>
-
-      {/* Submit */}
-      <Button
-        type="submit"
-        className="gradient-primary shadow-brand w-full font-semibold"
-        disabled={isPending}
-      >
-        {isPending ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {expense ? "Guardando..." : "Registrando..."}
-          </>
-        ) : (
-          <>
-            <Save className="mr-2 h-4 w-4" />
-            {expense ? "Guardar cambios" : "Registrar consumo"}
-          </>
-        )}
-      </Button>
-    </form>
-
-    {/* Dialog: ¿modificar solo esta cuota o todas? */}
-    <AlertDialog
-      open={!!installmentChoiceData}
-      onOpenChange={(open) => { if (!open) setInstallmentChoiceData(null); }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿A qué cuotas aplicás el cambio?</AlertDialogTitle>
-          <AlertDialogDescription>
-            <div className="space-y-3">
-              {/* Resumen del cambio */}
-              <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
-                  Nuevo importe
-                </p>
-                <p className="font-semibold text-foreground text-base">
-                  {formatCurrency(installmentChoiceData?.installment_amount ?? 0)}
-                  <span className="ml-2 text-xs font-normal text-muted-foreground line-through">
-                    {formatCurrency(expense?.installment_amount ?? 0)}
-                  </span>
-                </p>
+          {discountActive && (
+            <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="discount_percentage">% de descuento</Label>
+                  <Input
+                    id="discount_percentage"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    placeholder="10"
+                    inputMode="decimal"
+                    className={cn(errors.discount_percentage && "border-destructive")}
+                    {...register("discount_percentage", {
+                      valueAsNumber: true,
+                      setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                    })}
+                  />
+                  {errors.discount_percentage && (
+                    <p className="text-xs text-destructive">
+                      {errors.discount_percentage.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="discount_cap">
+                    Tope reintegro{" "}
+                    <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="discount_cap"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Sin tope"
+                    inputMode="decimal"
+                    className={cn(errors.discount_cap && "border-destructive")}
+                    {...register("discount_cap", {
+                      valueAsNumber: true,
+                      setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                    })}
+                  />
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Este consumo tiene <strong>{expense?.installments} cuotas</strong>.
-                Elegí si el nuevo importe aplica solo a la cuota que estás viendo o a todas.
+
+              {totalAmount > 0 && (
+                <div className="rounded-lg bg-card border border-border p-2.5 space-y-1 text-sm">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Monto original</span>
+                    <span>{formatCurrency(totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Descuento calculado</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      -{formatCurrency(discountCalculado)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-semibold border-t border-border pt-1">
+                    <span>Precio final</span>
+                    <span>{formatCurrency(precioFinal)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sección avanzada (collapsable) */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((s) => !s)}
+          className="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <span>
+            {showAdvanced ? "Ocultar" : "Más"} opciones (fecha, categoría, monto x cuota, notas, tags)
+          </span>
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform", showAdvanced && "rotate-180")}
+          />
+        </button>
+
+        {showAdvanced && (
+          <div className="space-y-5 rounded-xl border border-border bg-muted/20 p-4">
+            {/* Fecha */}
+            <div className="space-y-1.5">
+              <Label htmlFor="expense_date">Fecha del consumo</Label>
+              <Input
+                id="expense_date"
+                type="date"
+                className={cn(errors.expense_date && "border-destructive")}
+                {...register("expense_date")}
+              />
+              {errors.expense_date && (
+                <p className="text-xs text-destructive">{errors.expense_date.message}</p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Cuota calculada (manual override) */}
+            <div className="space-y-1.5">
+              <Label htmlFor="installment_amount">Monto por cuota</Label>
+              <Controller
+                control={control}
+                name="installment_amount"
+                render={({ field }) => (
+                  <AmountInput
+                    id="installment_amount"
+                    value={field.value}
+                    onChange={(v) => field.onChange(v ?? 0)}
+                    invalid={!!errors.installment_amount}
+                  />
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Se calcula automáticamente
+                {discountActive ? " sobre el precio con descuento" : ""}. Podés ajustarlo
+                manualmente.
               </p>
             </div>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col sm:flex-col gap-2">
-          <Button
-            onClick={handleOnlyThisInstallment}
-            disabled={isPending}
-            className="w-full"
-          >
-            {isPending ? "Guardando..." : `Solo cuota ${installmentIndex !== undefined ? installmentIndex + 1 : "—"}/${expense?.installments}`}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleAllInstallments}
-            disabled={isPending}
-            className="w-full"
-          >
-            {isPending ? "Guardando..." : `Todas las cuotas (${expense?.installments})`}
-          </Button>
-          <AlertDialogCancel className="w-full" disabled={isPending}>
-            Cancelar
-          </AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+
+            <Separator />
+
+            {/* Categoría */}
+            <div className="space-y-2">
+              <Label>Categoría</Label>
+              <Controller
+                control={control}
+                name="category_id"
+                render={({ field }) => (
+                  <CategoryPicker
+                    categories={categories}
+                    value={field.value ?? null}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Notas */}
+            <div className="space-y-1.5">
+              <Label htmlFor="notes">
+                Notas{" "}
+                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Input
+                id="notes"
+                placeholder="Cualquier detalle adicional..."
+                {...register("notes")}
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-1.5">
+              <Label htmlFor="tags">
+                Tags{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (separados por coma)
+                </span>
+              </Label>
+              <Input
+                id="tags"
+                placeholder="Ej: viaje, trabajo, familia"
+                defaultValue={(expense?.tags ?? []).join(", ")}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const tags = raw
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean);
+                  setValue("tags", tags);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Submit */}
+        <Button
+          type="submit"
+          className="gradient-primary shadow-brand w-full font-semibold"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {expense ? "Guardando..." : "Registrando..."}
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              {expense ? "Guardar cambios" : "Registrar consumo"}
+            </>
+          )}
+        </Button>
+      </form>
+
+      {/* Diálogo: ¿modificar solo esta cuota o todas? */}
+      <AlertDialog
+        open={!!installmentChoiceData}
+        onOpenChange={(open) => {
+          if (!open) setInstallmentChoiceData(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿A qué cuotas aplicás el cambio?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Nuevo importe
+                  </p>
+                  <p className="font-semibold text-foreground text-base">
+                    {formatCurrency(installmentChoiceData?.installment_amount ?? 0)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground line-through">
+                      {formatCurrency(expense?.installment_amount ?? 0)}
+                    </span>
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Este consumo tiene <strong>{expense?.installments} cuotas</strong>. Elegí si el
+                  nuevo importe aplica solo a la cuota que estás viendo o a todas.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+            <Button onClick={handleOnlyThisInstallment} disabled={isPending} className="w-full">
+              {isPending
+                ? "Guardando..."
+                : `Solo cuota ${
+                    installmentIndex !== undefined ? installmentIndex + 1 : "—"
+                  }/${expense?.installments}`}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleAllInstallments}
+              disabled={isPending}
+              className="w-full"
+            >
+              {isPending ? "Guardando..." : `Todas las cuotas (${expense?.installments})`}
+            </Button>
+            <AlertDialogCancel className="w-full" disabled={isPending}>
+              Cancelar
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo: posible duplicado */}
+      <AlertDialog
+        open={!!duplicate}
+        onOpenChange={(o) => {
+          if (!o) setDuplicate(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Es un consumo distinto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Detectamos un consumo casi idéntico ya registrado:{" "}
+              <strong>{duplicate?.description}</strong> por{" "}
+              <strong>{formatCurrency(duplicate?.total_amount ?? 0)}</strong> en la misma tarjeta y
+              fecha. ¿Querés guardarlo igual?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (duplicate) {
+                  const p = duplicate.payload;
+                  setDuplicate(null);
+                  saveExpense(p, true);
+                }
+              }}
+            >
+              Sí, guardar igual
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

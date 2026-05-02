@@ -79,3 +79,62 @@ export function parseArgentineNumber(value: string): number {
   const normalized = value.replace(/\./g, "").replace(",", ".");
   return parseFloat(normalized);
 }
+
+/**
+ * Formatea un input de monto en tiempo real con separador de miles argentino.
+ * - Acepta solo dígitos y un único separador decimal (coma o punto)
+ * - Inserta puntos cada 3 dígitos en la parte entera
+ * - Permite hasta 2 decimales
+ *
+ * @example formatAmountInput("1500") → "1.500"
+ * @example formatAmountInput("1500,5") → "1.500,5"
+ * @example formatAmountInput("1.500.000,75") → "1.500.000,75"
+ */
+export function formatAmountInput(raw: string): string {
+  if (!raw) return "";
+  // Normalizar: quitar puntos (separador de miles) pero mantener coma/punto decimal
+  // Sólo permitir dígitos y un único separador
+  const cleaned = raw.replace(/[^\d.,]/g, "");
+
+  // Determinar separador decimal: el último ',' o '.' que aparezca con dígitos después
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  let decimalIdx = -1;
+  if (lastComma > -1 && lastComma > lastDot) decimalIdx = lastComma;
+  // Sólo tratamos un punto como decimal si NO hay comas y hay dígitos después
+  // (el punto es separador de miles en Argentina, salvo que sea el único separador)
+  // Para facilidad de uso, si el usuario tipea "1500.5" lo tomamos como decimal.
+  else if (lastDot > -1 && lastComma === -1) {
+    // sólo si hay un único punto y va al final (decimal)
+    const pointCount = (cleaned.match(/\./g) ?? []).length;
+    if (pointCount === 1) decimalIdx = lastDot;
+  }
+
+  let intPart = "";
+  let decPart = "";
+  if (decimalIdx > -1) {
+    intPart = cleaned.slice(0, decimalIdx).replace(/[.,]/g, "");
+    decPart = cleaned.slice(decimalIdx + 1).replace(/[.,]/g, "").slice(0, 2);
+  } else {
+    intPart = cleaned.replace(/[.,]/g, "");
+  }
+
+  // Quitar ceros a la izquierda salvo que la parte entera sea exactamente "0"
+  intPart = intPart.replace(/^0+(?=\d)/, "");
+  if (intPart === "") intPart = "0";
+
+  // Insertar puntos cada 3 dígitos
+  const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  return decimalIdx > -1 ? `${intFormatted},${decPart}` : intFormatted;
+}
+
+/**
+ * Convierte un input formateado al estilo argentino a número
+ */
+export function unformatAmount(formatted: string): number {
+  if (!formatted) return 0;
+  const normalized = formatted.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(normalized);
+  return isNaN(n) ? 0 : n;
+}

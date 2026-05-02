@@ -2,7 +2,7 @@
 
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, MoreVertical } from "lucide-react";
+import { Trash2, Pencil, MoreVertical, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
-import { deleteExpense } from "@/actions/expenses";
+import { deleteExpense, cloneExpense } from "@/actions/expenses";
 import { getInstallmentAmountForIndex } from "@/lib/periods/calculate";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -51,6 +51,14 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
       if (!result.success) toast.error(result.error);
       else toast.success("Consumo eliminado");
       setDeleteOpen(false);
+    });
+  }
+
+  function handleClone() {
+    startTransition(async () => {
+      const result = await cloneExpense(expense.id);
+      if (!result.success) toast.error(result.error);
+      else toast.success("Consumo duplicado para hoy");
     });
   }
 
@@ -160,9 +168,13 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
                   <Pencil className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
               </>
             )}
+            <DropdownMenuItem onClick={handleClone}>
+              <Copy className="mr-2 h-4 w-4" />
+              Repetir hoy
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => setDeleteOpen(true)}

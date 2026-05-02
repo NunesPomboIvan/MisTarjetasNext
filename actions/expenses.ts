@@ -7,7 +7,10 @@ import type { ExpenseFormData } from "@/lib/schemas/expense";
 import type { ActionResult } from "./cards";
 
 /** Crea un nuevo consumo */
-export async function createExpense(formData: ExpenseFormData): Promise<ActionResult> {
+export async function createExpense(
+  formData: ExpenseFormData,
+  options?: { skipDuplicateCheck?: boolean }
+): Promise<ActionResult & { duplicate?: { id: string; description: string; total_amount: number } }> {
   const parsed = expenseSchema.safeParse(formData);
   if (!parsed.success) {
     return {
@@ -21,6 +24,28 @@ export async function createExpense(formData: ExpenseFormData): Promise<ActionRe
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // Detección de duplicados: misma tarjeta + descripción + total + fecha
+  if (!options?.skipDuplicateCheck) {
+    const { data: dup } = await supabase
+      .from("expenses")
+      .select("id, description, total_amount")
+      .eq("user_id", user.id)
+      .eq("card_id", parsed.data.card_id)
+      .eq("expense_date", parsed.data.expense_date)
+      .ilike("description", parsed.data.description)
+      .eq("total_amount", parsed.data.total_amount)
+      .limit(1)
+      .maybeSingle();
+
+    if (dup) {
+      return {
+        success: false,
+        error: "Posible duplicado detectado",
+        duplicate: dup as { id: string; description: string; total_amount: number },
+      };
+    }
+  }
+
   const { data, error } = await supabase
     .from("expenses")
     .insert({ ...parsed.data, user_id: user.id })
@@ -33,6 +58,37 @@ export async function createExpense(formData: ExpenseFormData): Promise<ActionRe
   revalidatePath("/expenses");
   revalidatePath("/");
   return { success: true, id: data.id };
+}
+
+/** Sugerencias de descripciones recientes/frecuentes del usuario */
+export async function getDescriptionSuggestions(query: string): Promise<string[]> {
+  if (!query || query.trim().length < 2) return [];
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("description")
+    .eq("user_id", user.id)
+    .ilike("description", `%${query.trim()}%`)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error || !data) return [];
+
+  // De-duplicar manteniendo el orden por recencia
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const row of data) {
+    const d = row.description?.trim();
+    if (d && !seen.has(d.toLowerCase())) {
+      seen.add(d.toLowerCase());
+      out.push(d);
+    }
+    if (out.length >= 5) break;
+  }
+  return out;
 }
 
 /** Actualiza un consumo existente */
@@ -135,6 +191,58 @@ export async function updateAllInstallmentAmounts(
   revalidatePath("/expenses");
   revalidatePath("/");
   return { success: true };
+}
+
+/**
+ * Clona un consumo existente con la fecha de hoy.
+ * Útil para gastos que se repiten mes a mes (suscripciones, alquiler, servicios).
+ */
+export async function cloneExpense(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: original, error: fetchError } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !original) {
+    return { success: false, error: "Consumo no encontrado" };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const clone = {
+    user_id: user.id,
+    card_id: original.card_id,
+    category_id: original.category_id,
+    description: original.description,
+    total_amount: original.total_amount,
+    installments: original.installments,
+    installment_amount: original.installment_amount,
+    discount_percentage: original.discount_percentage,
+    discount_cap: original.discount_cap,
+    expense_date: today,
+    currency: original.currency,
+    notes: original.notes,
+    tags: original.tags,
+  };
+
+  const { data, error } = await supabase
+    .from("expenses")
+    .insert(clone)
+    .select("id")
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/cards/${original.card_id}`);
+  revalidatePath("/expenses");
+  revalidatePath("/");
+  return { success: true, id: data.id };
 }
 
 /** Elimina un consumo */

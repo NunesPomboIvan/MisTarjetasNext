@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CreditCard, ChevronRight, TrendingUp } from "lucide-react";
+import { ChevronRight, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { CardLogo } from "@/components/cards/card-logo";
 import { EmptyState } from "@/components/shared/empty-state";
+import { CardQuickAdd } from "@/components/shared/card-quick-add";
 import { getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
@@ -21,6 +22,15 @@ export default async function DashboardPage() {
 
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
+
+  // Categorías para el QuickExpenseSheet anidado en cada quick-add
+  const { data: categoriesData } = await supabase
+    .from("categories")
+    .select("*")
+    .or(`user_id.eq.${user!.id},user_id.is.null`)
+    .order("is_preset", { ascending: false })
+    .order("name");
+  const categories = (categoriesData ?? []) as Category[];
 
   // Calcular totales por tarjeta
   const cardSummaries = cards.map((card) => {
@@ -105,26 +115,35 @@ export default async function DashboardPage() {
               </Link>
             </div>
             {cardSummaries.map(({ card, period, total }) => (
-              <Link
+              <div
                 key={card.id}
-                href={`/cards/${card.id}`}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-all active:scale-[0.98]"
+                className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-all"
               >
-                <div
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: card.color + "20" }}
+                <Link
+                  href={`/cards/${card.id}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 active:scale-[0.99]"
                 >
-                  <CardLogo type={card.type} size="sm" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{card.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    vence {formatDate(period.due, "d 'de' MMMM")}
-                  </p>
-                </div>
-                <Money amount={total} gradient={total > 0} size="md" />
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-              </Link>
+                  <div
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: card.color + "20" }}
+                  >
+                    <CardLogo type={card.type} size="sm" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{card.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      vence {formatDate(period.due, "d 'de' MMMM")}
+                    </p>
+                  </div>
+                  <Money amount={total} gradient={total > 0} size="md" />
+                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                </Link>
+                <CardQuickAdd
+                  cardId={card.id}
+                  cards={cards}
+                  categories={categories}
+                />
+              </div>
             ))}
           </div>
 
