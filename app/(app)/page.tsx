@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
-import { WalletCard } from "@/components/cards/wallet-card";
+import { HomeCardsStack } from "@/components/home/home-cards-stack";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CardQuickAdd } from "@/components/shared/card-quick-add";
 import { getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
@@ -43,6 +43,16 @@ export default async function DashboardPage() {
 
   const grandTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
 
+  // Total USD del período
+  const usdTotal = allExpenses
+    .filter((e) => {
+      const card = cards.find((c) => c.id === e.card_id);
+      if (!card) return false;
+      const period = getCurrentPeriod(card);
+      return e.currency === "USD" && expenseFallsInPeriod(e, period);
+    })
+    .reduce((s, e) => s + e.installment_amount, 0);
+
   // Próximo vencimiento — agrupado si hay varias tarjetas en la misma fecha
   const cardsSortedByDue = cardSummaries
     .filter((c) => c.total > 0)
@@ -52,18 +62,26 @@ export default async function DashboardPage() {
     ? cardsSortedByDue.filter((c) => c.period.due.getTime() === soonestDueTime)
     : [];
 
-  // Saludo con fecha de hoy — un único `now` que también alimenta el cálculo
-  // de "días para vencer". Tomarlo en una const evita la regla de pureza del
-  // compilador de React (Date.now() es impura).
   const today = new Date();
 
-  // Días faltantes para el próximo vencimiento
   const daysUntilDue = nextDueGroup.length
     ? Math.ceil(
         (nextDueGroup[0].period.due.getTime() - today.getTime()) /
           (1000 * 60 * 60 * 24)
       )
     : 0;
+
+  // Desglose de monedas para el stat de tarjetas
+  const arsCount = cards.length;
+  const usdCount = allExpenses.filter((e) => {
+    const card = cards.find((c) => c.id === e.card_id);
+    if (!card) return false;
+    const period = getCurrentPeriod(card);
+    return e.currency === "USD" && expenseFallsInPeriod(e, period);
+  }).length > 0 ? 1 : 0;
+  const currencyLabel = usdCount > 0
+    ? `${arsCount - usdCount} ARS · ${usdCount} USD`
+    : `${arsCount} ARS`;
 
   // Actividad reciente (últimos 5)
   const recientes = [...allExpenses]
@@ -73,6 +91,9 @@ export default async function DashboardPage() {
   const dateLabel = capitalize(formatDate(today, "EEEE, d 'de' MMMM"));
   const userName = (user?.email?.split("@")[0] ?? "").split(/[._-]/)[0];
   const displayName = userName ? capitalize(userName) : "";
+
+  // Serializable summaries for client component
+  const stackSummaries = cardSummaries.map(({ card, total }) => ({ card, total }));
 
   return (
     <div className="relative space-y-7">
@@ -103,7 +124,7 @@ export default async function DashboardPage() {
         />
       ) : (
         <>
-          {/* Total del período + meta */}
+          {/* Total del período */}
           <section className="relative overflow-hidden rounded-[26px] border border-border bg-card p-6 shadow-sm">
             <div
               aria-hidden
@@ -122,6 +143,11 @@ export default async function DashboardPage() {
                 amount={grandTotal}
                 className="mt-1.5 block font-display text-[44px] font-semibold leading-[1.1] tracking-tight text-foreground"
               />
+              {usdTotal > 0 && (
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  + <Money amount={usdTotal} currency="USD" className="text-[13px]" />
+                </p>
+              )}
 
               <div className="mt-5 flex gap-4 border-t border-border pt-5">
                 {nextDueGroup.length > 0 ? (
@@ -157,57 +183,15 @@ export default async function DashboardPage() {
                     {cards.length} activa{cards.length === 1 ? "" : "s"}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {cards.length} ARS
+                    {currencyLabel}
                   </p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Tarjetas */}
-          <section className="space-y-3">
-            <div className="flex items-end justify-between">
-              <h2 className="font-display text-lg font-semibold text-foreground">
-                Mis tarjetas
-              </h2>
-              <Link
-                href="/cards"
-                className="text-[13px] font-semibold text-primary"
-              >
-                Ver todas
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {cardSummaries.map(({ card, period, total }) => (
-                <div
-                  key={card.id}
-                  className="relative flex items-center gap-2"
-                >
-                  <Link
-                    href={`/cards/${card.id}`}
-                    className="block flex-1 transition-all active:scale-[0.99]"
-                  >
-                    <WalletCard
-                      card={card}
-                      total={total}
-                      compact
-                    />
-                  </Link>
-                  <div className="absolute right-3 top-3 z-10">
-                    <CardQuickAdd
-                      cardId={card.id}
-                      cards={cards}
-                      categories={categories}
-                    />
-                  </div>
-                  <div className="sr-only">
-                    Vence {formatDate(period.due, "d/M")}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* Tarjetas apiladas — componente cliente (maneja ocultar saldos) */}
+          <HomeCardsStack cardSummaries={stackSummaries} />
 
           {/* Actividad reciente */}
           {recientes.length > 0 && (
