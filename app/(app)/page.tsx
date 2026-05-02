@@ -104,7 +104,9 @@ export default async function DashboardPage() {
               <div className="mt-3 text-right">
                 <p className="text-xs opacity-70">Próximo vencimiento</p>
                 <p className="text-sm font-semibold">
-                  {nextDueGroup.map((c) => c.card.name).join(" · ")}{" "}
+                  {nextDueGroup.length === 1
+                    ? nextDueGroup[0].card.name
+                    : `${nextDueGroup.length} tarjetas`}{" "}
                   · {formatDate(nextDueGroup[0].period.due, "d/M")}
                 </p>
               </div>
