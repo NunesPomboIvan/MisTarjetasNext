@@ -218,7 +218,7 @@ export function QuickExpenseSheet({
         <SheetContent
           side="bottom"
           showCloseButton={false}
-          className="max-h-[92vh] overflow-y-auto rounded-t-3xl pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className="h-dvh overflow-y-auto rounded-none pb-[max(1rem,env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]"
         >
           {/* Drag handle visual */}
           <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-muted-foreground/30" />
