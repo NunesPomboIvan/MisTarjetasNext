@@ -14,6 +14,8 @@ interface WalletCardProps {
   className?: string;
 }
 
+/* ─── Color utilities ───────────────────────────────────────── */
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace("#", "");
   const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -24,15 +26,20 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 
-function darken(hex: string, amount = 0.18): string {
+/** Mezcla el color con blanco (tint) */
+function tint(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex);
-  const f = 1 - amount;
-  const dr = Math.max(0, Math.round(r * f));
-  const dg = Math.max(0, Math.round(g * f));
-  const db = Math.max(0, Math.round(b * f));
-  return `rgb(${dr}, ${dg}, ${db})`;
+  return `rgb(${Math.round(r + (255 - r) * amount)},${Math.round(g + (255 - g) * amount)},${Math.round(b + (255 - b) * amount)})`;
 }
 
+/** Mezcla el color con negro (shade) */
+function shade(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  const f = 1 - amount;
+  return `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`;
+}
+
+/** Calcula si el texto debe ser claro u oscuro según WCAG */
 function relativeLuminance(hex: string): number {
   const { r, g, b } = hexToRgb(hex);
   const a = [r, g, b].map((v) => {
@@ -42,11 +49,67 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
-/**
- * Visualización de tarjeta estilo Wallet — gradiente cálido + blobs decorativos.
- * Usa el color de la tarjeta como base; calcula el contraste del texto y un acento
- * decorativo automáticamente.
- */
+/* ─── Chip EMV ──────────────────────────────────────────────── */
+
+function EmvChip({ isLight }: { isLight: boolean }) {
+  const chipGradient = isLight
+    ? "linear-gradient(145deg, #7a5c18 0%, #c4913b 35%, #e8bc5a 60%, #b07a25 100%)"
+    : "linear-gradient(145deg, #b8922a 0%, #e8c45a 40%, #f5d878 60%, #c09030 100%)";
+
+  return (
+    <div
+      aria-hidden
+      style={{
+        width: 34,
+        height: 26,
+        borderRadius: 5,
+        background: chipGradient,
+        position: "relative",
+        overflow: "hidden",
+        boxShadow:
+          "0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.3)",
+        flexShrink: 0,
+      }}
+    >
+      {/* Marco interior */}
+      <div
+        style={{
+          position: "absolute",
+          inset: "3px 4px",
+          border: "1px solid rgba(0,0,0,0.22)",
+          borderRadius: 3,
+        }}
+      />
+      {/* Línea horizontal */}
+      <div
+        style={{
+          position: "absolute",
+          left: 4,
+          right: 4,
+          top: "50%",
+          height: 1,
+          background: "rgba(0,0,0,0.22)",
+          transform: "translateY(-50%)",
+        }}
+      />
+      {/* Línea vertical */}
+      <div
+        style={{
+          position: "absolute",
+          top: 3,
+          bottom: 3,
+          left: "50%",
+          width: 1,
+          background: "rgba(0,0,0,0.2)",
+          transform: "translateX(-50%)",
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─── WalletCard ────────────────────────────────────────────── */
+
 export function WalletCard({
   card,
   total,
@@ -55,101 +118,161 @@ export function WalletCard({
   compact = false,
   className,
 }: WalletCardProps) {
-  const baseColor = card.color || "#3B4F8A";
-  const lum = relativeLuminance(baseColor);
-  const isLight = lum > 0.55;
-  const fg = isLight ? "#3A2818" : "#FFF4E0";
-  const fgMuted = isLight
-    ? "rgba(58, 40, 24, 0.7)"
-    : "rgba(255, 244, 224, 0.75)";
-  const decoColor = isLight ? "#8B5A2B" : "#F4B860";
+  const base = card.color || "#2563eb";
+  const lum = relativeLuminance(base);
+  const isLight = lum > 0.45;
+
+  /* Colores de texto */
+  const fg = isLight ? "rgba(18,10,4,0.93)" : "rgba(255,252,245,0.95)";
+  const fgMuted = isLight ? "rgba(18,10,4,0.52)" : "rgba(255,252,245,0.58)";
+
+  /* Gradiente principal — 3 paradas para profundidad real */
+  const g0 = tint(base, 0.28);   // esquina iluminada
+  const g1 = base;                // color base
+  const g2 = shade(base, 0.42);  // sombra profunda
+
+  /* Sombra coloreada */
+  const shadowHex = shade(base, 0.1);
+  const { r, g, b } = hexToRgb(shadowHex);
+
+  const cardH = compact ? 172 : 204;
 
   return (
     <div
       className={cn(
-        "relative flex flex-col justify-between overflow-hidden",
-        "rounded-3xl",
+        "relative flex flex-col justify-between overflow-hidden rounded-[24px]",
         compact ? "p-5" : "p-[22px]",
         className
       )}
       style={{
         width: "100%",
-        height: compact ? 174 : 200,
-        background: `linear-gradient(140deg, ${baseColor} 0%, ${darken(baseColor, 0.2)} 100%)`,
+        height: cardH,
+        background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
         color: fg,
-        boxShadow: `0 1px 2px rgba(0,0,0,0.06), 0 14px 36px -10px ${baseColor}66`,
+        boxShadow: [
+          "0 1px 0 rgba(255,255,255,0.18) inset",       // highlight borde superior
+          "0 -1px 0 rgba(0,0,0,0.18) inset",             // sombra borde inferior
+          "0 1px 3px rgba(0,0,0,0.14)",                  // sombra cercana
+          `0 12px 40px -8px rgba(${r},${g},${b},0.60)`, // glow coloreado
+          "0 4px 16px -4px rgba(0,0,0,0.22)",           // sombra difusa
+        ].join(", "),
       }}
     >
-      {/* Decorative blobs */}
+      {/* ── Shine diagonal — reflejo plástico ────────────────── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[24px]"
+        style={{
+          background:
+            "linear-gradient(132deg, rgba(255,255,255,0.19) 0%, rgba(255,255,255,0.05) 40%, transparent 62%)",
+        }}
+      />
+
+      {/* ── Glow radial top-right ─────────────────────────────── */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
         style={{
-          top: -40,
-          right: -30,
-          width: 180,
-          height: 180,
-          borderRadius: "60% 40% 55% 45% / 50% 60% 40% 50%",
-          background: decoColor,
-          opacity: 0.25,
-          filter: "blur(6px)",
+          top: -60,
+          right: -50,
+          width: 240,
+          height: 240,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${tint(base, 0.45)} 0%, transparent 65%)`,
+          opacity: 0.35,
+          filter: "blur(2px)",
         }}
       />
+
+      {/* ── Glow radial bottom-left ───────────────────────────── */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
         style={{
           bottom: -50,
-          left: -20,
-          width: 140,
-          height: 140,
-          borderRadius: "50% 50% 60% 40% / 45% 55% 45% 55%",
-          background: decoColor,
-          opacity: 0.15,
-          filter: "blur(8px)",
+          left: -30,
+          width: 180,
+          height: 180,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${shade(base, 0.55)} 0%, transparent 65%)`,
+          opacity: 0.5,
+          filter: "blur(4px)",
         }}
       />
 
-      {/* Top: bank + name + brand */}
+      {/* ── Arco decorativo (círculo grande, borde right) ────── */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute"
+        style={{
+          top: "-30%",
+          right: "-18%",
+          width: "70%",
+          height: "160%",
+          borderRadius: "50%",
+          border: `1px solid rgba(255,255,255,${isLight ? "0.12" : "0.10"})`,
+        }}
+      />
+
+      {/* ── TOP: chip + logo de red ───────────────────────────── */}
       <div className="relative flex items-start justify-between">
-        <div>
-          {card.bank && (
+        <div className="flex flex-col gap-2.5">
+          <EmvChip isLight={isLight} />
+          {card.bank ? (
             <div
-              className="text-[11px] font-semibold uppercase"
-              style={{ color: fgMuted, letterSpacing: "0.13em" }}
+              className="text-[10.5px] font-bold uppercase"
+              style={{ color: fgMuted, letterSpacing: "0.15em" }}
             >
               {card.bank}
             </div>
-          )}
-          <div
-            className="mt-1 font-display text-[17px] font-semibold"
-            style={{ letterSpacing: "-0.01em" }}
-          >
-            {card.name}
-          </div>
+          ) : null}
         </div>
-        <CardLogo type={card.type} size="sm" />
+
+        <CardLogo
+          type={card.type}
+          size={compact ? "sm" : "md"}
+          fgColor={fg}
+        />
       </div>
 
-      {/* Bottom: período actual + monto + ultimos 4 */}
-      <div className="relative">
+      {/* ── BOTTOM: nombre + período + número ────────────────── */}
+      <div className="relative space-y-2.5">
+        {/* Nombre de la tarjeta */}
         <div
-          className="mb-1 text-[10px] font-semibold uppercase"
-          style={{ color: fgMuted, letterSpacing: "0.16em" }}
+          className="font-display text-[17px] font-semibold leading-tight"
+          style={{ letterSpacing: "-0.015em", color: fg }}
         >
-          Período actual
+          {card.name}
         </div>
-        <div className="flex items-end justify-between gap-3">
-          <Money
-            amount={total}
-            currency={currency}
-            hide={hideBalance}
-            className="font-display text-[28px] font-semibold tabular-nums"
-            style={{ letterSpacing: "-0.02em", color: fg }}
-          />
+
+        {/* Separador sutil */}
+        <div
+          style={{
+            height: 1,
+            background: `rgba(255,255,255,${isLight ? "0.25" : "0.15"})`,
+          }}
+        />
+
+        {/* Período + monto + número */}
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <div
+              className="mb-1 text-[9.5px] font-semibold uppercase"
+              style={{ color: fgMuted, letterSpacing: "0.18em" }}
+            >
+              Período actual
+            </div>
+            <Money
+              amount={total}
+              currency={currency}
+              hide={hideBalance}
+              className="font-display text-[26px] font-bold tabular-nums leading-none"
+              style={{ letterSpacing: "-0.025em", color: fg }}
+            />
+          </div>
           <div
-            className="text-[13px] tabular-nums"
-            style={{ color: fgMuted, letterSpacing: "0.12em" }}
+            className="mb-0.5 text-[13px] tabular-nums"
+            style={{ color: fgMuted, letterSpacing: "0.14em" }}
           >
             •••• {card.last_four}
           </div>

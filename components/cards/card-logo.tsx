@@ -5,36 +5,116 @@ interface CardLogoProps {
   type: CardType;
   className?: string;
   size?: "sm" | "md" | "lg";
+  /** Si se pasa, usa ese color para el texto en vez del default */
+  fgColor?: string;
 }
 
-const sizeClasses = {
-  sm: "h-5 w-8 text-[8px]",
-  md: "h-7 w-11 text-[10px]",
-  lg: "h-9 w-14 text-xs",
-};
+export function CardLogo({ type, className, size = "md", fgColor }: CardLogoProps) {
+  const sizes = {
+    sm: { wrap: "h-6 w-6", text: "text-[10px]", circles: 16 },
+    md: { wrap: "h-8 w-8", text: "text-[13px]", circles: 22 },
+    lg: { wrap: "h-10 w-10", text: "text-[16px]", circles: 28 },
+  };
+  const s = sizes[size];
+  const fg = fgColor ?? "rgba(255,255,255,0.92)";
 
-const cardStyles: Record<CardType, { bg: string; text: string; label: string }> = {
-  visa: { bg: "bg-blue-600", text: "text-white", label: "VISA" },
-  mastercard: { bg: "bg-gradient-to-r from-red-500 to-yellow-400", text: "text-white", label: "MC" },
-  amex: { bg: "bg-cyan-600", text: "text-white", label: "AMEX" },
-  naranja: { bg: "bg-orange-500", text: "text-white", label: "NRJ" },
-  cabal: { bg: "bg-blue-800", text: "text-white", label: "CABAL" },
-  other: { bg: "bg-gray-500", text: "text-white", label: "CARD" },
-};
+  if (type === "visa") {
+    return (
+      <span
+        className={cn("font-black italic select-none leading-none tracking-[-0.03em]", s.text, className)}
+        style={{ color: fg, fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
+      >
+        VISA
+      </span>
+    );
+  }
 
-export function CardLogo({ type, className, size = "md" }: CardLogoProps) {
-  const style = cardStyles[type];
+  if (type === "mastercard") {
+    const r = s.circles;
+    const overlap = r * 0.42;
+    const totalW = r * 2 - overlap;
+    return (
+      <div
+        className={cn("relative flex-shrink-0 select-none", className)}
+        style={{ width: totalW, height: r }}
+        aria-label="Mastercard"
+      >
+        {/* Círculo izquierdo — rojo */}
+        <div
+          className="absolute left-0 top-0 rounded-full"
+          style={{
+            width: r,
+            height: r,
+            background: "#EB001B",
+            opacity: 0.92,
+          }}
+        />
+        {/* Círculo derecho — amarillo */}
+        <div
+          className="absolute top-0 rounded-full"
+          style={{
+            width: r,
+            height: r,
+            right: 0,
+            background: "#F79E1B",
+            opacity: 0.92,
+          }}
+        />
+        {/* Zona de superposición — mezcla naranja */}
+        <div
+          className="absolute top-0"
+          style={{
+            left: r - overlap,
+            width: overlap,
+            height: r,
+            background: "linear-gradient(to right, #EB001B, #FF5F00, #F79E1B)",
+            opacity: 0.92,
+            mixBlendMode: "multiply",
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (type === "amex") {
+    return (
+      <span
+        className={cn("font-black tracking-[0.08em] select-none leading-none", s.text, className)}
+        style={{ color: fg, fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontSize: "calc(1em * 0.85)", textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
+      >
+        AMEX
+      </span>
+    );
+  }
+
+  if (type === "naranja") {
+    return (
+      <span
+        className={cn("font-black tracking-[-0.01em] select-none leading-none", s.text, className)}
+        style={{ color: "#FF6B00", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
+      >
+        naranja
+      </span>
+    );
+  }
+
+  if (type === "cabal") {
+    return (
+      <span
+        className={cn("font-bold tracking-[0.04em] select-none leading-none uppercase", s.text, className)}
+        style={{ color: fg, textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
+      >
+        Cabal
+      </span>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "flex items-center justify-center rounded font-bold tracking-tight",
-        style.bg,
-        style.text,
-        sizeClasses[size],
-        className
-      )}
+    <span
+      className={cn("font-semibold select-none leading-none opacity-80", s.text, className)}
+      style={{ color: fg }}
     >
-      {style.label}
-    </div>
+      Card
+    </span>
   );
 }
