@@ -82,18 +82,12 @@ export function BottomNav({ cards, categories }: BottomNavProps) {
               type="button"
               aria-label="Nuevo consumo"
               onClick={() => setSheetOpen(true)}
-              className="relative -mt-5 flex h-14 w-14 items-center justify-center rounded-full gradient-primary shadow-brand transition-transform active:scale-95"
+              className="relative -mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-foreground transition-transform active:scale-95"
+              style={{
+                boxShadow: "0 4px 20px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08) inset",
+              }}
             >
-              <span
-                className="pointer-events-none absolute inset-0 rounded-full"
-                style={{
-                  background: "oklch(0.50 0.22 264)",
-                  filter: "blur(14px)",
-                  opacity: 0.5,
-                  transform: "translateY(4px) scale(0.85)",
-                }}
-              />
-              <Plus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
+              <Plus className="relative h-6 w-6 text-background" strokeWidth={2.5} />
             </button>
           </div>
 

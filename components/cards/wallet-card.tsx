@@ -158,18 +158,24 @@ export function WalletCard({
         }}
       />
 
-      {/* ── TOP: banco (opcional) + logo de red ─────────────── */}
-      <div className="relative flex items-start justify-between">
-        {card.bank ? (
+      {/* ── TOP: nombre (izq) + logo de red (der) ───────────── */}
+      <div className="relative flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          {card.bank && (
+            <div
+              className="mb-0.5 text-[10px] font-bold uppercase"
+              style={{ color: fgMuted, letterSpacing: "0.15em" }}
+            >
+              {card.bank}
+            </div>
+          )}
           <div
-            className="text-[10.5px] font-bold uppercase"
-            style={{ color: fgMuted, letterSpacing: "0.15em" }}
+            className="font-display text-[17px] font-semibold leading-tight"
+            style={{ letterSpacing: "-0.015em", color: fg }}
           >
-            {card.bank}
+            {card.name}
           </div>
-        ) : (
-          <div />
-        )}
+        </div>
 
         <CardLogo
           type={card.type}
@@ -178,21 +184,13 @@ export function WalletCard({
         />
       </div>
 
-      {/* ── BOTTOM: nombre + período + número ────────────────── */}
-      <div className="relative space-y-2.5">
-        {/* Nombre de la tarjeta */}
-        <div
-          className="font-display text-[17px] font-semibold leading-tight"
-          style={{ letterSpacing: "-0.015em", color: fg }}
-        >
-          {card.name}
-        </div>
-
+      {/* ── BOTTOM: período + número ─────────────────────────── */}
+      <div className="relative space-y-2">
         {/* Separador sutil */}
         <div
           style={{
             height: 1,
-            background: `rgba(255,255,255,${isLight ? "0.25" : "0.15"})`,
+            background: `rgba(255,255,255,${isLight ? "0.22" : "0.12"})`,
           }}
         />
 
