@@ -12,6 +12,8 @@ interface WalletCardProps {
   hideBalance?: boolean;
   compact?: boolean;
   className?: string;
+  /** Fecha de cierre del período, ej: "23 may" */
+  closeLabel?: string;
   /** Fecha de vencimiento formateada, ej: "10 jun" */
   dueLabel?: string;
 }
@@ -60,6 +62,7 @@ export function WalletCard({
   hideBalance = false,
   compact = false,
   className,
+  closeLabel,
   dueLabel,
 }: WalletCardProps) {
   const base = card.color || "#2563eb";
@@ -184,8 +187,57 @@ export function WalletCard({
         />
       </div>
 
-      {/* ── BOTTOM: período + número ─────────────────────────── */}
+      {/* ── BOTTOM: fechas + período + número ───────────────── */}
       <div className="relative space-y-2">
+        {/* Fechas cierre / vencimiento */}
+        {(closeLabel || dueLabel) && (
+          <div className="flex items-center gap-3">
+            {closeLabel && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="text-[8.5px] font-bold uppercase"
+                  style={{ color: fgMuted, letterSpacing: "0.16em" }}
+                >
+                  Cierre
+                </span>
+                <span
+                  className="rounded-[5px] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums"
+                  style={{
+                    background: `rgba(255,255,255,${isLight ? "0.18" : "0.13"})`,
+                    color: fg,
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {closeLabel}
+                </span>
+              </div>
+            )}
+            {closeLabel && dueLabel && (
+              <span style={{ color: fgMuted, opacity: 0.35, fontSize: 10 }}>|</span>
+            )}
+            {dueLabel && (
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="text-[8.5px] font-bold uppercase"
+                  style={{ color: fgMuted, letterSpacing: "0.16em" }}
+                >
+                  Vence
+                </span>
+                <span
+                  className="rounded-[5px] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums"
+                  style={{
+                    background: `rgba(255,255,255,${isLight ? "0.18" : "0.13"})`,
+                    color: fg,
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {dueLabel}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Separador sutil */}
         <div
           style={{
@@ -198,16 +250,10 @@ export function WalletCard({
         <div className="flex items-end justify-between gap-2">
           <div>
             <div
-              className="mb-1 flex items-center gap-2 text-[9.5px] font-semibold uppercase"
+              className="mb-1 text-[9.5px] font-semibold uppercase"
               style={{ color: fgMuted, letterSpacing: "0.18em" }}
             >
-              <span>Período actual</span>
-              {dueLabel && (
-                <>
-                  <span style={{ opacity: 0.4 }}>·</span>
-                  <span>Vence {dueLabel}</span>
-                </>
-              )}
+              Período actual
             </div>
             <Money
               amount={total}

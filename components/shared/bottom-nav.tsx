@@ -82,12 +82,28 @@ export function BottomNav({ cards, categories }: BottomNavProps) {
               type="button"
               aria-label="Nuevo consumo"
               onClick={() => setSheetOpen(true)}
-              className="relative -mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-foreground transition-transform active:scale-95"
+              className="relative -mt-5 flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95"
               style={{
-                boxShadow: "0 4px 20px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08) inset",
+                background: "linear-gradient(145deg, oklch(0.48 0.26 268) 0%, oklch(0.34 0.26 260) 100%)",
+                boxShadow: [
+                  "0 0 0 1.5px oklch(0.55 0.22 264 / 0.45)",
+                  "0 0 0 3.5px oklch(0.55 0.22 264 / 0.12)",
+                  "0 8px 24px -4px oklch(0.28 0.22 264 / 0.70)",
+                  "0 2px 8px -2px oklch(0.28 0.22 264 / 0.45)",
+                  "0 1px 0 rgba(255,255,255,0.20) inset",
+                ].join(", "),
               }}
             >
-              <Plus className="relative h-6 w-6 text-background" strokeWidth={2.5} />
+              {/* Shine diagonal */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(130deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 40%, transparent 60%)",
+                }}
+              />
+              <Plus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
             </button>
           </div>
 
