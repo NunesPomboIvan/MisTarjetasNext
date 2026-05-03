@@ -12,6 +12,8 @@ interface WalletCardProps {
   hideBalance?: boolean;
   compact?: boolean;
   className?: string;
+  /** Fecha de vencimiento formateada, ej: "10 jun" */
+  dueLabel?: string;
 }
 
 /* ─── Color utilities ───────────────────────────────────────── */
@@ -49,65 +51,6 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
-/* ─── Chip EMV ──────────────────────────────────────────────── */
-
-function EmvChip({ isLight }: { isLight: boolean }) {
-  const chipGradient = isLight
-    ? "linear-gradient(145deg, #7a5c18 0%, #c4913b 35%, #e8bc5a 60%, #b07a25 100%)"
-    : "linear-gradient(145deg, #b8922a 0%, #e8c45a 40%, #f5d878 60%, #c09030 100%)";
-
-  return (
-    <div
-      aria-hidden
-      style={{
-        width: 34,
-        height: 26,
-        borderRadius: 5,
-        background: chipGradient,
-        position: "relative",
-        overflow: "hidden",
-        boxShadow:
-          "0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.3)",
-        flexShrink: 0,
-      }}
-    >
-      {/* Marco interior */}
-      <div
-        style={{
-          position: "absolute",
-          inset: "3px 4px",
-          border: "1px solid rgba(0,0,0,0.22)",
-          borderRadius: 3,
-        }}
-      />
-      {/* Línea horizontal */}
-      <div
-        style={{
-          position: "absolute",
-          left: 4,
-          right: 4,
-          top: "50%",
-          height: 1,
-          background: "rgba(0,0,0,0.22)",
-          transform: "translateY(-50%)",
-        }}
-      />
-      {/* Línea vertical */}
-      <div
-        style={{
-          position: "absolute",
-          top: 3,
-          bottom: 3,
-          left: "50%",
-          width: 1,
-          background: "rgba(0,0,0,0.2)",
-          transform: "translateX(-50%)",
-        }}
-      />
-    </div>
-  );
-}
-
 /* ─── WalletCard ────────────────────────────────────────────── */
 
 export function WalletCard({
@@ -117,6 +60,7 @@ export function WalletCard({
   hideBalance = false,
   compact = false,
   className,
+  dueLabel,
 }: WalletCardProps) {
   const base = card.color || "#2563eb";
   const lum = relativeLuminance(base);
@@ -214,19 +158,18 @@ export function WalletCard({
         }}
       />
 
-      {/* ── TOP: chip + logo de red ───────────────────────────── */}
+      {/* ── TOP: banco (opcional) + logo de red ─────────────── */}
       <div className="relative flex items-start justify-between">
-        <div className="flex flex-col gap-2.5">
-          <EmvChip isLight={isLight} />
-          {card.bank ? (
-            <div
-              className="text-[10.5px] font-bold uppercase"
-              style={{ color: fgMuted, letterSpacing: "0.15em" }}
-            >
-              {card.bank}
-            </div>
-          ) : null}
-        </div>
+        {card.bank ? (
+          <div
+            className="text-[10.5px] font-bold uppercase"
+            style={{ color: fgMuted, letterSpacing: "0.15em" }}
+          >
+            {card.bank}
+          </div>
+        ) : (
+          <div />
+        )}
 
         <CardLogo
           type={card.type}
@@ -257,10 +200,16 @@ export function WalletCard({
         <div className="flex items-end justify-between gap-2">
           <div>
             <div
-              className="mb-1 text-[9.5px] font-semibold uppercase"
+              className="mb-1 flex items-center gap-2 text-[9.5px] font-semibold uppercase"
               style={{ color: fgMuted, letterSpacing: "0.18em" }}
             >
-              Período actual
+              <span>Período actual</span>
+              {dueLabel && (
+                <>
+                  <span style={{ opacity: 0.4 }}>·</span>
+                  <span>Vence {dueLabel}</span>
+                </>
+              )}
             </div>
             <Money
               amount={total}

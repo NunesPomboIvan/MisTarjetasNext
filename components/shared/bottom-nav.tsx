@@ -1,61 +1,115 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, BarChart2, Settings } from "lucide-react";
+import { Home, List, BarChart2, Settings, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QuickExpenseSheet } from "@/components/expenses/quick-expense-sheet";
+import type { Card, Category } from "@/lib/supabase/database.types";
 
-const NAV_ITEMS = [
-  { href: "/",         label: "Inicio",       icon: Home     },
-  { href: "/expenses", label: "Movimientos",  icon: List     },
-  { href: "/stats",    label: "Stats",        icon: BarChart2 },
-  { href: "/settings", label: "Ajustes",      icon: Settings },
+const LEFT_NAV = [
+  { href: "/",         label: "Inicio",      icon: Home      },
+  { href: "/expenses", label: "Movimientos", icon: List      },
 ] as const;
 
-export function BottomNav() {
+const RIGHT_NAV = [
+  { href: "/stats",    label: "Stats",   icon: BarChart2 },
+  { href: "/settings", label: "Ajustes", icon: Settings  },
+] as const;
+
+interface BottomNavProps {
+  cards: Card[];
+  categories: Category[];
+}
+
+export function BottomNav({ cards, categories }: BottomNavProps) {
   const pathname = usePathname();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const cardDetailMatch = pathname?.match(/^\/cards\/([^/]+)$/);
+  const defaultCardId = cardDetailMatch ? cardDetailMatch[1] : undefined;
+
+  function NavItem({
+    href,
+    label,
+    icon: Icon,
+  }: {
+    href: string;
+    label: string;
+    icon: typeof Home;
+  }) {
+    const isActive = href === "/" ? pathname === "/" : pathname?.startsWith(href);
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "tap-target flex flex-1 flex-col items-center justify-center gap-1 px-2 py-1 text-[10.5px] font-semibold tracking-[0.01em] transition-colors duration-200",
+          isActive ? "text-primary" : "text-muted-foreground"
+        )}
+      >
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-2xl px-3.5 py-1.5 transition-all duration-200",
+            isActive ? "bg-accent text-accent-foreground" : "bg-transparent"
+          )}
+        >
+          <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
+        </span>
+        <span style={{ opacity: isActive ? 1 : 0.85 }}>{label}</span>
+      </Link>
+    );
+  }
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 pb-safe"
-      style={{
-        backdropFilter: "blur(24px) saturate(180%)",
-        WebkitBackdropFilter: "blur(24px) saturate(180%)",
-        backgroundColor: "oklch(from var(--background) l c h / 0.85)",
-      }}
-    >
-      <div className="mx-auto flex max-w-lg items-center justify-around px-3 pt-2.5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+    <>
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 pb-safe"
+        style={{
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          backgroundColor: "oklch(from var(--background) l c h / 0.85)",
+        }}
+      >
+        <div className="mx-auto flex max-w-lg items-end justify-around px-3 pt-2">
+          {LEFT_NAV.map((item) => (
+            <NavItem key={item.href} {...item} />
+          ))}
 
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "tap-target flex flex-col items-center justify-center gap-1 px-2.5 py-1 text-[10.5px] font-semibold tracking-[0.01em] transition-colors duration-200",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
+          {/* Botón central "+" */}
+          <div className="flex flex-col items-center pb-1">
+            <button
+              type="button"
+              aria-label="Nuevo consumo"
+              onClick={() => setSheetOpen(true)}
+              className="relative -mt-5 flex h-14 w-14 items-center justify-center rounded-full gradient-primary shadow-brand transition-transform active:scale-95"
             >
               <span
-                className={cn(
-                  "flex items-center justify-center rounded-2xl px-3.5 py-1.5 transition-all duration-200",
-                  isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-transparent"
-                )}
-              >
-                <Icon
-                  className="h-5 w-5"
-                  strokeWidth={isActive ? 2.2 : 1.8}
-                />
-              </span>
-              <span style={{ opacity: isActive ? 1 : 0.85 }}>{label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  background: "oklch(0.50 0.22 264)",
+                  filter: "blur(14px)",
+                  opacity: 0.5,
+                  transform: "translateY(4px) scale(0.85)",
+                }}
+              />
+              <Plus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {RIGHT_NAV.map((item) => (
+            <NavItem key={item.href} {...item} />
+          ))}
+        </div>
+      </nav>
+
+      <QuickExpenseSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        cards={cards}
+        categories={categories}
+        defaultCardId={defaultCardId}
+      />
+    </>
   );
 }

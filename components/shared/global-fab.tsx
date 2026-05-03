@@ -48,7 +48,7 @@ export function GlobalFab({ cards, categories }: GlobalFabProps) {
           aria-hidden
           className="pointer-events-none absolute inset-[-8px] rounded-full"
           style={{
-            background: "oklch(0.62 0.16 35)",
+            background: "oklch(0.50 0.22 264)",
             filter: "blur(18px)",
             opacity: 0.45,
           }}

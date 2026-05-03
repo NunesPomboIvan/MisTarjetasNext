@@ -9,6 +9,7 @@ import type { Card } from "@/lib/supabase/database.types";
 interface CardSummary {
   card: Card;
   total: number;
+  dueLabel?: string;
 }
 
 interface HomeCardsStackProps {
@@ -101,7 +102,7 @@ export function HomeCardsStack({ cardSummaries }: HomeCardsStackProps) {
           WebkitOverflowScrolling: "touch",
         }}
       >
-        {cardSummaries.map(({ card, total }) => (
+        {cardSummaries.map(({ card, total, dueLabel }) => (
           <div
             key={card.id}
             className="w-full flex-shrink-0 snap-center"
@@ -110,7 +111,7 @@ export function HomeCardsStack({ cardSummaries }: HomeCardsStackProps) {
               href={`/cards/${card.id}`}
               className="block transition-transform active:scale-[0.985]"
             >
-              <WalletCard card={card} total={total} compact hideBalance={hide} />
+              <WalletCard card={card} total={total} compact hideBalance={hide} dueLabel={dueLabel} />
             </Link>
           </div>
         ))}

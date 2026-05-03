@@ -296,7 +296,7 @@ export function QuickExpenseSheet({
                     onChange={field.onChange}
                     placeholder="Ej: Supermercado Coto"
                     invalid={!!errors.description}
-                    autoFocus
+                    autoFocus={false}
                   />
                 )}
               />

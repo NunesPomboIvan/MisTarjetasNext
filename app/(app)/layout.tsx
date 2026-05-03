@@ -1,5 +1,4 @@
 import { BottomNav } from "@/components/shared/bottom-nav";
-import { GlobalFab } from "@/components/shared/global-fab";
 import { createClient } from "@/lib/supabase/server";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
@@ -48,8 +47,7 @@ export default async function AppLayout({
         <div className="mx-auto max-w-lg px-4 py-4">{children}</div>
       </main>
 
-      <GlobalFab cards={cards} categories={categories} />
-      <BottomNav />
+      <BottomNav cards={cards} categories={categories} />
     </div>
   );
 }

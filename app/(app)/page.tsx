@@ -93,7 +93,11 @@ export default async function DashboardPage() {
   const displayName = userName ? capitalize(userName) : "";
 
   // Serializable summaries for client component
-  const stackSummaries = cardSummaries.map(({ card, total }) => ({ card, total }));
+  const stackSummaries = cardSummaries.map(({ card, total, period }) => ({
+    card,
+    total,
+    dueLabel: formatDate(period.due, "d MMM"),
+  }));
 
   return (
     <div className="relative space-y-7">
@@ -132,7 +136,7 @@ export default async function DashboardPage() {
               style={{
                 borderRadius: "50% 50% 60% 40%",
                 background:
-                  "radial-gradient(circle, oklch(0.88 0.14 35 / 0.45), transparent 65%)",
+                  "radial-gradient(circle, oklch(0.78 0.14 264 / 0.35), transparent 65%)",
               }}
             />
             <div className="relative">
