@@ -1,21 +1,21 @@
 import Link from "next/link";
 import { Archive } from "lucide-react";
 import { WalletCard } from "./wallet-card";
+import { CompactCardRow } from "./compact-card-row";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
-import { isSameDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
-interface CardWithTotal extends Card {
+interface CardWithExpenses extends Card {
   expenses: Expense[];
 }
 
 interface CardListProps {
-  cards: CardWithTotal[];
+  cards: CardWithExpenses[];
 }
 
-function getCardTotal(card: CardWithTotal): number {
+function getCardTotal(card: CardWithExpenses): number {
   const period = getCurrentPeriod(card);
   return card.expenses.reduce((sum, e) => sum + getAmountInPeriod(e, period), 0);
 }
@@ -35,11 +35,41 @@ export function CardList({ cards }: CardListProps) {
     );
   }
 
+  // Primera tarjeta destacada como WalletCard, las demás compactas.
+  const [first, ...rest] = activeCards;
+
   return (
-    <div className="space-y-3">
-      {activeCards.map((card) => (
-        <CardItem key={card.id} card={card} />
-      ))}
+    <div className="space-y-5">
+      {first && (() => {
+        const period = getCurrentPeriod(first);
+        const total = getCardTotal(first);
+        return (
+          <Link
+            href={`/cards/${first.id}`}
+            className="block transition-transform active:scale-[0.985]"
+          >
+            <WalletCard
+              card={first}
+              total={total}
+              closeLabel={formatDate(period.end, "d MMM")}
+              dueLabel={formatDate(period.due, "d MMM")}
+            />
+          </Link>
+        );
+      })()}
+
+      {rest.length > 0 && (
+        <div className="space-y-2.5">
+          {rest.map((card) => (
+            <CompactCardRow
+              key={card.id}
+              card={card}
+              balance={getCardTotal(card)}
+              href={`/cards/${card.id}`}
+            />
+          ))}
+        </div>
+      )}
 
       {archivedCards.length > 0 && (
         <details className="group">
@@ -51,49 +81,18 @@ export function CardList({ cards }: CardListProps) {
               {archivedCards.length !== 1 ? "s" : ""}
             </span>
           </summary>
-          <div className="mt-2 space-y-3 opacity-60">
+          <div className="mt-2 space-y-2.5 opacity-60">
             {archivedCards.map((card) => (
-              <CardItem key={card.id} card={card} archived />
+              <CompactCardRow
+                key={card.id}
+                card={card}
+                balance={getCardTotal(card)}
+                href={`/cards/${card.id}`}
+              />
             ))}
           </div>
         </details>
       )}
     </div>
-  );
-}
-
-function CardItem({
-  card,
-  archived,
-}: {
-  card: CardWithTotal;
-  archived?: boolean;
-}) {
-  const period = getCurrentPeriod(card);
-  const total = getCardTotal(card);
-  const dueToday = isSameDay(period.due, new Date());
-
-  return (
-    <Link
-      href={`/cards/${card.id}`}
-      className="block transition-all active:scale-[0.99]"
-    >
-      <WalletCard card={card} total={total} compact />
-      {/* Pie textual debajo de la tarjeta */}
-      <div className="mt-2 flex items-center justify-between px-1 text-xs text-muted-foreground">
-        <span>{period.label}</span>
-        {archived ? (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold">
-            Archivada
-          </span>
-        ) : dueToday ? (
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            Vence hoy
-          </span>
-        ) : (
-          <span>vence {formatDate(period.due, "d/M")}</span>
-        )}
-      </div>
-    </Link>
   );
 }

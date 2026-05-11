@@ -22,6 +22,12 @@ export interface Database {
           close_date: string; // YYYY-MM-DD, el día del mes se usa para calcular períodos
           due_date: string;   // YYYY-MM-DD, el día del mes es el día de vencimiento
           color: string;
+          bank: string | null;
+          is_extension: boolean;
+          parent_card_id: string | null;
+          credit_limit: number | null;
+          holder_name: string | null;
+          expiry: string | null;
           archived: boolean;
           created_at: string;
           updated_at: string;
@@ -35,6 +41,12 @@ export interface Database {
           close_date: string;
           due_date: string;
           color?: string;
+          bank?: string | null;
+          is_extension?: boolean;
+          parent_card_id?: string | null;
+          credit_limit?: number | null;
+          holder_name?: string | null;
+          expiry?: string | null;
           archived?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -48,6 +60,12 @@ export interface Database {
           close_date?: string;
           due_date?: string;
           color?: string;
+          bank?: string | null;
+          is_extension?: boolean;
+          parent_card_id?: string | null;
+          credit_limit?: number | null;
+          holder_name?: string | null;
+          expiry?: string | null;
           archived?: boolean;
           updated_at?: string;
         };

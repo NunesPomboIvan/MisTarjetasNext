@@ -1,28 +1,32 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PeriodNavigator } from "@/components/cards/period-navigator";
-import { PeriodProgress } from "@/components/cards/period-progress";
 import { WalletCard } from "@/components/cards/wallet-card";
-import { ExpenseItem } from "@/components/expenses/expense-item";
 import { Money } from "@/components/shared/money";
+import { UtilizationDonut } from "@/components/shared/utilization-donut";
+import { BackButton } from "@/components/shared/back-button";
+import { CardActionsMenu } from "@/components/cards/card-actions-menu";
+import { ExpenseItem } from "@/components/expenses/expense-item";
+import { PeriodNavigator } from "@/components/cards/period-navigator";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getPeriodByOffset,
   expenseFallsInPeriod,
-  getInstallmentIndexInPeriod,
   getAmountInPeriod,
+  getInstallmentIndexInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
+import { formatDate } from "@/lib/utils";
 import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
-import { PeriodEditDialog } from "@/components/cards/period-edit-dialog";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
 interface CardDetailPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ offset?: string }>;
 }
+
+const DAY_OF_MONTH = (iso: string) => parseInt(iso.split("-")[2], 10);
 
 export default async function CardDetailPage({
   params,
@@ -58,13 +62,16 @@ export default async function CardDetailPage({
     expenseFallsInPeriod(e, period)
   ) as ExpenseWithCategory[];
 
-  const periodTotal = periodExpenses.reduce(
+  const saldo = periodExpenses.reduce(
     (sum, e) => sum + getAmountInPeriod(e, period),
     0
   );
+  const limite = card.credit_limit ?? 0;
+  const disponible = Math.max(0, limite - saldo);
+  const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
 
   return (
-    <div className="relative space-y-5">
+    <div className="space-y-5">
       {periodExpired && (
         <PeriodRenewalDialog
           cardId={card.id}
@@ -74,75 +81,94 @@ export default async function CardDetailPage({
         />
       )}
 
-      {/* Halo cálido detrás del header */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-20 -top-20 -right-20 h-72"
-        style={{
-          background: `radial-gradient(ellipse at center, ${card.color}33, transparent 70%)`,
-        }}
-      />
-
       {/* Header */}
-      <div className="relative flex items-center gap-3">
-        <Link
-          href="/cards"
-          aria-label="Volver"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex-1">
-          <p className="text-[13px] text-muted-foreground">{card.name}</p>
-          <p className="text-xs text-muted-foreground/80">
-            •••• {card.last_four}
-          </p>
-        </div>
-        <Link
-          href={`/cards/${id}/edit`}
-          aria-label="Editar tarjeta"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Pencil className="h-4 w-4" />
-        </Link>
+      <div className="flex items-center justify-between">
+        <BackButton />
+        <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
+        <CardActionsMenu cardId={id} />
       </div>
 
-      {/* Visual de la tarjeta — centrada */}
-      <div className="relative flex justify-center">
-        <div className="w-full max-w-[332px]">
-          <WalletCard card={card} total={periodTotal} />
-        </div>
-      </div>
+      {/* Wallet card */}
+      <WalletCard
+        card={card}
+        total={saldo}
+        closeLabel={formatDate(period.end, "d MMM")}
+        dueLabel={formatDate(period.due, "d MMM")}
+      />
 
       {/* Period Navigator */}
       <PeriodNavigator card={card} currentPeriod={period} />
 
-      {/* Period progress */}
-      <PeriodProgress period={period} color={card.color} now={new Date()} />
+      {/* Stats card: Límite + Saldo side by side, donut a la derecha */}
+      <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-4">
+          {/* Límite + Saldo lado a lado */}
+          <div className="grid min-w-0 flex-1 grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground">Límite total</p>
+              {limite > 0 ? (
+                <Money
+                  amount={limite}
+                  className="mt-0.5 block font-display text-[18px] font-bold leading-tight tracking-tight text-foreground truncate"
+                />
+              ) : (
+                <Link
+                  href={`/cards/${id}/edit`}
+                  className="mt-0.5 inline-block font-display text-[18px] font-bold leading-tight tracking-tight text-primary"
+                >
+                  Definir
+                </Link>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
+              <Money
+                amount={saldo}
+                className="mt-0.5 block font-display text-[18px] font-bold leading-tight text-foreground truncate"
+              />
+            </div>
+          </div>
 
-      {/* Resumen del período */}
-      <div className="flex items-center justify-between rounded-[22px] border border-border bg-card p-5">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            Total del período
-          </p>
+          {limite > 0 && (
+            <UtilizationDonut
+              percent={utilizacion}
+              size={84}
+              thickness={9}
+              label="Utilizado"
+            />
+          )}
+        </div>
+      </section>
+
+      {/* Stats 3 columnas */}
+      <section className="grid grid-cols-3 gap-2.5">
+        <div className="rounded-[14px] border border-border bg-card p-3">
+          <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
           <Money
-            amount={periodTotal}
-            className="mt-1 block font-display text-[26px] font-semibold text-foreground"
+            amount={disponible}
+            className="mt-1 block text-[14px] font-bold leading-none tabular-nums"
+            style={{ color: "#10b981" }}
           />
         </div>
-        <PeriodEditDialog
-          cardId={card.id}
-          currentCloseDate={card.close_date}
-          currentDueDate={card.due_date}
-        />
-      </div>
+        <div className="rounded-[14px] border border-border bg-card p-3">
+          <p className="text-[10.5px] font-medium text-muted-foreground">Fecha de corte</p>
+          <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
+            {DAY_OF_MONTH(card.close_date)} de cada mes
+          </p>
+        </div>
+        <div className="rounded-[14px] border border-border bg-card p-3">
+          <p className="text-[10.5px] font-medium text-muted-foreground">Fecha de pago</p>
+          <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
+            {DAY_OF_MONTH(card.due_date)} de cada mes
+          </p>
+        </div>
+      </section>
 
-      {/* Lista de consumos */}
-      <div className="space-y-3">
+      {/* Lista de movimientos del período */}
+      <section className="space-y-3">
         <div className="flex items-end justify-between">
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            Movimientos del período{" "}
+          <h2 className="font-display text-[16px] font-semibold text-foreground">
+            Movimientos{" "}
             <span className="text-sm font-normal text-muted-foreground">
               ({periodExpenses.length})
             </span>
@@ -170,21 +196,21 @@ export default async function CardDetailPage({
           <div className="space-y-2">
             {periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);
-              const params = new URLSearchParams({ card_id: id });
-              if (instIdx >= 0) params.set("installment", String(instIdx));
+              const p = new URLSearchParams({ card_id: id });
+              if (instIdx >= 0) p.set("installment", String(instIdx));
               return (
                 <ExpenseItem
                   key={expense.id}
                   expense={expense}
                   installmentIndex={instIdx}
                   cardId={id}
-                  editHref={`/expenses/${expense.id}/edit?${params}`}
+                  editHref={`/expenses/${expense.id}/edit?${p}`}
                 />
               );
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

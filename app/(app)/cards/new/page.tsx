@@ -1,10 +1,22 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { CardForm } from "@/components/cards/card-form";
 
 export const metadata = { title: "Nueva tarjeta" };
 
-export default function NewCardPage() {
+export default async function NewCardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: cards } = await supabase
+    .from("cards")
+    .select("id, name, last_four")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .eq("is_extension", false)
+    .order("created_at");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -21,7 +33,7 @@ export default function NewCardPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <CardForm />
+        <CardForm availableParents={cards ?? []} />
       </div>
     </div>
   );

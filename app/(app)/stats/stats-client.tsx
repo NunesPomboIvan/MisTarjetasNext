@@ -1,278 +1,161 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, Cell as BarCell,
-} from "recharts";
+import { useMemo, useState } from "react";
 import { Money } from "@/components/shared/money";
-import { formatCurrency } from "@/lib/utils";
-import { subMonths, format, startOfMonth, endOfMonth } from "date-fns";
-import { es } from "date-fns/locale";
+import { EmptyState } from "@/components/shared/empty-state";
+import { CategoryDonut } from "@/components/stats/category-donut";
+import { ExpenseLineChart } from "@/components/stats/expense-line-chart";
+import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
+import { BackButton } from "@/components/shared/back-button";
 import type { Expense, Category, Card } from "@/lib/supabase/database.types";
 
+type ExpenseWithCat = Expense & { category: Category | null };
+
+const RANGES = [
+  { value: "month", label: "Este mes" },
+  { value: "3months", label: "Últimos 3 meses" },
+  { value: "6months", label: "Últimos 6 meses" },
+  { value: "all", label: "Todo" },
+] as const;
+
 interface StatsClientProps {
-  expenses: Array<Expense & { category: Category | null }>;
+  expenses: ExpenseWithCat[];
   cards: Card[];
 }
 
-// Paleta cálida basada en el design — usa hues consistentes con el tema warm
-const CHART_COLORS = [
-  "oklch(0.65 0.18 35)",   // terracotta
-  "oklch(0.72 0.16 60)",   // amber
-  "oklch(0.65 0.18 142)",  // sage
-  "oklch(0.62 0.18 280)",  // plum
-  "oklch(0.62 0.16 215)",  // teal
-  "oklch(0.65 0.18 25)",   // burnt-orange
-  "oklch(0.7 0.14 320)",   // rose
-  "oklch(0.65 0.16 100)",  // ochre
-];
+export function StatsClient({ expenses, cards }: StatsClientProps) {
+  const [range, setRange] = useState<typeof RANGES[number]["value"]>("month");
+  const [cardId, setCardId] = useState<string>("all");
 
-export function StatsClient({ expenses }: StatsClientProps) {
-  // --- Gastos por categoría (todos los tiempos) ---
+  const filtered = useMemo(() => {
+    let result = expenses;
+    if (cardId !== "all") {
+      result = result.filter((e) => e.card_id === cardId);
+    }
+    if (range !== "all") {
+      const now = new Date();
+      const start =
+        range === "month"
+          ? startOfMonth(now)
+          : range === "3months"
+          ? startOfMonth(subMonths(now, 2))
+          : startOfMonth(subMonths(now, 5));
+      const end = endOfMonth(now);
+      result = result.filter((e) => {
+        const d = new Date(e.expense_date + "T00:00:00");
+        return isWithinInterval(d, { start, end });
+      });
+    }
+    return result;
+  }, [expenses, range, cardId]);
+
+  const total = filtered.reduce((s, e) => s + e.installment_amount, 0);
+
   const byCategory = useMemo(() => {
-    const totals: Record<
-      string,
-      { name: string; emoji: string; value: number }
-    > = {};
-    for (const e of expenses) {
-      const key = e.category?.name ?? "Sin categoría";
-      const emoji = e.category?.emoji ?? "📦";
-      if (!totals[key]) totals[key] = { name: key, emoji, value: 0 };
-      totals[key].value += e.installment_amount;
+    const map = new Map<string, { name: string; emoji: string; color: string; amount: number }>();
+    for (const e of filtered) {
+      const cat = e.category;
+      const key = cat?.id ?? "none";
+      const existing = map.get(key);
+      const amount = (existing?.amount ?? 0) + e.installment_amount;
+      map.set(key, {
+        name: cat?.name ?? "Sin categoría",
+        emoji: cat?.emoji ?? "❓",
+        color: cat?.color_bg ?? "#94a3b8",
+        amount,
+      });
     }
-    return Object.values(totals)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8);
-  }, [expenses]);
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [filtered]);
 
-  // --- Gasto mensual (últimos 6 meses, tipo bar chart como el prototipo) ---
-  const monthlyTrend = useMemo(() => {
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const d = subMonths(new Date(), 5 - i);
-      return {
-        label: format(d, "MMM", { locale: es }),
-        start: startOfMonth(d),
-        end: endOfMonth(d),
-        total: 0,
-        isCurrent: i === 5,
-      };
-    });
-
-    for (const e of expenses) {
-      const expDate = new Date(e.expense_date + "T00:00:00");
-      for (const m of months) {
-        if (expDate >= m.start && expDate <= m.end) {
-          m.total += e.installment_amount;
-        }
-      }
+  const lineData = useMemo(() => {
+    const byDay = new Map<string, number>();
+    for (const e of filtered) {
+      const key = e.expense_date;
+      byDay.set(key, (byDay.get(key) ?? 0) + e.installment_amount);
     }
-    return months.map(({ label, total, isCurrent }) => ({
-      label,
-      total: Math.round(total),
-      isCurrent,
-    }));
-  }, [expenses]);
+    return Array.from(byDay.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, amount]) => ({
+        date,
+        label: format(new Date(date + "T00:00:00"), "d MMM"),
+        amount,
+      }));
+  }, [filtered]);
 
-  // Mes actual y comparación con el anterior
-  const currentMonthTotal = monthlyTrend[5]?.total ?? 0;
-  const prevMonthTotal = monthlyTrend[4]?.total ?? 0;
-  const monthOverMonth =
-    prevMonthTotal > 0
-      ? Math.round(((currentMonthTotal - prevMonthTotal) / prevMonthTotal) * 100)
-      : 0;
-
-  // --- Top 5 consumos ---
-  const top5 = useMemo(
-    () =>
-      [...expenses]
-        .sort((a, b) => b.total_amount - a.total_amount)
-        .slice(0, 5),
-    [expenses]
-  );
+  if (expenses.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
+          <div className="w-10" />
+        </div>
+        <EmptyState
+          icon={<span>📊</span>}
+          title="Sin datos suficientes"
+          description="Agregá algunos consumos para ver tus estadísticas"
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="relative space-y-5">
-      {/* Halo decorativo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, var(--halo-light), transparent 70%)",
-        }}
-      />
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <BackButton />
+        <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
+        <div className="w-10" />
+      </div>
 
-      <h1 className="relative font-display text-[28px] font-bold tracking-tight text-foreground">
-        Estadísticas
-      </h1>
-
-      {/* Tendencia mensual + comparación */}
-      <section className="relative overflow-hidden rounded-[26px] border border-border bg-card p-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-12 -right-8 h-40 w-40"
-          style={{
-            borderRadius: "60% 40% 50% 50%",
-            background: "oklch(0.88 0.14 35 / 0.4)",
-          }}
-        />
-        <div className="relative">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-primary">
-            {format(new Date(), "MMMM yyyy", { locale: es })}
-          </p>
-          <Money
-            amount={currentMonthTotal}
-            className="mt-1 block font-display text-[36px] font-semibold tracking-tight text-foreground"
-          />
-          <div className="mt-1.5 flex items-center gap-2 text-[13px]">
-            <span
-              className={`font-bold ${
-                monthOverMonth >= 0 ? "text-primary" : "text-emerald-600"
-              }`}
-            >
-              {monthOverMonth >= 0 ? "↑" : "↓"} {Math.abs(monthOverMonth)}%
-            </span>
-            <span className="text-muted-foreground">vs mes anterior</span>
-          </div>
-
-          <div className="mt-6">
-            <ResponsiveContainer width="100%" height={120}>
-              <BarChart data={monthlyTrend} margin={{ top: 5, right: 0, left: 0, bottom: 5 }}>
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis hide />
-                <Tooltip
-                  formatter={(v: unknown) => formatCurrency(Number(v))}
-                  cursor={{ fill: "var(--muted)" }}
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid var(--border)",
-                    background: "var(--popover)",
-                  }}
-                />
-                <Bar dataKey="total" radius={[4, 4, 4, 4]}>
-                  {monthlyTrend.map((m, i) => (
-                    <BarCell
-                      key={i}
-                      fill={
-                        m.isCurrent
-                          ? "var(--primary)"
-                          : "oklch(from var(--primary) l c h / 0.35)"
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </section>
+      {/* Filtros */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <select
+          value={range}
+          onChange={(e) => setRange(e.target.value as typeof range)}
+          className="h-10 appearance-none rounded-[12px] border border-border bg-card px-3 text-[13px] font-medium text-foreground focus:border-primary focus:outline-none"
+        >
+          {RANGES.map((r) => (
+            <option key={r.value} value={r.value}>{r.label}</option>
+          ))}
+        </select>
+        <select
+          value={cardId}
+          onChange={(e) => setCardId(e.target.value)}
+          className="h-10 appearance-none rounded-[12px] border border-border bg-card px-3 text-[13px] font-medium text-foreground focus:border-primary focus:outline-none"
+        >
+          <option value="all">Todas las tarjetas</option>
+          {cards.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Donut por categoría */}
-      {byCategory.length > 0 && (
-        <section className="rounded-[26px] border border-border bg-card p-6">
-          <h2 className="font-display text-base font-semibold text-foreground">
-            Por categoría
-          </h2>
-          <div className="mt-4 flex items-center gap-5">
-            <div className="relative h-[140px] w-[140px] flex-shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={byCategory}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={68}
-                    dataKey="value"
-                    paddingAngle={2}
-                    stroke="none"
-                  >
-                    {byCategory.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    formatter={(value: any) => formatCurrency(Number(value))}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    labelFormatter={(_: any, payload: readonly any[]) =>
-                      `${payload[0]?.payload?.emoji} ${payload[0]?.payload?.name}`
-                    }
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "1px solid var(--border)",
-                      background: "var(--popover)",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  Categorías
-                </p>
-                <p className="font-display text-[22px] font-semibold text-foreground">
-                  {byCategory.length}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-2.5">
-              {byCategory.slice(0, 5).map((cat, i) => {
-                const grand = byCategory.reduce((s, c) => s + c.value, 0);
-                const pct = Math.round((cat.value / grand) * 100);
-                return (
-                  <div key={cat.name} className="flex items-center gap-2">
-                    <div
-                      className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                      style={{
-                        backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
-                      }}
-                    />
-                    <span className="flex-1 truncate text-xs font-medium text-foreground">
-                      {cat.name}
-                    </span>
-                    <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
-                      {pct}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+      <section className="rounded-[20px] border border-border bg-card p-5">
+        <p className="text-[14px] font-semibold text-foreground">Gastos por categoría</p>
+        <CategoryDonut categories={byCategory} total={total} />
+      </section>
 
-      {/* Top 5 consumos */}
-      {top5.length > 0 && (
-        <section className="rounded-[26px] border border-border bg-card p-6">
-          <h2 className="font-display text-base font-semibold text-foreground">
-            Top 5 consumos
-          </h2>
-          <div className="mt-4 space-y-3">
-            {top5.map((e, i) => (
-              <div key={e.id} className="flex items-center gap-3">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {e.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {e.expense_date}
-                  </p>
-                </div>
-                <Money amount={e.total_amount} size="sm" />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Evolución */}
+      <section className="rounded-[20px] border border-border bg-card p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[14px] font-semibold text-foreground">Evolución de gastos</p>
+          <span className="text-[12px] text-muted-foreground">
+            {RANGES.find((r) => r.value === range)?.label}
+          </span>
+        </div>
+        <ExpenseLineChart data={lineData} />
+      </section>
+
+      {/* Total */}
+      <section className="rounded-[18px] gradient-card p-5 text-center text-white">
+        <p className="text-[12px] font-medium opacity-80">Total del período</p>
+        <Money
+          amount={total}
+          className="mt-1 block font-display text-[26px] font-bold leading-none"
+        />
+      </section>
     </div>
   );
 }

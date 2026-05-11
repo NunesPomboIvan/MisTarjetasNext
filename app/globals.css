@@ -62,105 +62,105 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* ─── Light theme — Wallet Warm ────────────────────────────── */
+/* ─── Light theme — CardControl Indigo ─────────────────────────── */
 :root {
   /* App palette */
-  --bg-app: #f7f3ed;
+  --bg-app: #f7f7fb;
   --bg-card: #ffffff;
-  --bg-secondary: #f0ebe2;
-  --text-primary: #1a1410;
-  --text-secondary: rgba(26, 20, 16, 0.55);
-  --brand-primary: oklch(0.62 0.16 35);
-  --brand-secondary: oklch(0.68 0.16 38);
-  --brand-accent: oklch(0.62 0.16 35);
-  --brand-success: #22c55e;
-  --app-border: rgba(26, 20, 16, 0.08);
-  --halo-light: oklch(0.85 0.12 35 / 0.55);
+  --bg-secondary: #f1f1f7;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --brand-primary: #6366f1;     /* indigo-500 */
+  --brand-secondary: #818cf8;    /* indigo-400 */
+  --brand-accent: #4f46e5;       /* indigo-600 */
+  --brand-success: #10b981;
+  --app-border: #e5e7eb;
+  --halo-light: rgba(99, 102, 241, 0.18);
 
-  /* shadcn tokens mapped to our palette */
-  --background: #f7f3ed;
-  --foreground: #1a1410;
+  /* shadcn tokens */
+  --background: #f7f7fb;
+  --foreground: #111827;
   --card: #ffffff;
-  --card-foreground: #1a1410;
+  --card-foreground: #111827;
   --popover: #ffffff;
-  --popover-foreground: #1a1410;
-  --primary: oklch(0.62 0.16 35);
+  --popover-foreground: #111827;
+  --primary: #6366f1;
   --primary-foreground: #ffffff;
-  --secondary: #f0ebe2;
-  --secondary-foreground: #1a1410;
-  --muted: #f0ebe2;
-  --muted-foreground: rgba(26, 20, 16, 0.55);
-  --accent: oklch(0.95 0.04 35);
-  --accent-foreground: oklch(0.4 0.12 30);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(26, 20, 16, 0.08);
-  --input: rgba(26, 20, 16, 0.12);
-  --ring: oklch(0.62 0.16 35);
+  --secondary: #f1f1f7;
+  --secondary-foreground: #111827;
+  --muted: #f1f1f7;
+  --muted-foreground: #6b7280;
+  --accent: #eef0ff;
+  --accent-foreground: #4338ca;
+  --destructive: #ef4444;
+  --border: #e5e7eb;
+  --input: #d1d5db;
+  --ring: #6366f1;
   --radius: 0.875rem;
 
-  --chart-1: oklch(0.65 0.18 35);
-  --chart-2: oklch(0.72 0.16 60);
-  --chart-3: oklch(0.62 0.18 280);
-  --chart-4: oklch(0.65 0.18 142);
-  --chart-5: oklch(0.62 0.16 215);
+  --chart-1: #6366f1;
+  --chart-2: #f59e0b;
+  --chart-3: #10b981;
+  --chart-4: #ef4444;
+  --chart-5: #06b6d4;
 
-  --sidebar: #f0ebe2;
-  --sidebar-foreground: #1a1410;
-  --sidebar-primary: oklch(0.62 0.16 35);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #6366f1;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0ebe2;
-  --sidebar-accent-foreground: #1a1410;
-  --sidebar-border: rgba(26, 20, 16, 0.08);
-  --sidebar-ring: oklch(0.62 0.16 35);
+  --sidebar-accent: #f1f1f7;
+  --sidebar-accent-foreground: #111827;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #6366f1;
 }
 
-/* ─── Dark theme — Wallet Warm ─────────────────────────────── */
+/* ─── Dark theme — opcional ────────────────────────────────────── */
 .dark {
-  --bg-app: #1a1410;
-  --bg-card: #241d17;
-  --bg-secondary: #2e2620;
-  --text-primary: #f5efe6;
-  --text-secondary: rgba(245, 239, 230, 0.55);
-  --brand-primary: oklch(0.72 0.16 38);
-  --brand-secondary: oklch(0.78 0.14 40);
-  --brand-accent: oklch(0.75 0.15 38);
-  --brand-success: #22c55e;
-  --app-border: rgba(245, 239, 230, 0.08);
-  --halo-light: oklch(0.55 0.14 35 / 0.55);
+  --bg-app: #0b0a14;
+  --bg-card: #15131f;
+  --bg-secondary: #1c1a26;
+  --text-primary: #f5f5fa;
+  --text-secondary: #9ca3af;
+  --brand-primary: #818cf8;
+  --brand-secondary: #a5b4fc;
+  --brand-accent: #6366f1;
+  --brand-success: #10b981;
+  --app-border: rgba(255, 255, 255, 0.08);
+  --halo-light: rgba(99, 102, 241, 0.25);
 
-  --background: #1a1410;
-  --foreground: #f5efe6;
-  --card: #241d17;
-  --card-foreground: #f5efe6;
-  --popover: #241d17;
-  --popover-foreground: #f5efe6;
-  --primary: oklch(0.72 0.16 38);
-  --primary-foreground: #1a1410;
-  --secondary: #2e2620;
-  --secondary-foreground: #f5efe6;
-  --muted: #2e2620;
-  --muted-foreground: rgba(245, 239, 230, 0.55);
-  --accent: oklch(0.32 0.08 38);
-  --accent-foreground: oklch(0.85 0.12 38);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: rgba(245, 239, 230, 0.08);
-  --input: rgba(245, 239, 230, 0.12);
-  --ring: oklch(0.72 0.16 38);
+  --background: #0b0a14;
+  --foreground: #f5f5fa;
+  --card: #15131f;
+  --card-foreground: #f5f5fa;
+  --popover: #15131f;
+  --popover-foreground: #f5f5fa;
+  --primary: #818cf8;
+  --primary-foreground: #0b0a14;
+  --secondary: #1c1a26;
+  --secondary-foreground: #f5f5fa;
+  --muted: #1c1a26;
+  --muted-foreground: #9ca3af;
+  --accent: #2a2640;
+  --accent-foreground: #c7d2fe;
+  --destructive: #f87171;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #818cf8;
 
-  --chart-1: oklch(0.72 0.16 38);
-  --chart-2: oklch(0.78 0.14 60);
-  --chart-3: oklch(0.7 0.16 280);
-  --chart-4: oklch(0.72 0.16 142);
-  --chart-5: oklch(0.7 0.14 215);
+  --chart-1: #818cf8;
+  --chart-2: #fbbf24;
+  --chart-3: #34d399;
+  --chart-4: #f87171;
+  --chart-5: #22d3ee;
 
-  --sidebar: #241d17;
-  --sidebar-foreground: #f5efe6;
-  --sidebar-primary: oklch(0.72 0.16 38);
-  --sidebar-primary-foreground: #1a1410;
-  --sidebar-accent: #2e2620;
-  --sidebar-accent-foreground: #f5efe6;
-  --sidebar-border: rgba(245, 239, 230, 0.08);
-  --sidebar-ring: oklch(0.72 0.16 38);
+  --sidebar: #15131f;
+  --sidebar-foreground: #f5f5fa;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0b0a14;
+  --sidebar-accent: #1c1a26;
+  --sidebar-accent-foreground: #f5f5fa;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #818cf8;
 }
 
 /* ─── Base styles ─────────────────────────────────────────── */
@@ -177,7 +177,6 @@
 
   html {
     @apply font-sans;
-    /* iOS safe areas */
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -185,65 +184,55 @@
 
 /* ─── Utility classes ─────────────────────────────────────── */
 @layer utilities {
-  /* Gradient para CTAs y montos destacados — terracotta cálido */
+  /* Gradiente principal — indigo/púrpura */
   .gradient-primary {
-    background: linear-gradient(
-      135deg,
-      oklch(0.68 0.16 38) 0%,
-      oklch(0.58 0.18 28) 100%
-    );
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
   }
 
   .gradient-text {
-    background: linear-gradient(
-      135deg,
-      oklch(0.62 0.16 35),
-      oklch(0.55 0.18 25)
-    );
+    background: linear-gradient(135deg, #6366f1, #4338ca);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Sombra cálida para botones CTA y FAB */
   .shadow-brand {
-    box-shadow: 0 8px 22px oklch(0.62 0.16 35 / 0.4);
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.35);
   }
 
   .shadow-brand-glow {
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.4) inset,
-      0 -1px 0 rgba(0, 0, 0, 0.15) inset,
-      0 12px 28px -6px oklch(0.62 0.16 35 / 0.6),
-      0 4px 10px -2px rgba(0, 0, 0, 0.15);
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 -1px 0 rgba(0, 0, 0, 0.12) inset,
+      0 12px 28px -6px rgba(99, 102, 241, 0.45),
+      0 4px 10px -2px rgba(17, 24, 39, 0.08);
   }
 
-  /* Halo radial cálido — usado como decoración de fondo */
   .halo-warm {
     background: radial-gradient(
       circle at top right,
-      var(--halo-light, oklch(0.85 0.12 35 / 0.55)),
+      var(--halo-light, rgba(99, 102, 241, 0.18)),
       transparent 65%
     );
   }
 
-  /* Transition con overshoot sutil */
   .transition-spring {
     transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* Safe area padding para bottom nav */
   .pb-safe {
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
 
-  /* Tap targets mínimos 44px */
   .tap-target {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* Tipografía display — números grandes, headings hero */
   .font-display {
     font-family:
       -apple-system, "SF Pro Display", system-ui, sans-serif;

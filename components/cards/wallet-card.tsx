@@ -4,21 +4,23 @@ import { cn } from "@/lib/utils";
 import type { Card, Currency } from "@/lib/supabase/database.types";
 
 interface WalletCardProps {
-  card: Pick<Card, "id" | "name" | "type" | "last_four" | "color"> & {
-    bank?: string | null;
-  };
-  total: number;
+  card: Pick<
+    Card,
+    "id" | "name" | "type" | "last_four" | "color" | "bank" | "is_extension"
+  >;
+  /** Total del período. Si se pasa, se renderiza el strip "Período actual" + monto */
+  total?: number;
   currency?: Currency;
   hideBalance?: boolean;
   compact?: boolean;
   className?: string;
-  /** Fecha de cierre del período, ej: "23 may" */
+  /** Fecha de cierre formateada, ej: "23 may" */
   closeLabel?: string;
   /** Fecha de vencimiento formateada, ej: "10 jun" */
   dueLabel?: string;
 }
 
-/* ─── Color utilities ───────────────────────────────────────── */
+/* ─── Color utilities ─────────────────────────────────────── */
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const h = hex.replace("#", "");
@@ -30,20 +32,17 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 
-/** Mezcla el color con blanco (tint) */
 function tint(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex);
   return `rgb(${Math.round(r + (255 - r) * amount)},${Math.round(g + (255 - g) * amount)},${Math.round(b + (255 - b) * amount)})`;
 }
 
-/** Mezcla el color con negro (shade) */
 function shade(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex);
   const f = 1 - amount;
   return `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`;
 }
 
-/** Calcula si el texto debe ser claro u oscuro según WCAG */
 function relativeLuminance(hex: string): number {
   const { r, g, b } = hexToRgb(hex);
   const a = [r, g, b].map((v) => {
@@ -53,7 +52,7 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
-/* ─── WalletCard ────────────────────────────────────────────── */
+/* ─── WalletCard ──────────────────────────────────────────── */
 
 export function WalletCard({
   card,
@@ -65,18 +64,17 @@ export function WalletCard({
   closeLabel,
   dueLabel,
 }: WalletCardProps) {
-  const base = card.color || "#2563eb";
+  const base = card.color || "#6366f1";
   const lum = relativeLuminance(base);
   const isLight = lum > 0.45;
 
-  /* Colores de texto */
   const fg = isLight ? "rgba(18,10,4,0.93)" : "rgba(255,252,245,0.95)";
   const fgMuted = isLight ? "rgba(18,10,4,0.52)" : "rgba(255,252,245,0.58)";
 
-  /* Gradiente principal — 3 paradas para profundidad real */
-  const g0 = tint(base, 0.28);   // esquina iluminada
-  const g1 = base;                // color base
-  const g2 = shade(base, 0.42);  // sombra profunda
+  /* Gradiente 3 paradas — profundidad real */
+  const g0 = tint(base, 0.28);
+  const g1 = base;
+  const g2 = shade(base, 0.42);
 
   /* Sombra coloreada */
   const shadowHex = shade(base, 0.1);
@@ -97,15 +95,15 @@ export function WalletCard({
         background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
         color: fg,
         boxShadow: [
-          "0 1px 0 rgba(255,255,255,0.18) inset",       // highlight borde superior
-          "0 -1px 0 rgba(0,0,0,0.18) inset",             // sombra borde inferior
-          "0 1px 3px rgba(0,0,0,0.14)",                  // sombra cercana
-          `0 12px 40px -8px rgba(${r},${g},${b},0.60)`, // glow coloreado
-          "0 4px 16px -4px rgba(0,0,0,0.22)",           // sombra difusa
+          "0 1px 0 rgba(255,255,255,0.18) inset",
+          "0 -1px 0 rgba(0,0,0,0.18) inset",
+          "0 1px 3px rgba(0,0,0,0.14)",
+          `0 12px 40px -8px rgba(${r},${g},${b},0.60)`,
+          "0 4px 16px -4px rgba(0,0,0,0.22)",
         ].join(", "),
       }}
     >
-      {/* ── Shine diagonal — reflejo plástico ────────────────── */}
+      {/* Shine diagonal */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-[24px]"
@@ -115,7 +113,7 @@ export function WalletCard({
         }}
       />
 
-      {/* ── Glow radial top-right ─────────────────────────────── */}
+      {/* Glow radial top-right */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
@@ -131,7 +129,7 @@ export function WalletCard({
         }}
       />
 
-      {/* ── Glow radial bottom-left ───────────────────────────── */}
+      {/* Glow radial bottom-left */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
@@ -147,7 +145,7 @@ export function WalletCard({
         }}
       />
 
-      {/* ── Arco decorativo (círculo grande, borde right) ────── */}
+      {/* Arco decorativo */}
       <div
         aria-hidden
         className="pointer-events-none absolute"
@@ -161,7 +159,7 @@ export function WalletCard({
         }}
       />
 
-      {/* ── TOP: nombre (izq) + logo de red (der) ───────────── */}
+      {/* TOP: nombre (izq) + logo de red (der) */}
       <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0">
           {card.bank && (
@@ -178,18 +176,26 @@ export function WalletCard({
           >
             {card.name}
           </div>
+          {card.is_extension && (
+            <div
+              className="mt-1 inline-flex items-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"
+              style={{
+                background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
+                color: fgMuted,
+                letterSpacing: "0.14em",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              Adicional
+            </div>
+          )}
         </div>
 
-        <CardLogo
-          type={card.type}
-          size={compact ? "sm" : "md"}
-          fgColor={fg}
-        />
+        <CardLogo type={card.type} size={compact ? "sm" : "md"} fgColor={fg} />
       </div>
 
-      {/* ── BOTTOM: fechas + período + número ───────────────── */}
+      {/* BOTTOM: fechas + período + número */}
       <div className="relative space-y-2">
-        {/* Fechas cierre / vencimiento */}
         {(closeLabel || dueLabel) && (
           <div className="flex items-center gap-3">
             {closeLabel && (
@@ -255,13 +261,22 @@ export function WalletCard({
             >
               Período actual
             </div>
-            <Money
-              amount={total}
-              currency={currency}
-              hide={hideBalance}
-              className="font-display text-[26px] font-bold tabular-nums leading-none"
-              style={{ letterSpacing: "-0.025em", color: fg }}
-            />
+            {total != null ? (
+              <Money
+                amount={total}
+                currency={currency}
+                hide={hideBalance}
+                className="font-display text-[26px] font-bold tabular-nums leading-none"
+                style={{ letterSpacing: "-0.025em", color: fg }}
+              />
+            ) : (
+              <span
+                className="font-display text-[26px] font-bold leading-none"
+                style={{ letterSpacing: "-0.025em", color: fg }}
+              >
+                ·····
+              </span>
+            )}
           </div>
           <div
             className="mb-0.5 text-[13px] tabular-nums"

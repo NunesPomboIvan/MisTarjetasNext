@@ -12,15 +12,28 @@ export const cardSchema = z.object({
     .string()
     .length(4, "Deben ser exactamente 4 dígitos")
     .regex(/^\d{4}$/, "Solo se permiten números"),
-  // TODO: re-habilitar validación de fecha pasada antes de release
-  // (actualmente sin restricción para poder testear alertas de períodos vencidos)
   close_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de cierre inválida"),
   due_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de vencimiento inválida"),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido").default("#f97316"),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido").default("#6366f1"),
+  bank: z.string().max(40).nullable().optional(),
+  is_extension: z.boolean().default(false),
+  parent_card_id: z.string().uuid().nullable().optional(),
+  credit_limit: z
+    .number()
+    .nonnegative("El límite debe ser mayor o igual a 0")
+    .nullable()
+    .optional(),
+  holder_name: z.string().max(60).nullable().optional(),
+  /** Vencimiento de la tarjeta en formato MM/YY */
+  expiry: z
+    .string()
+    .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "Formato MM/YY")
+    .nullable()
+    .optional(),
   archived: z.boolean().default(false),
 });
 

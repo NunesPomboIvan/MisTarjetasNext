@@ -1,0 +1,231 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { SlidersHorizontal, Plus, ChevronRight, Search } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { Money } from "@/components/shared/money";
+import { EmptyState } from "@/components/shared/empty-state";
+import { BackButton } from "@/components/shared/back-button";
+import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod } from "@/lib/periods/calculate";
+import { formatDate, capitalize } from "@/lib/utils";
+import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function CardMovimientosPage({ params, searchParams }: PageProps) {
+  const { id } = await params;
+  const { q } = await searchParams;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: card } = await supabase
+    .from("cards")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user!.id)
+    .single();
+
+  if (!card) notFound();
+
+  let query = supabase
+    .from("expenses")
+    .select("*, category:categories(*)")
+    .eq("card_id", id)
+    .eq("user_id", user!.id)
+    .order("expense_date", { ascending: false });
+
+  if (q) query = query.ilike("description", `%${q}%`);
+
+  const { data: expenses } = await query;
+  const all = (expenses ?? []) as ExpenseWithCategory[];
+
+  const currentPeriod = getCurrentPeriod(card);
+  const pendientes = all.filter((e) => expenseFallsInPeriod(e, currentPeriod));
+  const pendientesTotal = pendientes.reduce(
+    (s, e) => s + getAmountInPeriod(e, currentPeriod),
+    0
+  );
+
+  // Movimientos de meses anteriores agrupados por mes
+  const previousByMonth: Record<string, ExpenseWithCategory[]> = {};
+  for (const e of all) {
+    if (expenseFallsInPeriod(e, currentPeriod)) continue;
+    const key = e.expense_date.slice(0, 7);
+    if (!previousByMonth[key]) previousByMonth[key] = [];
+    previousByMonth[key].push(e);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <BackButton />
+        <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
+        <button
+          aria-label="Filtros"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground/70"
+        >
+          <SlidersHorizontal className="h-[18px] w-[18px]" />
+        </button>
+      </div>
+
+      <form action={`/cards/${id}/movimientos`} method="get">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Buscar movimiento"
+            className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-4 text-[14px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          />
+        </div>
+      </form>
+
+      {all.length === 0 ? (
+        <EmptyState
+          icon={<span>🧾</span>}
+          title="Sin movimientos"
+          description="Agregá un consumo para que aparezca acá"
+          action={{ label: "Agregar consumo", href: `/expenses/new?card_id=${id}` }}
+        />
+      ) : (
+        <div className="space-y-5">
+          {pendientes.length > 0 && (
+            <section>
+              <div className="mb-2 flex items-baseline justify-between px-1">
+                <h2 className="text-[13px] font-semibold text-foreground">Pendientes</h2>
+                <Money
+                  amount={pendientesTotal}
+                  className="text-[13px] font-semibold tabular-nums text-foreground"
+                />
+              </div>
+              <div className="overflow-hidden rounded-[18px] border border-border bg-card">
+                {pendientes.map((exp, i) => (
+                  <CardExpenseRow
+                    key={exp.id}
+                    expense={exp}
+                    cardId={id}
+                    showInstallment
+                    installmentIndex={getInstallmentIndexInPeriod(exp, currentPeriod)}
+                    pendingBadge
+                    isLast={i === pendientes.length - 1}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {Object.entries(previousByMonth).map(([month, items]) => {
+            const total = items.reduce((s, e) => s + e.installment_amount, 0);
+            const monthLabel = capitalize(
+              formatDate(month + "-01T00:00:00", "MMMM yyyy")
+            );
+            return (
+              <section key={month}>
+                <div className="mb-2 flex items-baseline justify-between px-1">
+                  <h2 className="text-[13px] font-semibold text-foreground">{monthLabel}</h2>
+                  <Money
+                    amount={total}
+                    className="text-[13px] font-semibold tabular-nums text-foreground"
+                  />
+                </div>
+                <div className="overflow-hidden rounded-[18px] border border-border bg-card">
+                  {items.map((exp, i) => (
+                    <CardExpenseRow
+                      key={exp.id}
+                      expense={exp}
+                      cardId={id}
+                      isLast={i === items.length - 1}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      {/* FAB agregar */}
+      <Link
+        href={`/expenses/new?card_id=${id}`}
+        aria-label="Nuevo movimiento"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
+      >
+        <Plus className="h-6 w-6" strokeWidth={2.5} />
+      </Link>
+    </div>
+  );
+}
+
+function CardExpenseRow({
+  expense,
+  cardId,
+  isLast,
+  showInstallment,
+  installmentIndex,
+  pendingBadge,
+}: {
+  expense: ExpenseWithCategory;
+  cardId: string;
+  isLast: boolean;
+  showInstallment?: boolean;
+  installmentIndex?: number;
+  pendingBadge?: boolean;
+}) {
+  const cat = expense.category;
+  const installmentSuffix =
+    showInstallment && expense.installments > 1 && installmentIndex != null && installmentIndex >= 0
+      ? ` · Cuota ${installmentIndex + 1}/${expense.installments}`
+      : "";
+
+  const params = new URLSearchParams({ card_id: cardId });
+  if (installmentIndex != null && installmentIndex >= 0) {
+    params.set("installment", String(installmentIndex));
+  }
+
+  return (
+    <Link
+      href={`/expenses/${expense.id}/edit?${params.toString()}`}
+      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
+      style={{ borderBottom: isLast ? "none" : "1px solid var(--border)" }}
+    >
+      <div
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] text-base"
+        style={{
+          backgroundColor: cat?.color_bg ?? "var(--muted)",
+          color: cat?.color_text ?? "var(--muted-foreground)",
+        }}
+      >
+        {cat?.emoji ?? "•"}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold text-foreground">
+          {expense.description}
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {cat?.name ?? "Sin categoría"}{installmentSuffix}
+        </p>
+      </div>
+
+      <div className="flex-shrink-0 text-right">
+        <Money
+          amount={expense.installment_amount}
+          currency={expense.currency}
+          className="block text-[14px] font-semibold tabular-nums text-foreground"
+        />
+        {pendingBadge ? (
+          <p className="mt-0.5 text-[10.5px] font-semibold text-amber-600">Pendiente</p>
+        ) : (
+          <p className="mt-0.5 text-[10.5px] text-muted-foreground tabular-nums">
+            {formatDate(expense.expense_date + "T00:00:00", "d MMM")}
+          </p>
+        )}
+      </div>
+
+      <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
+    </Link>
+  );
+}

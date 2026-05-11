@@ -19,28 +19,21 @@ export default async function CardsPage() {
   const activeCount = (cards?.filter((c) => !c.archived) ?? []).length;
 
   return (
-    <div className="relative space-y-5">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, var(--halo-light), transparent 70%)",
-        }}
-      />
-
-      <div className="relative flex items-end justify-between">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
             Mis tarjetas
           </h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
             {activeCount} activa{activeCount === 1 ? "" : "s"}
           </p>
         </div>
+
         <Link
           href="/cards/new"
-          className="inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-white gradient-primary shadow-brand"
+          className="inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-white gradient-primary shadow-brand"
         >
           <Plus className="h-4 w-4" />
           Nueva

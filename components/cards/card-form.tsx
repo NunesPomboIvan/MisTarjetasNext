@@ -36,10 +36,12 @@ const COLOR_PRESETS = [
 ];
 
 interface CardFormProps {
-  card?: Card; // Si existe, es modo edición
+  card?: Card;
+  /** Lista de tarjetas titulares para el selector de extensión */
+  availableParents?: Pick<Card, "id" | "name" | "last_four">[];
 }
 
-export function CardForm({ card }: CardFormProps) {
+export function CardForm({ card, availableParents = [] }: CardFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -60,16 +62,23 @@ export function CardForm({ card }: CardFormProps) {
           close_date: card.close_date,
           due_date: card.due_date,
           color: card.color,
+          bank: card.bank ?? undefined,
+          is_extension: card.is_extension,
+          parent_card_id: card.parent_card_id ?? undefined,
+          credit_limit: card.credit_limit ?? undefined,
+          holder_name: card.holder_name ?? undefined,
+          expiry: card.expiry ?? undefined,
           archived: card.archived,
         }
       : {
-          color: "#f97316",
+          color: "#6366f1",
+          is_extension: false,
           archived: false,
         } as Partial<CardFormData>,
   });
 
   const selectedColor = watch("color");
-  const selectedType = watch("type");
+  const isExtension = watch("is_extension");
 
   function onSubmit(data: CardFormData) {
     startTransition(async () => {
@@ -88,6 +97,73 @@ export function CardForm({ card }: CardFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
+      {/* Extensión toggle — primero para que fluya el formulario */}
+      {availableParents.length > 0 && (
+        <div className="rounded-[16px] border border-border bg-muted/40 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[14px] font-semibold text-foreground">Tarjeta adicional</p>
+              <p className="text-[12px] text-muted-foreground">Es extensión de otra tarjeta</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isExtension}
+              onClick={() => {
+                const next = !isExtension;
+                setValue("is_extension", next);
+                if (!next) setValue("parent_card_id", null);
+              }}
+              className={cn(
+                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                isExtension ? "bg-primary" : "bg-input"
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform duration-200",
+                  isExtension ? "translate-x-5" : "translate-x-0"
+                )}
+              />
+            </button>
+          </div>
+
+          {isExtension && (
+            <div className="space-y-1.5">
+              <Label>Tarjeta titular</Label>
+              <Select
+                defaultValue={card?.parent_card_id ?? undefined}
+                onValueChange={(v) => setValue("parent_card_id", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccioná la tarjeta titular" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableParents
+                    .filter((p) => p.id !== card?.id)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} •••• {p.last_four}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Banco (opcional) */}
+      <div className="space-y-1.5">
+        <Label htmlFor="bank">Banco <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+        <Input
+          id="bank"
+          placeholder="Ej: Galicia, Santander, BBVA…"
+          {...register("bank")}
+        />
+      </div>
+
       {/* Nombre */}
       <div className="space-y-1.5">
         <Label htmlFor="name">Nombre de la tarjeta</Label>
@@ -122,24 +198,68 @@ export function CardForm({ card }: CardFormProps) {
         {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
       </div>
 
-      {/* Últimos 4 dígitos */}
+      {/* Últimos 4 + Vencimiento */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="last_four">Últimos 4 dígitos</Label>
+          <Input
+            id="last_four"
+            placeholder="1234"
+            maxLength={4}
+            inputMode="numeric"
+            pattern="[0-9]{4}"
+            className={cn(errors.last_four && "border-destructive")}
+            {...register("last_four")}
+          />
+          {errors.last_four && (
+            <p className="text-xs text-destructive">{errors.last_four.message}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="expiry">Vence (MM/YY) <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Input
+            id="expiry"
+            placeholder="05/27"
+            maxLength={5}
+            inputMode="numeric"
+            className={cn(errors.expiry && "border-destructive")}
+            {...register("expiry")}
+          />
+          {errors.expiry && (
+            <p className="text-xs text-destructive">{errors.expiry.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Nombre del titular */}
       <div className="space-y-1.5">
-        <Label htmlFor="last_four">Últimos 4 dígitos</Label>
+        <Label htmlFor="holder_name">Nombre del titular <span className="text-muted-foreground font-normal">(opcional)</span></Label>
         <Input
-          id="last_four"
-          placeholder="1234"
-          maxLength={4}
-          inputMode="numeric"
-          pattern="[0-9]{4}"
-          className={cn(errors.last_four && "border-destructive", "w-28")}
-          {...register("last_four")}
+          id="holder_name"
+          placeholder="Ej: Juan Pérez"
+          {...register("holder_name")}
         />
-        {errors.last_four && (
-          <p className="text-xs text-destructive">{errors.last_four.message}</p>
+      </div>
+
+      {/* Límite de crédito */}
+      <div className="space-y-1.5">
+        <Label htmlFor="credit_limit">Límite de crédito <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+        <Input
+          id="credit_limit"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={1}
+          placeholder="20000"
+          className={cn(errors.credit_limit && "border-destructive")}
+          {...register("credit_limit", { setValueAs: (v) => v === "" ? null : Number(v) })}
+        />
+        {errors.credit_limit && (
+          <p className="text-xs text-destructive">{errors.credit_limit.message}</p>
         )}
       </div>
 
-      {/* Fechas de cierre y vencimiento */}
+      {/* Fechas */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="close_date">Fecha de cierre</Label>
@@ -167,8 +287,7 @@ export function CardForm({ card }: CardFormProps) {
         </div>
       </div>
       <p className="text-xs text-muted-foreground -mt-3">
-        Solo importa el <strong>día del mes</strong>. Si elegís el 23 de cierre y el 10 de vencimiento,
-        cada mes el período cierra el 23 y vence el 10 del mes siguiente.
+        Solo importa el <strong>día del mes</strong>. Cada mes el período cierra y vence en esos días.
       </p>
 
       {/* Color */}

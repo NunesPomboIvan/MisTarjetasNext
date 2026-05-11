@@ -11,14 +11,21 @@ export default async function EditCardPage({ params }: { params: Promise<{ id: s
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: card } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user!.id)
-    .single();
+  const [{ data: card }, { data: allCards }] = await Promise.all([
+    supabase.from("cards").select("*").eq("id", id).eq("user_id", user!.id).single(),
+    supabase
+      .from("cards")
+      .select("id, name, last_four")
+      .eq("user_id", user!.id)
+      .eq("archived", false)
+      .eq("is_extension", false)
+      .order("created_at"),
+  ]);
 
   if (!card) notFound();
+
+  // Excluir la propia tarjeta de los posibles padres
+  const availableParents = (allCards ?? []).filter((c) => c.id !== id);
 
   return (
     <div className="space-y-4">
@@ -36,7 +43,7 @@ export default async function EditCardPage({ params }: { params: Promise<{ id: s
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <CardForm card={card} />
+        <CardForm card={card} availableParents={availableParents} />
       </div>
     </div>
   );
