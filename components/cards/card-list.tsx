@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Archive } from "lucide-react";
 import { WalletCard } from "./wallet-card";
-import { CompactCardRow } from "./compact-card-row";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
@@ -35,40 +34,10 @@ export function CardList({ cards }: CardListProps) {
     );
   }
 
-  // Primera tarjeta destacada como WalletCard, las demás compactas.
-  const [first, ...rest] = activeCards;
-
   return (
     <div className="space-y-5">
-      {first && (() => {
-        const period = getCurrentPeriod(first);
-        const total = getCardTotal(first);
-        return (
-          <Link
-            href={`/cards/${first.id}`}
-            className="block transition-transform active:scale-[0.985]"
-          >
-            <WalletCard
-              card={first}
-              total={total}
-              closeLabel={formatDate(period.end, "d MMM")}
-              dueLabel={formatDate(period.due, "d MMM")}
-            />
-          </Link>
-        );
-      })()}
-
-      {rest.length > 0 && (
-        <div className="space-y-2.5">
-          {rest.map((card) => (
-            <CompactCardRow
-              key={card.id}
-              card={card}
-              balance={getCardTotal(card)}
-              href={`/cards/${card.id}`}
-            />
-          ))}
-        </div>
+      {activeCards.length > 0 && (
+        <StackedWallet cards={activeCards} />
       )}
 
       {archivedCards.length > 0 && (
@@ -81,18 +50,43 @@ export function CardList({ cards }: CardListProps) {
               {archivedCards.length !== 1 ? "s" : ""}
             </span>
           </summary>
-          <div className="mt-2 space-y-2.5 opacity-60">
-            {archivedCards.map((card) => (
-              <CompactCardRow
-                key={card.id}
-                card={card}
-                balance={getCardTotal(card)}
-                href={`/cards/${card.id}`}
-              />
-            ))}
+          <div className="mt-2 opacity-60">
+            <StackedWallet cards={archivedCards} />
           </div>
         </details>
       )}
+    </div>
+  );
+}
+
+function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
+  return (
+    <div className="flex flex-col">
+      {cards.map((card, i) => {
+        const period = getCurrentPeriod(card);
+        const total = getCardTotal(card);
+        const isLast = i === cards.length - 1;
+        return (
+          <div key={card.id}>
+            <Link
+              href={`/cards/${card.id}`}
+              className="block transition-transform duration-150 active:scale-[0.985]"
+            >
+              <WalletCard
+                card={card}
+                total={total}
+                closeLabel={formatDate(period.end, "d MMM")}
+                dueLabel={formatDate(period.due, "d MMM")}
+              />
+            </Link>
+            {!isLast && (
+              <div className="flex justify-center py-2.5">
+                <div className="h-px w-12 rounded-full bg-border/50" />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

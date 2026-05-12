@@ -17,7 +17,7 @@ import {
   getInstallmentIndexInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
-import { formatDate } from "@/lib/utils";
+import { formatDate, capitalize } from "@/lib/utils";
 import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -26,7 +26,6 @@ interface CardDetailPageProps {
   searchParams: Promise<{ offset?: string }>;
 }
 
-const DAY_OF_MONTH = (iso: string) => parseInt(iso.split("-")[2], 10);
 
 export default async function CardDetailPage({
   params,
@@ -114,9 +113,9 @@ export default async function CardDetailPage({
               ) : (
                 <Link
                   href={`/cards/${id}/edit`}
-                  className="mt-0.5 inline-block font-display text-[18px] font-bold leading-tight tracking-tight text-primary"
+                  className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
                 >
-                  Definir
+                  Definir límite
                 </Link>
               )}
             </div>
@@ -151,15 +150,15 @@ export default async function CardDetailPage({
           />
         </div>
         <div className="rounded-[14px] border border-border bg-card p-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground">Fecha de corte</p>
+          <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
           <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
-            {DAY_OF_MONTH(card.close_date)} de cada mes
+            {capitalize(formatDate(period.end, "d 'de' MMM"))}
           </p>
         </div>
         <div className="rounded-[14px] border border-border bg-card p-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground">Fecha de pago</p>
+          <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
           <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
-            {DAY_OF_MONTH(card.due_date)} de cada mes
+            {capitalize(formatDate(period.due, "d 'de' MMM"))}
           </p>
         </div>
       </section>

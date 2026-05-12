@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CardList } from "@/components/cards/card-list";
 
-export const metadata = { title: "Mis Tarjetas" };
+export const metadata = { title: "Tarjetas" };
 
 export default async function CardsPage() {
   const supabase = await createClient();
@@ -16,20 +16,13 @@ export default async function CardsPage() {
     .order("archived", { ascending: true })
     .order("created_at", { ascending: true });
 
-  const activeCount = (cards?.filter((c) => !c.archived) ?? []).length;
-
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-            Mis tarjetas
-          </h1>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-            {activeCount} activa{activeCount === 1 ? "" : "s"}
-          </p>
-        </div>
+        <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+          Tarjetas
+        </h1>
 
         <Link
           href="/cards/new"

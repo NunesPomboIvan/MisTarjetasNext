@@ -18,6 +18,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -247,23 +253,12 @@ export function NewExpenseHero({
               control={control}
               name="card_id"
               render={({ field }) => (
-                <div className="relative flex items-center">
-                  <select
-                    value={field.value}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    className={cn(
-                      "appearance-none bg-transparent pr-5 text-right text-sm font-medium text-foreground outline-none focus:text-primary",
-                      errors.card_id && "text-destructive"
-                    )}
-                  >
-                    {cards.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ··{c.last_four}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                </div>
+                <CardSelector
+                  cards={cards}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={!!errors.card_id}
+                />
               )}
             />
           </div>
@@ -298,7 +293,7 @@ export function NewExpenseHero({
                               : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                           )}
                         >
-                          {n}x
+                          {n}
                         </button>
                       );
                     })}
@@ -540,6 +535,75 @@ export function NewExpenseHero({
 
 /* ─── Subcomponentes ──────────────────────────────────────── */
 
+function CardSelector({
+  cards,
+  value,
+  onChange,
+  error,
+}: {
+  cards: Card[];
+  value: string;
+  onChange: (v: string) => void;
+  error?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const selected = cards.find((c) => c.id === value);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(
+          "flex items-center gap-2 text-sm font-medium transition-colors",
+          error ? "text-destructive" : "text-foreground"
+        )}
+      >
+        {selected && (
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: selected.color }}
+          />
+        )}
+        <span className="max-w-[160px] truncate">
+          {selected ? `${selected.name} ··${selected.last_four}` : "Seleccioná"}
+        </span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" showCloseButton={false} className="pb-safe px-0">
+          <SheetHeader className="px-5 pb-2">
+            <SheetTitle>Elegí la tarjeta</SheetTitle>
+          </SheetHeader>
+          <div className="divide-y divide-border/50">
+            {cards.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { onChange(c.id); setOpen(false); }}
+                className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left transition-colors active:bg-muted/60"
+              >
+                <span
+                  className="h-3.5 w-3.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: c.color }}
+                />
+                <span className="flex-1 text-[15px] font-medium text-foreground">
+                  {c.name}
+                </span>
+                <span className="text-xs text-muted-foreground">····{c.last_four}</span>
+                {value === c.id && (
+                  <span className="text-[13px] font-bold text-primary">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
 interface HeroAmountInputProps {
   value: number | undefined | null;
   onChange: (v: number | undefined) => void;
@@ -572,13 +636,20 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
     onChange(next === "" ? undefined : parsed);
   }
 
+  const fontSize =
+    display.length <= 5 ? 44 :
+    display.length <= 8 ? 36 :
+    display.length <= 11 ? 28 :
+    display.length <= 14 ? 22 : 18;
+
   return (
-    <div className="mt-2 flex items-baseline justify-center gap-2">
+    <div className="mt-2 flex items-baseline gap-1 px-4">
       <span
         className={cn(
-          "text-[28px] font-medium select-none",
+          "shrink-0 font-medium select-none",
           invalid ? "text-destructive" : "text-muted-foreground"
         )}
+        style={{ fontSize: fontSize * 0.64 }}
       >
         $
       </span>
@@ -592,10 +663,10 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
         onChange={handleChange}
         aria-invalid={invalid}
         className={cn(
-          "min-w-[2ch] max-w-[260px] bg-transparent text-center text-[44px] font-bold tracking-tight tabular-nums outline-none placeholder:text-foreground/25",
+          "min-w-0 flex-1 bg-transparent text-center font-bold tracking-tight tabular-nums outline-none placeholder:text-foreground/25 transition-[font-size] duration-100",
           invalid ? "text-destructive" : "text-foreground"
         )}
-        style={{ fieldSizing: "content" } as React.CSSProperties}
+        style={{ fontSize } as React.CSSProperties}
       />
     </div>
   );

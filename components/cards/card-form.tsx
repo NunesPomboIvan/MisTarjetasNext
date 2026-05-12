@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save } from "lucide-react";
@@ -18,7 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn } from "@/lib/utils";
+import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
+import { format } from "date-fns";
 import type { Card } from "@/lib/supabase/database.types";
 
 const CARD_TYPES = [
@@ -35,15 +38,52 @@ const COLOR_PRESETS = [
   "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
 ];
 
+/** Parent shape: necesitamos los datos completos para copiar al activar "adicional" */
+export type ParentCardOption = Pick<
+  Card,
+  | "id"
+  | "name"
+  | "last_four"
+  | "bank"
+  | "type"
+  | "close_date"
+  | "due_date"
+  | "color"
+  | "credit_limit"
+  | "expiry"
+>;
+
 interface CardFormProps {
   card?: Card;
   /** Lista de tarjetas titulares para el selector de extensión */
-  availableParents?: Pick<Card, "id" | "name" | "last_four">[];
+  availableParents?: ParentCardOption[];
+}
+
+/** Convierte un Date a YYYY-MM-DD usando hora local */
+function toLocalDateStr(d: Date): string {
+  return format(d, "yyyy-MM-dd");
 }
 
 export function CardForm({ card, availableParents = [] }: CardFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  /** Fechas iniciales: si estamos editando, mostramos el período actual de esa tarjeta.
+   *  Las dos fechas se muestran en el MISMO mes (el del cierre del período actual)
+   *  porque para el cálculo solo importa el día — así el form queda visualmente coherente.
+   *  Si es nueva, dejamos vacío y el usuario las elige. */
+  const initialPeriodDates = useMemo(() => {
+    if (!card) return { close_date: "", due_date: "" };
+    const p = getCurrentPeriod(card);
+    const closeDay = parseLocalDate(card.close_date).getDate();
+    const dueDay = parseLocalDate(card.due_date).getDate();
+    const refYear = p.end.getFullYear();
+    const refMonth = p.end.getMonth(); // 0-based
+    return {
+      close_date: toLocalDateStr(new Date(refYear, refMonth, closeDay)),
+      due_date: toLocalDateStr(new Date(refYear, refMonth, dueDay)),
+    };
+  }, [card]);
 
   const {
     register,
@@ -59,8 +99,8 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           name: card.name,
           type: card.type,
           last_four: card.last_four,
-          close_date: card.close_date,
-          due_date: card.due_date,
+          close_date: initialPeriodDates.close_date,
+          due_date: initialPeriodDates.due_date,
           color: card.color,
           bank: card.bank ?? undefined,
           is_extension: card.is_extension,
@@ -79,6 +119,28 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
 
   const selectedColor = watch("color");
   const isExtension = watch("is_extension");
+  const parentCardId = watch("parent_card_id");
+  const closeDate = watch("close_date");
+  const dueDate = watch("due_date");
+
+  /** Cuando se selecciona/cambia la tarjeta titular en modo "adicional",
+   *  copiamos automáticamente banco, tipo, fechas, color, límite y vencimiento.
+   *  El usuario solo necesita poner el nombre y datos del titular. */
+  useEffect(() => {
+    if (!isExtension || !parentCardId) return;
+    const parent = availableParents.find((p) => p.id === parentCardId);
+    if (!parent) return;
+
+    setValue("bank", parent.bank ?? undefined, { shouldDirty: true });
+    setValue("type", parent.type, { shouldDirty: true });
+    setValue("close_date", parent.close_date, { shouldDirty: true });
+    setValue("due_date", parent.due_date, { shouldDirty: true });
+    setValue("color", parent.color, { shouldDirty: true });
+    setValue("credit_limit", parent.credit_limit ?? undefined, { shouldDirty: true });
+    if (parent.expiry) setValue("expiry", parent.expiry, { shouldDirty: true });
+    // last_four: en adicionales el plástico suele tener otros 4 dígitos.
+    // No los copiamos: el usuario los pone manualmente.
+  }, [isExtension, parentCardId, availableParents, setValue]);
 
   function onSubmit(data: CardFormData) {
     startTransition(async () => {
@@ -94,6 +156,9 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
       }
     });
   }
+
+  /** Para mostrar el label legible (nombre •••• 1234) en el trigger del Select de titular */
+  const selectedParent = availableParents.find((p) => p.id === parentCardId);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -133,11 +198,15 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
             <div className="space-y-1.5">
               <Label>Tarjeta titular</Label>
               <Select
-                defaultValue={card?.parent_card_id ?? undefined}
+                value={parentCardId ?? undefined}
                 onValueChange={(v) => setValue("parent_card_id", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccioná la tarjeta titular" />
+                  <SelectValue placeholder="Seleccioná la tarjeta titular">
+                    {selectedParent
+                      ? `${selectedParent.name} •••• ${selectedParent.last_four}`
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {availableParents
@@ -149,17 +218,26 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
                     ))}
                 </SelectContent>
               </Select>
+              {parentCardId && (
+                <p className="text-[11.5px] text-muted-foreground">
+                  Banco, fechas y límite se copian del titular. Solo cambiá el nombre y el
+                  titular del adicional.
+                </p>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Banco (opcional) */}
+      {/* Banco (opcional) — bloqueado en adicionales */}
       <div className="space-y-1.5">
-        <Label htmlFor="bank">Banco <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+        <Label htmlFor="bank">
+          Banco <span className="text-muted-foreground font-normal">(opcional)</span>
+        </Label>
         <Input
           id="bank"
           placeholder="Ej: Galicia, Santander, BBVA…"
+          disabled={isExtension}
           {...register("bank")}
         />
       </div>
@@ -181,8 +259,9 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
       <div className="space-y-1.5">
         <Label>Tipo de tarjeta</Label>
         <Select
-          defaultValue={card?.type}
+          value={watch("type") ?? undefined}
           onValueChange={(v) => setValue("type", v as CardFormData["type"])}
+          disabled={isExtension}
         >
           <SelectTrigger className={cn(errors.type && "border-destructive")}>
             <SelectValue placeholder="Seleccioná el tipo" />
@@ -198,37 +277,21 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
       </div>
 
-      {/* Últimos 4 + Vencimiento */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="last_four">Últimos 4 dígitos</Label>
-          <Input
-            id="last_four"
-            placeholder="1234"
-            maxLength={4}
-            inputMode="numeric"
-            pattern="[0-9]{4}"
-            className={cn(errors.last_four && "border-destructive")}
-            {...register("last_four")}
-          />
-          {errors.last_four && (
-            <p className="text-xs text-destructive">{errors.last_four.message}</p>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="expiry">Vence (MM/YY) <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-          <Input
-            id="expiry"
-            placeholder="05/27"
-            maxLength={5}
-            inputMode="numeric"
-            className={cn(errors.expiry && "border-destructive")}
-            {...register("expiry")}
-          />
-          {errors.expiry && (
-            <p className="text-xs text-destructive">{errors.expiry.message}</p>
-          )}
-        </div>
+      {/* Últimos 4 dígitos */}
+      <div className="space-y-1.5">
+        <Label htmlFor="last_four">Últimos 4 dígitos</Label>
+        <Input
+          id="last_four"
+          placeholder="1234"
+          maxLength={4}
+          inputMode="numeric"
+          pattern="[0-9]{4}"
+          className={cn(errors.last_four && "border-destructive")}
+          {...register("last_four")}
+        />
+        {errors.last_four && (
+          <p className="text-xs text-destructive">{errors.last_four.message}</p>
+        )}
       </div>
 
       {/* Nombre del titular */}
@@ -241,9 +304,12 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         />
       </div>
 
-      {/* Límite de crédito */}
+      {/* Límite de crédito — bloqueado en adicionales */}
       <div className="space-y-1.5">
-        <Label htmlFor="credit_limit">Límite de crédito <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+        <Label htmlFor="credit_limit">
+          Límite de crédito{" "}
+          <span className="text-muted-foreground font-normal">(opcional)</span>
+        </Label>
         <Input
           id="credit_limit"
           type="number"
@@ -251,6 +317,7 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           min={0}
           step={1}
           placeholder="20000"
+          disabled={isExtension}
           className={cn(errors.credit_limit && "border-destructive")}
           {...register("credit_limit", { setValueAs: (v) => v === "" ? null : Number(v) })}
         />
@@ -259,27 +326,29 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         )}
       </div>
 
-      {/* Fechas */}
+      {/* Fechas — bloqueadas en adicionales */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="close_date">Fecha de cierre</Label>
-          <Input
-            id="close_date"
-            type="date"
+          <Label>Fecha de cierre</Label>
+          <DatePickerField
+            value={closeDate ?? ""}
+            onChange={(v) => setValue("close_date", v, { shouldDirty: true, shouldValidate: true })}
+            disabled={isExtension}
+            placeholder="Día de cierre"
             className={cn(errors.close_date && "border-destructive")}
-            {...register("close_date")}
           />
           {errors.close_date && (
             <p className="text-xs text-destructive">{errors.close_date.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="due_date">Fecha de vencimiento</Label>
-          <Input
-            id="due_date"
-            type="date"
+          <Label>Fecha de vencimiento</Label>
+          <DatePickerField
+            value={dueDate ?? ""}
+            onChange={(v) => setValue("due_date", v, { shouldDirty: true, shouldValidate: true })}
+            disabled={isExtension}
+            placeholder="Día de vencimiento"
             className={cn(errors.due_date && "border-destructive")}
-            {...register("due_date")}
           />
           {errors.due_date && (
             <p className="text-xs text-destructive">{errors.due_date.message}</p>
@@ -298,8 +367,9 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
             <button
               key={color}
               type="button"
+              disabled={isExtension}
               className={cn(
-                "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
+                "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 disabled:opacity-50",
                 selectedColor === color ? "border-foreground scale-110" : "border-transparent"
               )}
               style={{ backgroundColor: color }}
@@ -309,8 +379,9 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           <input
             type="color"
             value={selectedColor ?? "#f97316"}
+            disabled={isExtension}
             onChange={(e) => setValue("color", e.target.value)}
-            className="h-8 w-8 cursor-pointer rounded-full border-0 bg-transparent p-0"
+            className="h-8 w-8 cursor-pointer rounded-full border-0 bg-transparent p-0 disabled:opacity-50"
             title="Color personalizado"
           />
         </div>
