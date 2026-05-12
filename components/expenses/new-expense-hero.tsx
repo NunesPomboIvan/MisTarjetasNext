@@ -630,26 +630,49 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const next = formatAmountInput(e.target.value);
+    const raw = e.target.value;
+    // When the display contains thousands-separator dots (e.g. "1.256"), the browser
+    // includes them in e.target.value (e.g. "1.2565" after typing "5"). A single dot
+    // would be misread as a decimal separator. Strip our formatting dots first.
+    const commaIdx = raw.indexOf(",");
+    let cleaned: string;
+    if (commaIdx >= 0) {
+      // Decimal comma present → all dots before it are thousands seps
+      cleaned = raw.slice(0, commaIdx).replace(/\./g, "") + raw.slice(commaIdx);
+    } else {
+      const dotCount = (raw.match(/\./g) ?? []).length;
+      if (dotCount > 1) {
+        // Multiple dots → all thousands seps
+        cleaned = raw.replace(/\./g, "");
+      } else if (dotCount === 1 && display.includes(".")) {
+        // Single dot and we already had a thousands dot → strip it
+        cleaned = raw.replace(/\./g, "");
+      } else {
+        // No dot, or user just typed a decimal dot → pass through (formatAmountInput handles it)
+        cleaned = raw;
+      }
+    }
+    const next = formatAmountInput(cleaned);
     setDisplay(next);
     const parsed = unformatAmount(next);
     onChange(next === "" ? undefined : parsed);
   }
 
+  const len = display.length || 1;
   const fontSize =
-    display.length <= 5 ? 44 :
-    display.length <= 8 ? 36 :
-    display.length <= 11 ? 28 :
-    display.length <= 14 ? 22 : 18;
+    len <= 5  ? 48 :
+    len <= 9  ? 38 :
+    len <= 12 ? 30 :
+    len <= 15 ? 24 : 20;
 
   return (
-    <div className="mt-2 flex items-baseline gap-1 px-4">
+    <div className="relative mt-2 flex min-h-[4rem] items-center justify-center px-8">
       <span
         className={cn(
-          "shrink-0 font-medium select-none",
+          "absolute left-6 top-1/2 -translate-y-1/2 select-none font-bold",
           invalid ? "text-destructive" : "text-muted-foreground"
         )}
-        style={{ fontSize: fontSize * 0.64 }}
+        style={{ fontSize: 18 }}
       >
         $
       </span>
@@ -663,7 +686,7 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
         onChange={handleChange}
         aria-invalid={invalid}
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-center font-bold tracking-tight tabular-nums outline-none placeholder:text-foreground/25 transition-[font-size] duration-100",
+          "w-full bg-transparent text-center font-bold tracking-tight tabular-nums outline-none placeholder:text-foreground/25",
           invalid ? "text-destructive" : "text-foreground"
         )}
         style={{ fontSize } as React.CSSProperties}
