@@ -50,7 +50,6 @@ export type ParentCardOption = Pick<
   | "due_date"
   | "color"
   | "credit_limit"
-  | "expiry"
 >;
 
 interface CardFormProps {
@@ -137,7 +136,6 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
     setValue("due_date", parent.due_date, { shouldDirty: true });
     setValue("color", parent.color, { shouldDirty: true });
     setValue("credit_limit", parent.credit_limit ?? undefined, { shouldDirty: true });
-    if (parent.expiry) setValue("expiry", parent.expiry, { shouldDirty: true });
     // last_four: en adicionales el plástico suele tener otros 4 dígitos.
     // No los copiamos: el usuario los pone manualmente.
   }, [isExtension, parentCardId, availableParents, setValue]);

@@ -11,7 +11,7 @@ export default async function NewCardPage() {
 
   const { data: cards } = await supabase
     .from("cards")
-    .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit, expiry")
+    .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit")
     .eq("user_id", user!.id)
     .eq("archived", false)
     .eq("is_extension", false)
