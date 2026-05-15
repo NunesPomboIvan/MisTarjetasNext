@@ -13,6 +13,10 @@ export function SignOutButton() {
     startTransition(async () => {
       const supabase = createClient();
       await supabase.auth.signOut();
+      try {
+        localStorage.removeItem("mt_auth_v1");
+        localStorage.removeItem("mt_auth_email");
+      } catch {}
       router.push("/login");
       router.refresh();
     });

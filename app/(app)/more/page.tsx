@@ -7,18 +7,16 @@ import {
   ChevronRight,
   Bell,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/shared/sign-out-button";
+import {
+  LocalUserName,
+  LocalUserEmail,
+  LocalUserInitial,
+} from "@/components/shared/local-user";
 
 export const metadata = { title: "Más" };
 
-export default async function MorePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const userName = (user?.email?.split("@")[0] ?? "").split(/[._-]/)[0];
-  const displayName = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : "Usuario";
-
+export default function MorePage() {
   return (
     <div className="space-y-5">
       <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
@@ -31,11 +29,15 @@ export default async function MorePage() {
           className="flex h-12 w-12 items-center justify-center rounded-full font-display text-[18px] font-bold text-white"
           style={{ background: "linear-gradient(135deg, #6366f1, #4338ca)" }}
         >
-          {displayName.charAt(0)}
+          <LocalUserInitial fallback="U" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-foreground">{displayName}</p>
-          <p className="truncate text-[12px] text-muted-foreground">{user?.email}</p>
+          <p className="truncate text-[15px] font-semibold text-foreground">
+            <LocalUserName fallback="Usuario" />
+          </p>
+          <p className="truncate text-[12px] text-muted-foreground">
+            <LocalUserEmail />
+          </p>
         </div>
       </section>
 

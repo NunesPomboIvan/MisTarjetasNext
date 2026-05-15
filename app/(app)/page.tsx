@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { ProximosPagosRotator } from "@/components/home/proximos-pagos-rotator";
+import { LocalUserName } from "@/components/shared/local-user";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
 import { getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
@@ -83,7 +84,7 @@ export default async function DashboardPage() {
             {greeting(hour)}
           </p>
           <h1 className="mt-0.5 truncate font-display text-[24px] font-bold tracking-tight text-foreground">
-            Hola{displayName ? `, ${displayName}` : ""} 👋
+            Hola, <LocalUserName fallback={displayName || "Usuario"} /> 👋
           </h1>
           <p className="mt-0.5 text-[12.5px] text-muted-foreground">{todayLabel}</p>
         </div>
