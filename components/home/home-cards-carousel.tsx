@@ -19,6 +19,8 @@ interface HomeCardsCarouselProps {
 export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dotsStartXRef = useRef<number | null>(null);
+  const dotsStartIdxRef = useRef<number>(0);
   const multi = items.length > 1;
 
   useEffect(() => {
@@ -52,6 +54,32 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
     child?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
   }, []);
 
+  // Drag sobre la barra de dots para moverse entre tarjetas
+  function onDotsPointerDown(e: React.PointerEvent) {
+    if (!multi) return;
+    dotsStartXRef.current = e.clientX;
+    dotsStartIdxRef.current = activeIndex;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function onDotsPointerMove(e: React.PointerEvent) {
+    if (dotsStartXRef.current == null) return;
+    const dx = e.clientX - dotsStartXRef.current;
+    const stepPx = 32;
+    const delta = Math.round(dx / stepPx);
+    const next = Math.max(
+      0,
+      Math.min(items.length - 1, dotsStartIdxRef.current + delta)
+    );
+    if (next !== activeIndex) scrollTo(next);
+  }
+  function onDotsPointerUp(e: React.PointerEvent) {
+    if (dotsStartXRef.current == null) return;
+    dotsStartXRef.current = null;
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  }
+
   if (items.length === 0) return null;
 
   return (
@@ -64,6 +92,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x",
         }}
       >
         {items.map(({ card, total, closeLabel, dueLabel }, i) => {
@@ -104,9 +133,16 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
         })}
       </div>
 
-      {/* Dots */}
+      {/* Dots — toda la zona es arrastrable */}
       {multi && (
-        <div className="flex items-center justify-center gap-1.5 pt-0.5">
+        <div
+          className="flex cursor-grab items-center justify-center gap-1.5 py-2 active:cursor-grabbing"
+          style={{ touchAction: "none" }}
+          onPointerDown={onDotsPointerDown}
+          onPointerMove={onDotsPointerMove}
+          onPointerUp={onDotsPointerUp}
+          onPointerCancel={onDotsPointerUp}
+        >
           {items.map((_, i) => (
             <button
               key={i}
