@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const VALID_EMAIL = "nunespomboivan@gmail.com";
 const VALID_PASSWORD = "Chaca123";
 const STORAGE_KEY = "mt_auth_v1";
+const EMAIL_KEY = "mt_auth_email";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,6 +46,7 @@ export default function LoginPage() {
 
     try {
       localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(EMAIL_KEY, email.trim());
     } catch {}
     router.replace("/");
   }
