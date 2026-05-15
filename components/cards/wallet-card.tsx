@@ -6,7 +6,7 @@ import type { Card, Currency } from "@/lib/supabase/database.types";
 interface WalletCardProps {
   card: Pick<
     Card,
-    "id" | "name" | "type" | "last_four" | "color" | "bank" | "is_extension"
+    "id" | "name" | "type" | "last_four" | "color" | "bank" | "is_extension" | "holder_name"
   >;
   /** Total del período. Si se pasa, se renderiza el strip "Período actual" + monto */
   total?: number;
@@ -177,16 +177,27 @@ export function WalletCard({
             {card.name}
           </div>
           {card.is_extension && (
-            <div
-              className="mt-1 inline-flex items-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"
-              style={{
-                background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
-                color: fgMuted,
-                letterSpacing: "0.14em",
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              Adicional
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span
+                className="inline-flex items-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                style={{
+                  background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
+                  color: fgMuted,
+                  letterSpacing: "0.14em",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                Adicional
+              </span>
+              {card.holder_name && (
+                <span
+                  className="truncate text-[11px] font-semibold"
+                  style={{ color: fg, maxWidth: 160 }}
+                  title={card.holder_name}
+                >
+                  {card.holder_name}
+                </span>
+              )}
             </div>
           )}
         </div>

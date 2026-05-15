@@ -11,6 +11,7 @@ import { createCard, updateCard } from "@/actions/cards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AmountInput } from "@/components/expenses/amount-input";
 import {
   Select,
   SelectContent,
@@ -121,6 +122,8 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
   const parentCardId = watch("parent_card_id");
   const closeDate = watch("close_date");
   const dueDate = watch("due_date");
+  const bankValue = watch("bank");
+  const creditLimit = watch("credit_limit");
 
   /** Cuando se selecciona/cambia la tarjeta titular en modo "adicional",
    *  copiamos automáticamente banco, tipo, fechas, color, límite y vencimiento.
@@ -130,10 +133,12 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
     const parent = availableParents.find((p) => p.id === parentCardId);
     if (!parent) return;
 
-    setValue("bank", parent.bank ?? undefined, { shouldDirty: true });
+    const parentBank = parent.bank ?? parent.name ?? "";
+    setValue("bank", parentBank, { shouldDirty: true });
+    setValue("name", parentBank || parent.name, { shouldDirty: true, shouldValidate: true });
     setValue("type", parent.type, { shouldDirty: true });
-    setValue("close_date", parent.close_date, { shouldDirty: true });
-    setValue("due_date", parent.due_date, { shouldDirty: true });
+    setValue("close_date", parent.close_date, { shouldDirty: true, shouldValidate: true });
+    setValue("due_date", parent.due_date, { shouldDirty: true, shouldValidate: true });
     setValue("color", parent.color, { shouldDirty: true });
     setValue("credit_limit", parent.credit_limit ?? undefined, { shouldDirty: true });
     // last_four: en adicionales el plástico suele tener otros 4 dígitos.
@@ -227,30 +232,27 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         </div>
       )}
 
-      {/* Banco (opcional) — bloqueado en adicionales */}
+      {/* Banco / Entidad — también se usa como nombre de la tarjeta */}
       <div className="space-y-1.5">
-        <Label htmlFor="bank">
-          Banco <span className="text-muted-foreground font-normal">(opcional)</span>
-        </Label>
+        <Label htmlFor="bank">Banco o entidad</Label>
         <Input
           id="bank"
           placeholder="Ej: Galicia, Santander, BBVA…"
-          disabled={isExtension}
-          {...register("bank")}
-        />
-      </div>
-
-      {/* Nombre */}
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Nombre de la tarjeta</Label>
-        <Input
-          id="name"
-          placeholder="Ej: Visa Galicia"
           autoFocus={!card}
-          className={cn(errors.name && "border-destructive")}
-          {...register("name")}
+          disabled={isExtension}
+          className={cn((errors.bank || errors.name) && "border-destructive")}
+          value={bankValue ?? ""}
+          onChange={(e) => {
+            const v = e.target.value;
+            setValue("bank", v, { shouldDirty: true, shouldValidate: true });
+            setValue("name", v, { shouldDirty: true, shouldValidate: true });
+          }}
         />
-        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+        {(errors.bank || errors.name) && (
+          <p className="text-xs text-destructive">
+            {errors.bank?.message || errors.name?.message}
+          </p>
+        )}
       </div>
 
       {/* Tipo */}
@@ -308,17 +310,20 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           Límite de crédito{" "}
           <span className="text-muted-foreground font-normal">(opcional)</span>
         </Label>
-        <Input
-          id="credit_limit"
-          type="number"
-          inputMode="numeric"
-          min={0}
-          step={1}
-          placeholder="20000"
-          disabled={isExtension}
-          className={cn(errors.credit_limit && "border-destructive")}
-          {...register("credit_limit", { setValueAs: (v) => v === "" ? null : Number(v) })}
-        />
+        <div
+          className={cn(isExtension && "pointer-events-none opacity-60")}
+          aria-disabled={isExtension}
+        >
+          <AmountInput
+            id="credit_limit"
+            value={creditLimit ?? null}
+            onChange={(v) =>
+              setValue("credit_limit", v ?? null, { shouldDirty: true, shouldValidate: true })
+            }
+            placeholder="20.000,00"
+            invalid={!!errors.credit_limit}
+          />
+        </div>
         {errors.credit_limit && (
           <p className="text-xs text-destructive">{errors.credit_limit.message}</p>
         )}
