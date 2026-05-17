@@ -45,7 +45,7 @@ export function ExpenseDetailActions({
         toast.error(result.error);
         return;
       }
-      toast.success("Gasto eliminado");
+      toast.success("Consumo eliminado");
       setOpen(false);
       router.push(backHref);
       router.refresh();
@@ -76,7 +76,7 @@ export function ExpenseDetailActions({
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar gasto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
             <AlertDialogDescription>
               Vas a eliminar &quot;{description}&quot;. Esta acción no se puede
               deshacer.

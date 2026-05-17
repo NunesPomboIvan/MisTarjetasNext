@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, ChevronRight, Search } from "lucide-react";
+import { Plus, ChevronRight } from "lucide-react";
+import { LiveSearch } from "@/components/expenses/live-search";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -95,29 +96,14 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
         />
       </div>
 
-      <form action={`/cards/${id}/movimientos`} method="get">
-        {category_id && <input type="hidden" name="category_id" value={category_id} />}
-        {date_from && <input type="hidden" name="date_from" value={date_from} />}
-        {date_to && <input type="hidden" name="date_to" value={date_to} />}
-        {cuotas && <input type="hidden" name="cuotas" value={cuotas} />}
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Buscar movimiento"
-            className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-4 text-[14px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
-        </div>
-      </form>
+      <LiveSearch basePath={`/cards/${id}/movimientos`} placeholder="Buscar consumo" />
 
       {all.length === 0 ? (
         <EmptyState
           icon={<span>🧾</span>}
           title="Sin movimientos"
-          description="Agregá un gasto para que aparezca acá"
-          action={{ label: "Agregar gasto", href: `/expenses/new?card_id=${id}` }}
+          description="Agregá un consumo para que aparezca acá"
+          action={{ label: "Agregar consumo", href: `/expenses/new?card_id=${id}` }}
         />
       ) : (
         <div className="space-y-5">

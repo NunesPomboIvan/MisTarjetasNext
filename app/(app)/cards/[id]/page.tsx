@@ -184,10 +184,10 @@ export default async function CardDetailPage({
         {periodExpenses.length === 0 ? (
           <EmptyState
             icon={<span>🧾</span>}
-            title="Sin gastos en este período"
-            description="Agregá un gasto para que aparezca acá"
+            title="Sin consumos en este período"
+            description="Agregá un consumo para que aparezca acá"
             action={{
-              label: "Agregar gasto",
+              label: "Agregar consumo",
               href: `/expenses/new?card_id=${id}`,
             }}
           />

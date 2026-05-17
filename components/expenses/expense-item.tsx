@@ -49,7 +49,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
     startTransition(async () => {
       const result = await deleteExpense(expense.id, expense.card_id);
       if (!result.success) toast.error(result.error);
-      else toast.success("Gasto eliminado");
+      else toast.success("Consumo eliminado");
       setDeleteOpen(false);
     });
   }
@@ -58,7 +58,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
     startTransition(async () => {
       const result = await cloneExpense(expense.id);
       if (!result.success) toast.error(result.error);
-      else toast.success("Gasto duplicado para hoy");
+      else toast.success("Consumo duplicado para hoy");
     });
   }
 
@@ -190,7 +190,7 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar gasto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
             <AlertDialogDescription>
               Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se puede deshacer.
             </AlertDialogDescription>

@@ -301,7 +301,7 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Los gastos que usaban &quot;{cat.name}&quot; quedarán sin categoría.
+                        Los consumos que usaban &quot;{cat.name}&quot; quedarán sin categoría.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -349,7 +349,7 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
           </label>
         </div>
         <p className="text-xs text-muted-foreground">
-          El backup incluye tarjetas, gastos y categorías. La importación no elimina datos existentes.
+          El backup incluye tarjetas, consumos y categorías. La importación no elimina datos existentes.
         </p>
       </section>
     </div>

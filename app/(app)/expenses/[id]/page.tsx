@@ -6,7 +6,7 @@ import { ExpenseDetailActions } from "@/components/expenses/expense-detail-actio
 import { formatDate, capitalize, formatCurrency } from "@/lib/utils";
 import type { ExpenseWithAll } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Detalle del gasto" };
+export const metadata = { title: "Detalle del consumo" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -54,7 +54,7 @@ export default async function ExpenseDetailPage({
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="text-[15px] font-semibold text-foreground">
-          Detalle del gasto
+          Detalle del consumo
         </h1>
         <span className="h-10 w-10" />
       </div>

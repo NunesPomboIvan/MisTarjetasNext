@@ -141,7 +141,7 @@ export function NewExpenseHero({
 
       if (result.success) {
         setLastCardId(payload.card_id);
-        toast.success("Gasto registrado");
+        toast.success("Consumo registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
         return;
@@ -164,7 +164,7 @@ export function NewExpenseHero({
     return (
       <div className="space-y-4 py-8 text-center">
         <p className="text-sm text-muted-foreground">
-          Necesitás al menos una tarjeta para registrar gastos.
+          Necesitás al menos una tarjeta para registrar consumos.
         </p>
         <Button
           className="gradient-primary shadow-brand"
@@ -187,7 +187,7 @@ export function NewExpenseHero({
           >
             Cancelar
           </Link>
-          <h1 className="text-[15px] font-semibold tracking-tight">Nuevo gasto</h1>
+          <h1 className="text-[15px] font-semibold tracking-tight">Nuevo consumo</h1>
           <Button
             type="submit"
             disabled={isPending}
@@ -331,7 +331,7 @@ export function NewExpenseHero({
           <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
             {/* Fecha */}
             <div className="space-y-1.5">
-              <Label htmlFor="ne-date">Fecha del gasto</Label>
+              <Label htmlFor="ne-date">Fecha del consumo</Label>
               <Input
                 id="ne-date"
                 type="date"
@@ -450,9 +450,9 @@ export function NewExpenseHero({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Es un gasto distinto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Es un consumo distinto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Detectamos un gasto casi idéntico ya registrado:{" "}
+              Detectamos un consumo casi idéntico ya registrado:{" "}
               <strong>{duplicate?.description}</strong> por{" "}
               <strong>{formatCurrency(duplicate?.total_amount ?? 0)}</strong> en la misma
               tarjeta y fecha. ¿Querés guardarlo igual?

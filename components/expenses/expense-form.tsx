@@ -176,7 +176,7 @@ export function ExpenseForm({
 
       if (result.success) {
         if (!expense) setLastCardId(payload.card_id);
-        toast.success(expense ? "Gasto actualizado" : "Gasto registrado");
+        toast.success(expense ? "Consumo actualizado" : "Consumo registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
         return;
@@ -441,7 +441,7 @@ export function ExpenseForm({
           <div className="space-y-5 rounded-xl border border-border bg-muted/20 p-4">
             {/* Fecha */}
             <div className="space-y-1.5">
-              <Label htmlFor="expense_date">Fecha del gasto</Label>
+              <Label htmlFor="expense_date">Fecha del consumo</Label>
               <Input
                 id="expense_date"
                 type="date"
@@ -549,7 +549,7 @@ export function ExpenseForm({
           ) : (
             <>
               <Save className="mr-2 h-4 w-4" />
-              {expense ? "Guardar cambios" : "Registrar gasto"}
+              {expense ? "Guardar cambios" : "Registrar consumo"}
             </>
           )}
         </Button>
@@ -579,7 +579,7 @@ export function ExpenseForm({
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Este gasto tiene <strong>{expense?.installments} cuotas</strong>. Elegí si el
+                  Este consumo tiene <strong>{expense?.installments} cuotas</strong>. Elegí si el
                   nuevo importe aplica solo a la cuota que estás viendo o a todas.
                 </p>
               </div>
@@ -617,9 +617,9 @@ export function ExpenseForm({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Es un gasto distinto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Es un consumo distinto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Detectamos un gasto casi idéntico ya registrado:{" "}
+              Detectamos un consumo casi idéntico ya registrado:{" "}
               <strong>{duplicate?.description}</strong> por{" "}
               <strong>{formatCurrency(duplicate?.total_amount ?? 0)}</strong> en la misma tarjeta y
               fecha. ¿Querés guardarlo igual?

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Search, Plus, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
+import { LiveSearch } from "@/components/expenses/live-search";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithAll, Card, Category } from "@/lib/supabase/database.types";
 
@@ -97,31 +98,14 @@ export default async function ExpensesPage({
         />
       </div>
 
-      {/* Search bar */}
-      <form action="/expenses" method="get">
-        {filters.card_id && <input type="hidden" name="card_id" value={filters.card_id} />}
-        {filters.category_id && <input type="hidden" name="category_id" value={filters.category_id} />}
-        {filters.date_from && <input type="hidden" name="date_from" value={filters.date_from} />}
-        {filters.date_to && <input type="hidden" name="date_to" value={filters.date_to} />}
-        {filters.cuotas && <input type="hidden" name="cuotas" value={filters.cuotas} />}
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            name="q"
-            defaultValue={filters.q ?? ""}
-            placeholder="Buscar movimiento"
-            className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-4 text-[14px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
-        </div>
-      </form>
+      <LiveSearch basePath="/expenses" placeholder="Buscar consumo" />
 
       {expenses.length === 0 ? (
         <EmptyState
           icon={<span>🧾</span>}
           title="Sin movimientos"
-          description="Empezá registrando tu primer gasto"
-          action={{ label: "Agregar gasto", href: "/expenses/new" }}
+          description="Empezá registrando tu primer consumo"
+          action={{ label: "Agregar consumo", href: "/expenses/new" }}
         />
       ) : (
         <div className="space-y-5">

@@ -94,7 +94,7 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         <EmptyState
           icon={<span>📊</span>}
           title="Sin datos suficientes"
-          description="Agregá algunos gastos para ver tus estadísticas"
+          description="Agregá algunos consumos para ver tus estadísticas"
         />
       </div>
     );
@@ -133,14 +133,14 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
 
       {/* Donut por categoría */}
       <section className="rounded-[20px] border border-border bg-card p-5">
-        <p className="text-[14px] font-semibold text-foreground">Gastos por categoría</p>
+        <p className="text-[14px] font-semibold text-foreground">Consumos por categoría</p>
         <CategoryDonut categories={byCategory} total={total} />
       </section>
 
       {/* Evolución */}
       <section className="rounded-[20px] border border-border bg-card p-5">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[14px] font-semibold text-foreground">Evolución de gastos</p>
+          <p className="text-[14px] font-semibold text-foreground">Evolución de consumos</p>
           <span className="text-[12px] text-muted-foreground">
             {RANGES.find((r) => r.value === range)?.label}
           </span>
