@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Mis Tarjetas",
     short_name: "Tarjetas",
-    description: "Gestión personal de tarjetas de crédito y consumos",
+    description: "Gestión personal de tarjetas de crédito y gastos",
     start_url: "/",
     display: "standalone",
     background_color: "#fffbf5",

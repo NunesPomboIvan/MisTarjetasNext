@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 
 const PRESETS = [1, 3, 6, 12, 18, 24] as const;
 
@@ -13,14 +12,38 @@ interface InstallmentPresetsProps {
 }
 
 /**
- * Selector rápido de cuotas con presets + opción "Otro" que abre input numérico.
+ * Selector de cuotas: chips rectangulares con presets + opción "Otra" que abre
+ * un campo numérico libre. El campo usa un borrador local (string) para que el
+ * usuario pueda borrar y escribir cualquier número sin que quede trabado.
  */
 export function InstallmentPresets({ value, onChange, invalid }: InstallmentPresetsProps) {
   const isPreset = PRESETS.includes(value as (typeof PRESETS)[number]);
-  // Trackeamos sólo la intención del usuario de "estar en modo Otro";
-  // si el value coincide con un preset, no mostramos el input numérico.
-  const [otherIntent, setOtherIntent] = React.useState(!isPreset && value > 1);
-  const otherActive = otherIntent && !isPreset;
+  const [otherActive, setOtherActive] = React.useState(!isPreset && value > 1);
+
+  // Borrador editable del campo libre (string → permite vaciar/editar sin trabas).
+  const [draft, setDraft] = React.useState<string>(() =>
+    value > 0 ? String(value) : ""
+  );
+
+  function handleDraftChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 3);
+    setDraft(digits);
+    if (digits === "") return; // dejamos vaciar; no propagamos hasta tener un número
+    const n = Math.max(1, Math.min(120, parseInt(digits, 10)));
+    onChange(n);
+  }
+
+  function handleBlur() {
+    const digits = draft.replace(/\D/g, "");
+    const n =
+      digits === ""
+        ? value >= 1
+          ? value
+          : 1
+        : Math.max(1, Math.min(120, parseInt(digits, 10)));
+    setDraft(String(n));
+    onChange(n);
+  }
 
   return (
     <div className="space-y-2">
@@ -32,11 +55,11 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
               key={n}
               type="button"
               onClick={() => {
-                setOtherIntent(false);
+                setOtherActive(false);
                 onChange(n);
               }}
               className={cn(
-                "h-9 min-w-[2.5rem] rounded-xl border px-2.5 text-sm font-medium transition-all tabular-nums",
+                "h-9 min-w-[2.75rem] rounded-lg border px-3 text-sm font-semibold tabular-nums transition-all",
                 active
                   ? "border-primary bg-primary/10 text-primary shadow-sm"
                   : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -50,38 +73,38 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
         <button
           type="button"
           onClick={() => {
-            setOtherIntent(true);
-            // Si activamos "otro" y el valor actual es preset, dejamos un placeholder neutro
-            if (PRESETS.includes(value as (typeof PRESETS)[number])) {
-              onChange(2);
-            }
+            setOtherActive(true);
+            setDraft(value > 0 ? String(value) : "");
           }}
           className={cn(
-            "h-9 rounded-xl border px-3 text-sm font-medium transition-all",
+            "h-9 rounded-lg border px-3 text-sm font-semibold transition-all",
             otherActive
               ? "border-primary bg-primary/10 text-primary shadow-sm"
               : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
           )}
         >
-          Otro…
+          Otra
         </button>
       </div>
 
       {otherActive && (
-        <Input
-          type="number"
-          min={1}
-          max={120}
-          inputMode="numeric"
-          value={Number.isFinite(value) ? value : ""}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            if (Number.isFinite(n)) onChange(Math.max(1, Math.min(120, n)));
-          }}
-          className={cn("max-w-[8rem]", invalid && "border-destructive")}
-          placeholder="N° cuotas"
-          autoFocus
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={draft}
+            onChange={(e) => handleDraftChange(e.target.value)}
+            onBlur={handleBlur}
+            autoFocus
+            placeholder="Ej: 15"
+            className={cn(
+              "h-9 w-24 rounded-lg border bg-card px-3 text-sm tabular-nums outline-none transition-colors focus:border-primary",
+              invalid ? "border-destructive" : "border-border"
+            )}
+          />
+          <span className="text-sm text-muted-foreground">cuotas</span>
+        </div>
       )}
     </div>
   );

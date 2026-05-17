@@ -5,7 +5,6 @@ import {
   HelpCircle,
   Shield,
   ChevronRight,
-  Bell,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 import {
@@ -45,7 +44,6 @@ export default function MorePage() {
       <nav className="overflow-hidden rounded-[18px] border border-border bg-card">
         <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" />
         <MoreRow href="/settings" icon={<Settings className="h-5 w-5" />} label="Ajustes generales" />
-        <MoreRow href="/settings" icon={<Bell className="h-5 w-5" />} label="Notificaciones" />
         <MoreRow href="#" icon={<Shield className="h-5 w-5" />} label="Privacidad y seguridad" />
         <MoreRow href="#" icon={<HelpCircle className="h-5 w-5" />} label="Ayuda" last />
       </nav>

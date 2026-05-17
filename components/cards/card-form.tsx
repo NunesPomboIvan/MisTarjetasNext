@@ -20,9 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import type { Card } from "@/lib/supabase/database.types";
 
 const CARD_TYPES = [
@@ -232,7 +233,56 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         </div>
       )}
 
+      {/* Resumen de datos heredados del titular (modo adicional) */}
+      {isExtension && selectedParent && (
+        <div className="rounded-[16px] border border-border bg-muted/40 p-4 space-y-3">
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Datos de la tarjeta titular
+          </p>
+          <dl className="space-y-2.5 text-[13.5px]">
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">Banco o entidad</dt>
+              <dd className="flex items-center gap-2 font-semibold text-foreground">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: selectedParent.color }}
+                />
+                {selectedParent.bank || selectedParent.name}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">Tipo de tarjeta</dt>
+              <dd className="font-semibold text-foreground">
+                {CARD_TYPES.find((t) => t.value === selectedParent.type)?.label ??
+                  selectedParent.type}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">Fecha de cierre</dt>
+              <dd className="font-semibold text-foreground tabular-nums">
+                {format(parseLocalDate(selectedParent.close_date), "d 'de' MMM", { locale: es })}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-muted-foreground">Fecha de vencimiento</dt>
+              <dd className="font-semibold text-foreground tabular-nums">
+                {format(parseLocalDate(selectedParent.due_date), "d 'de' MMM", { locale: es })}
+              </dd>
+            </div>
+            {selectedParent.credit_limit != null && (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Límite de crédito</dt>
+                <dd className="font-semibold text-foreground tabular-nums">
+                  {formatCurrency(selectedParent.credit_limit)}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+
       {/* Banco / Entidad — también se usa como nombre de la tarjeta */}
+      {!isExtension && (
       <div className="space-y-1.5">
         <Label htmlFor="bank">Banco o entidad</Label>
         <Input
@@ -254,8 +304,10 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           </p>
         )}
       </div>
+      )}
 
       {/* Tipo */}
+      {!isExtension && (
       <div className="space-y-1.5">
         <Label>Tipo de tarjeta</Label>
         <Select
@@ -276,6 +328,7 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         </Select>
         {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
       </div>
+      )}
 
       {/* Últimos 4 dígitos */}
       <div className="space-y-1.5">
@@ -304,7 +357,9 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
         />
       </div>
 
-      {/* Límite de crédito — bloqueado en adicionales */}
+      {!isExtension && (
+      <>
+      {/* Límite de crédito */}
       <div className="space-y-1.5">
         <Label htmlFor="credit_limit">
           Límite de crédito{" "}
@@ -389,6 +444,8 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
           />
         </div>
       </div>
+      </>
+      )}
 
       {/* Submit */}
       <Button

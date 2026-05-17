@@ -33,8 +33,8 @@ export function BottomNav() {
         <div className="relative flex flex-1 items-center justify-center">
           <Link
             href="/expenses/new"
-            aria-label="Nuevo consumo"
-            className="tap-target -mt-7 flex h-14 w-14 items-center justify-center rounded-full text-white gradient-primary shadow-brand-glow ring-4 ring-card transition-transform active:scale-95"
+            aria-label="Nuevo gasto"
+            className="tap-target -mt-7 flex h-14 w-14 items-center justify-center rounded-[20px] text-white gradient-primary shadow-brand-glow ring-4 ring-card transition-transform active:scale-95"
           >
             <Plus className="h-6 w-6" strokeWidth={2.6} />
           </Link>

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     default: "Mis Tarjetas",
     template: "%s | Mis Tarjetas",
   },
-  description: "Gestión personal de tarjetas de crédito y consumos",
+  description: "Gestión personal de tarjetas de crédito y gastos",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

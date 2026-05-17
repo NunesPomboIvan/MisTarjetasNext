@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 
-export const metadata = { title: "Editar consumo" };
+export const metadata = { title: "Editar gasto" };
 
 interface EditExpensePageProps {
   params: Promise<{ id: string }>;
@@ -70,7 +70,7 @@ export default async function EditExpensePage({
           <h1 className="text-xl font-bold">
             {isInstallmentEdit
               ? `Editar cuota ${installmentIndex! + 1}/${expense.installments}`
-              : "Editar consumo"}
+              : "Editar gasto"}
           </h1>
           <p className="text-sm text-muted-foreground truncate max-w-[220px]">
             {expense.description}
@@ -85,7 +85,7 @@ export default async function EditExpensePage({
           <strong>
             {installmentIndex! + 1}/{expense.installments}
           </strong>{" "}
-          de este consumo. Al guardar podrás elegir si el cambio de importe aplica
+          de este gasto. Al guardar podrás elegir si el cambio de importe aplica
           solo a esta cuota o a todas.
         </div>
       )}

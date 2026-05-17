@@ -1,22 +1,29 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { SlidersHorizontal, Plus, ChevronRight, Search } from "lucide-react";
+import { Plus, ChevronRight, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
+import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
 import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
-import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
+import type { ExpenseWithCategory, Category } from "@/lib/supabase/database.types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    category_id?: string;
+    date_from?: string;
+    date_to?: string;
+    cuotas?: string;
+  }>;
 }
 
 export default async function CardMovimientosPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { q } = await searchParams;
+  const { q, category_id, date_from, date_to, cuotas } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -37,9 +44,26 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
     .order("expense_date", { ascending: false });
 
   if (q) query = query.ilike("description", `%${q}%`);
+  if (category_id) query = query.eq("category_id", category_id);
+  if (date_from) query = query.gte("expense_date", date_from);
+  if (date_to) query = query.lte("expense_date", date_to);
+  if (cuotas === "multi") query = query.gt("installments", 1);
+  if (cuotas === "single") query = query.eq("installments", 1);
 
-  const { data: expenses } = await query;
+  const [{ data: expenses }, categoriesResult] = await Promise.all([
+    query,
+    supabase
+      .from("categories")
+      .select("id, name, emoji")
+      .or(`user_id.eq.${user!.id},user_id.is.null`)
+      .order("is_preset", { ascending: false })
+      .order("name"),
+  ]);
   const all = (expenses ?? []) as ExpenseWithCategory[];
+  const filterCategories = (categoriesResult.data ?? []) as Pick<
+    Category,
+    "id" | "name" | "emoji"
+  >[];
 
   const currentPeriod = getCurrentPeriod(card);
   const pendientes = all.filter((e) => expenseFallsInPeriod(e, currentPeriod));
@@ -62,15 +86,20 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
-        <button
-          aria-label="Filtros"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground/70"
-        >
-          <SlidersHorizontal className="h-[18px] w-[18px]" />
-        </button>
+        <MovimientosFilters
+          basePath={`/cards/${id}/movimientos`}
+          categories={filterCategories.map((c) => ({
+            id: c.id,
+            label: `${c.emoji ?? ""} ${c.name}`.trim(),
+          }))}
+        />
       </div>
 
       <form action={`/cards/${id}/movimientos`} method="get">
+        {category_id && <input type="hidden" name="category_id" value={category_id} />}
+        {date_from && <input type="hidden" name="date_from" value={date_from} />}
+        {date_to && <input type="hidden" name="date_to" value={date_to} />}
+        {cuotas && <input type="hidden" name="cuotas" value={cuotas} />}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -87,8 +116,8 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
         <EmptyState
           icon={<span>🧾</span>}
           title="Sin movimientos"
-          description="Agregá un consumo para que aparezca acá"
-          action={{ label: "Agregar consumo", href: `/expenses/new?card_id=${id}` }}
+          description="Agregá un gasto para que aparezca acá"
+          action={{ label: "Agregar gasto", href: `/expenses/new?card_id=${id}` }}
         />
       ) : (
         <div className="space-y-5">
@@ -151,7 +180,7 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
       <Link
         href={`/expenses/new?card_id=${id}`}
         aria-label="Nuevo movimiento"
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-[20px] gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} />
       </Link>
@@ -187,7 +216,7 @@ function CardExpenseRow({
 
   return (
     <Link
-      href={`/expenses/${expense.id}/edit?${params.toString()}`}
+      href={`/expenses/${expense.id}?${params.toString()}`}
       className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
       style={{ borderBottom: isLast ? "none" : "1px solid var(--border)" }}
     >

@@ -94,7 +94,7 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         <EmptyState
           icon={<span>📊</span>}
           title="Sin datos suficientes"
-          description="Agregá algunos consumos para ver tus estadísticas"
+          description="Agregá algunos gastos para ver tus estadísticas"
         />
       </div>
     );

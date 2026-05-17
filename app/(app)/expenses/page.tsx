@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Search, SlidersHorizontal, Plus, ChevronRight } from "lucide-react";
+import { Search, Plus, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
+import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
 import { formatDate, capitalize } from "@/lib/utils";
-import type { ExpenseWithAll } from "@/lib/supabase/database.types";
+import type { ExpenseWithAll, Card, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Movimientos" };
 
@@ -17,6 +18,9 @@ export default async function ExpensesPage({
   searchParams: Promise<{
     card_id?: string;
     category_id?: string;
+    date_from?: string;
+    date_to?: string;
+    cuotas?: string;
     q?: string;
   }>;
 }) {
@@ -33,10 +37,38 @@ export default async function ExpensesPage({
 
   if (filters.card_id) query = query.eq("card_id", filters.card_id);
   if (filters.category_id) query = query.eq("category_id", filters.category_id);
+  if (filters.date_from) query = query.gte("expense_date", filters.date_from);
+  if (filters.date_to) query = query.lte("expense_date", filters.date_to);
+  if (filters.cuotas === "multi") query = query.gt("installments", 1);
+  if (filters.cuotas === "single") query = query.eq("installments", 1);
   if (filters.q) query = query.ilike("description", `%${filters.q}%`);
 
-  const { data: expensesData } = await query;
+  const [{ data: expensesData }, cardsResult, categoriesResult] =
+    await Promise.all([
+      query,
+      supabase
+        .from("cards")
+        .select("id, name, last_four")
+        .eq("user_id", user!.id)
+        .eq("archived", false)
+        .order("name"),
+      supabase
+        .from("categories")
+        .select("id, name, emoji")
+        .or(`user_id.eq.${user!.id},user_id.is.null`)
+        .order("is_preset", { ascending: false })
+        .order("name"),
+    ]);
+
   const expenses = (expensesData ?? []) as ExpenseWithAll[];
+  const filterCards = (cardsResult.data ?? []) as Pick<
+    Card,
+    "id" | "name" | "last_four"
+  >[];
+  const filterCategories = (categoriesResult.data ?? []) as Pick<
+    Category,
+    "id" | "name" | "emoji"
+  >[];
 
   // Agrupar por mes
   const grouped = expenses.reduce<Record<string, ExpenseWithAll[]>>((acc, e) => {
@@ -52,16 +84,26 @@ export default async function ExpensesPage({
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
-        <button
-          aria-label="Filtros"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground/70"
-        >
-          <SlidersHorizontal className="h-[18px] w-[18px]" />
-        </button>
+        <MovimientosFilters
+          basePath="/expenses"
+          cards={filterCards.map((c) => ({
+            id: c.id,
+            label: `${c.name} ····${c.last_four}`,
+          }))}
+          categories={filterCategories.map((c) => ({
+            id: c.id,
+            label: `${c.emoji ?? ""} ${c.name}`.trim(),
+          }))}
+        />
       </div>
 
       {/* Search bar */}
       <form action="/expenses" method="get">
+        {filters.card_id && <input type="hidden" name="card_id" value={filters.card_id} />}
+        {filters.category_id && <input type="hidden" name="category_id" value={filters.category_id} />}
+        {filters.date_from && <input type="hidden" name="date_from" value={filters.date_from} />}
+        {filters.date_to && <input type="hidden" name="date_to" value={filters.date_to} />}
+        {filters.cuotas && <input type="hidden" name="cuotas" value={filters.cuotas} />}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -78,8 +120,8 @@ export default async function ExpensesPage({
         <EmptyState
           icon={<span>🧾</span>}
           title="Sin movimientos"
-          description="Empezá registrando tu primer consumo"
-          action={{ label: "Agregar consumo", href: "/expenses/new" }}
+          description="Empezá registrando tu primer gasto"
+          action={{ label: "Agregar gasto", href: "/expenses/new" }}
         />
       ) : (
         <div className="space-y-5">
@@ -118,7 +160,7 @@ export default async function ExpensesPage({
       <Link
         href="/expenses/new"
         aria-label="Nuevo movimiento"
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-[20px] gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} />
       </Link>
@@ -136,7 +178,9 @@ function ExpenseRow({
   const cat = expense.category;
   return (
     <Link
-      href={`/expenses/${expense.id}/edit`}
+      href={`/expenses/${expense.id}${
+        expense.card_id ? `?card_id=${expense.card_id}` : ""
+      }`}
       className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
       style={{ borderBottom: isLast ? "none" : "1px solid var(--border)" }}
     >

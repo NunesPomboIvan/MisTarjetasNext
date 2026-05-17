@@ -28,7 +28,7 @@ export function CardList({ cards }: CardListProps) {
       <EmptyState
         icon={<span>💳</span>}
         title="Todavía no tenés tarjetas"
-        description="Agregá tu primera tarjeta para empezar a registrar consumos"
+        description="Agregá tu primera tarjeta para empezar a registrar gastos"
         action={{ label: "Agregar tarjeta", href: "/cards/new" }}
       />
     );

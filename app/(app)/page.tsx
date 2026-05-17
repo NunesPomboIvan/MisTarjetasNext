@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -7,7 +6,7 @@ import { ProximosPagosRotator } from "@/components/home/proximos-pagos-rotator";
 import { LocalUserName } from "@/components/shared/local-user";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
-import { getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
+import { getNextDuePeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -32,9 +31,10 @@ export default async function DashboardPage() {
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
 
-  // Totales por tarjeta (período actual)
+  // Totales por tarjeta: tomamos el período cuyo vencimiento es el inmediato
+  // siguiente a hoy (el saldo que toca pagar próximamente).
   const cardSummaries = cards.map((card) => {
-    const period = getCurrentPeriod(card);
+    const period = getNextDuePeriod(card);
     const periodExpenses = allExpenses.filter(
       (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
     );
@@ -78,22 +78,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* Header personalizado */}
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {greeting(hour)}
-          </p>
-          <h1 className="mt-0.5 truncate font-display text-[24px] font-bold tracking-tight text-foreground">
-            Hola, <LocalUserName fallback={displayName || "Usuario"} /> 👋
-          </h1>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground">{todayLabel}</p>
-        </div>
-        <button
-          aria-label="Notificaciones"
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:text-foreground"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+      <header className="min-w-0">
+        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {greeting(hour)}
+        </p>
+        <h1 className="mt-0.5 truncate font-display text-[24px] font-bold tracking-tight text-foreground">
+          Hola, <LocalUserName fallback={displayName || "Usuario"} /> 👋
+        </h1>
+        <p className="mt-0.5 text-[12.5px] text-muted-foreground">{todayLabel}</p>
       </header>
 
       {cards.length === 0 ? (
@@ -158,7 +150,7 @@ export default async function DashboardPage() {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-[16px] font-semibold text-foreground">
-                  Últimos consumos
+                  Últimos gastos
                 </h2>
                 <Link href="/expenses" className="text-[13px] font-semibold text-primary">
                   Ver todos

@@ -223,6 +223,27 @@ export function getPeriods(
 }
 
 /**
+ * Período cuyo vencimiento es el inmediato siguiente a la fecha de hoy
+ * (incluye el que vence hoy). Recorre períodos alrededor del actual y elige
+ * el de menor `due` cuyo vencimiento no haya pasado todavía.
+ *
+ * Ej: hoy 10/may; si la tarjeta vence el 6 de junio, devuelve el período
+ * cuyo saldo se paga el 6/jun (aunque su cierre sea posterior a hoy).
+ *
+ * Si todos los vencimientos ya pasaron, cae al período actual.
+ */
+export function getNextDuePeriod(card: CardForPeriod): Period {
+  const todayStart = startOfDay(new Date());
+  let best: Period | null = null;
+  for (let offset = -6; offset <= 6; offset++) {
+    const p = getPeriodByOffset(card, offset);
+    if (isBefore(p.due, todayStart)) continue; // ya venció
+    if (!best || isBefore(p.due, best.due)) best = p;
+  }
+  return best ?? getCurrentPeriod(card);
+}
+
+/**
  * Determina si la cuota `installmentIndex` (0-based) de un gasto cae dentro del período.
  * Si no se pasa installmentIndex, retorna true si CUALQUIER cuota cae en el período.
  */

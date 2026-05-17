@@ -35,10 +35,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { DescriptionAutocomplete } from "./description-autocomplete";
+import { InstallmentPresets } from "./installment-presets";
 import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
-const CUOTA_PRESETS = [1, 3, 6, 12] as const;
 
 interface NewExpenseHeroProps {
   cards: Card[];
@@ -63,7 +63,6 @@ export function NewExpenseHero({
     total_amount: number;
     payload: ExpenseFormData;
   } | null>(null);
-  const [otherCuotaActive, setOtherCuotaActive] = React.useState(false);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -140,7 +139,7 @@ export function NewExpenseHero({
 
       if (result.success) {
         setLastCardId(payload.card_id);
-        toast.success("Consumo registrado");
+        toast.success("Gasto registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
         return;
@@ -163,7 +162,7 @@ export function NewExpenseHero({
     return (
       <div className="space-y-4 py-8 text-center">
         <p className="text-sm text-muted-foreground">
-          Necesitás al menos una tarjeta para registrar consumos.
+          Necesitás al menos una tarjeta para registrar gastos.
         </p>
         <Button
           className="gradient-primary shadow-brand"
@@ -186,7 +185,7 @@ export function NewExpenseHero({
           >
             Cancelar
           </Link>
-          <h1 className="text-[15px] font-semibold tracking-tight">Nuevo consumo</h1>
+          <h1 className="text-[15px] font-semibold tracking-tight">Nuevo gasto</h1>
           <Button
             type="submit"
             disabled={isPending}
@@ -264,81 +263,21 @@ export function NewExpenseHero({
           </div>
 
           {/* Cuotas */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="px-4 py-3">
             <span className="text-sm font-medium text-foreground">Cuotas</span>
-            <Controller
-              control={control}
-              name="installments"
-              render={({ field }) => {
-                const isPreset = CUOTA_PRESETS.includes(
-                  field.value as (typeof CUOTA_PRESETS)[number]
-                );
-                const otherActive = otherCuotaActive && !isPreset;
-                return (
-                  <div className="flex items-center gap-1.5">
-                    {CUOTA_PRESETS.map((n) => {
-                      const active = !otherActive && field.value === n;
-                      return (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => {
-                            setOtherCuotaActive(false);
-                            field.onChange(n);
-                          }}
-                          className={cn(
-                            "flex h-9 min-w-[2.4rem] items-center justify-center rounded-full px-3 text-[13px] font-semibold tabular-nums transition-all",
-                            active
-                              ? "gradient-primary text-white shadow-sm"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                          )}
-                        >
-                          {n}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtherCuotaActive(true);
-                        if (
-                          CUOTA_PRESETS.includes(
-                            field.value as (typeof CUOTA_PRESETS)[number]
-                          )
-                        ) {
-                          field.onChange(2);
-                        }
-                      }}
-                      className={cn(
-                        "flex h-9 items-center justify-center rounded-full px-3 text-[13px] font-semibold transition-all",
-                        otherActive
-                          ? "gradient-primary text-white shadow-sm"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-                      )}
-                      aria-label="Otra cantidad de cuotas"
-                    >
-                      …
-                    </button>
-                    {otherActive && (
-                      <Input
-                        type="number"
-                        min={1}
-                        max={120}
-                        inputMode="numeric"
-                        value={Number.isFinite(field.value) ? field.value : ""}
-                        onChange={(e) => {
-                          const n = parseInt(e.target.value, 10);
-                          if (Number.isFinite(n))
-                            field.onChange(Math.max(1, Math.min(120, n)));
-                        }}
-                        className="h-9 w-16 text-center"
-                        autoFocus
-                      />
-                    )}
-                  </div>
-                );
-              }}
-            />
+            <div className="mt-2">
+              <Controller
+                control={control}
+                name="installments"
+                render={({ field }) => (
+                  <InstallmentPresets
+                    value={field.value ?? 1}
+                    onChange={field.onChange}
+                    invalid={!!errors.installments}
+                  />
+                )}
+              />
+            </div>
           </div>
         </div>
 
@@ -386,7 +325,7 @@ export function NewExpenseHero({
           <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
             {/* Fecha */}
             <div className="space-y-1.5">
-              <Label htmlFor="ne-date">Fecha del consumo</Label>
+              <Label htmlFor="ne-date">Fecha del gasto</Label>
               <Input
                 id="ne-date"
                 type="date"
@@ -505,9 +444,9 @@ export function NewExpenseHero({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Es un consumo distinto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Es un gasto distinto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Detectamos un consumo casi idéntico ya registrado:{" "}
+              Detectamos un gasto casi idéntico ya registrado:{" "}
               <strong>{duplicate?.description}</strong> por{" "}
               <strong>{formatCurrency(duplicate?.total_amount ?? 0)}</strong> en la misma
               tarjeta y fecha. ¿Querés guardarlo igual?
@@ -597,6 +536,17 @@ function CardSelector({
                 )}
               </button>
             ))}
+            <Link
+              href="/cards/new"
+              className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left text-primary transition-colors active:bg-muted/60"
+            >
+              <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                <Plus className="h-4 w-4" />
+              </span>
+              <span className="flex-1 text-[15px] font-semibold">
+                Agregar tarjeta nueva
+              </span>
+            </Link>
           </div>
         </SheetContent>
       </Sheet>

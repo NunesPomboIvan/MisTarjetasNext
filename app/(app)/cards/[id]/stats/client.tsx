@@ -79,7 +79,7 @@ export function CardStatsClient({ expenses }: CardStatsClientProps) {
       <EmptyState
         icon={<span>📊</span>}
         title="Sin datos suficientes"
-        description="Agregá algunos consumos para ver tus estadísticas"
+        description="Agregá algunos gastos para ver tus estadísticas"
       />
     );
   }

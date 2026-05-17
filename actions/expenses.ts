@@ -171,7 +171,7 @@ export async function updateInstallmentAmount(
     .eq("user_id", user.id)
     .single();
 
-  if (fetchError || !expense) return { success: false, error: "Consumo no encontrado" };
+  if (fetchError || !expense) return { success: false, error: "Gasto no encontrado" };
 
   const current: Record<string, number> =
     (expense.installment_amounts as Record<string, number>) ?? {};
@@ -237,7 +237,7 @@ export async function cloneExpense(id: string): Promise<ActionResult> {
     .single();
 
   if (fetchError || !original) {
-    return { success: false, error: "Consumo no encontrado" };
+    return { success: false, error: "Gasto no encontrado" };
   }
 
   const today = new Date().toISOString().slice(0, 10);

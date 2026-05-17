@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
 
-export const metadata = { title: "Nuevo consumo" };
+export const metadata = { title: "Nuevo gasto" };
 
 export default async function NewExpensePage({
   searchParams,

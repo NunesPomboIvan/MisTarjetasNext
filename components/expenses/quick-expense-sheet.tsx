@@ -165,7 +165,7 @@ export function QuickExpenseSheet({
 
       if (result.success) {
         setLastCardId(payload.card_id);
-        toast.success("Consumo registrado");
+        toast.success("Gasto registrado");
         onOpenChange(false);
         router.refresh();
         return;
@@ -191,7 +191,7 @@ export function QuickExpenseSheet({
           <SheetHeader>
             <SheetTitle>Sin tarjetas</SheetTitle>
             <SheetDescription>
-              Agregá una tarjeta antes de registrar consumos.
+              Agregá una tarjeta antes de registrar gastos.
             </SheetDescription>
           </SheetHeader>
           <div className="p-4">
@@ -225,7 +225,7 @@ export function QuickExpenseSheet({
 
           <SheetHeader className="px-4 pt-2 pb-0">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-lg">Nuevo consumo</SheetTitle>
+              <SheetTitle className="text-lg">Nuevo gasto</SheetTitle>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -526,9 +526,9 @@ export function QuickExpenseSheet({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Es un consumo distinto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Es un gasto distinto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Detectamos un consumo casi idéntico ya registrado:{" "}
+              Detectamos un gasto casi idéntico ya registrado:{" "}
               <strong>{duplicate?.description}</strong> por{" "}
               <strong>{formatCurrency(duplicate?.total_amount ?? 0)}</strong> en la misma tarjeta y
               fecha. ¿Querés guardarlo igual?
