@@ -58,6 +58,8 @@ interface CardFormProps {
   card?: Card;
   /** Lista de tarjetas titulares para el selector de extensión */
   availableParents?: ParentCardOption[];
+  /** Si se crea desde otro flujo (ej: carga de consumo), a dónde volver con la tarjeta nueva */
+  returnTo?: string;
 }
 
 /** Convierte un Date a YYYY-MM-DD usando hora local */
@@ -65,7 +67,7 @@ function toLocalDateStr(d: Date): string {
   return format(d, "yyyy-MM-dd");
 }
 
-export function CardForm({ card, availableParents = [] }: CardFormProps) {
+export function CardForm({ card, availableParents = [], returnTo }: CardFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -154,7 +156,14 @@ export function CardForm({ card, availableParents = [] }: CardFormProps) {
 
       if (result.success) {
         toast.success(card ? "Tarjeta actualizada" : "Tarjeta creada");
-        router.push(result.id ? `/cards/${result.id}` : "/cards");
+        if (!card && returnTo) {
+          const sep = returnTo.includes("?") ? "&" : "?";
+          router.push(
+            result.id ? `${returnTo}${sep}card_id=${result.id}` : returnTo
+          );
+        } else {
+          router.push(result.id ? `/cards/${result.id}` : "/cards");
+        }
       } else {
         toast.error(result.error);
       }

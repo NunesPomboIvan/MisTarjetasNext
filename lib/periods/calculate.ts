@@ -122,9 +122,12 @@ function buildPeriod(
   const prevClose = setDayOfMonth(prev.year, prev.month, closeDay);
   const start = startOfDay(addDays(prevClose, 1));
 
-  // due = due_day del mes siguiente al cierre
+  // due = due_day del mes siguiente al cierre.
+  // +1 día: la fecha real de pago del banco es un día después del due_day
+  // almacenado. Se aplica acá para que todas las vistas (tarjeta, próximos
+  // pagos, días para vencer) muestren la misma fecha.
   const next = nextYearMonth(closeYear, closeMonth);
-  const due = setDayOfMonth(next.year, next.month, dueDay);
+  const due = addDays(setDayOfMonth(next.year, next.month, dueDay), 1);
 
   // Status (comparamos inicio del día para consistencia)
   const nowDay = startOfDay(now);

@@ -543,7 +543,7 @@ function CardSelector({
               </button>
             ))}
             <Link
-              href="/cards/new"
+              href={`/cards/new?return=${encodeURIComponent("/expenses/new")}`}
               className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left text-primary transition-colors active:bg-muted/60"
             >
               <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">

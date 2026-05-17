@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
 import { WalletCard } from "@/components/cards/wallet-card";
+import { CardPressWrapper } from "@/components/cards/card-press-wrapper";
 import type { Card } from "@/lib/supabase/database.types";
 
 export interface HomeCardItem {
@@ -115,10 +115,11 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
                 opacity: multi && !isActive ? 0.7 : 1,
               }}
             >
-              <Link
+              <CardPressWrapper
                 href={`/cards/${card.id}`}
-                className="block active:scale-[0.985]"
-                style={{ transition: "transform 0.15s ease" }}
+                cardId={card.id}
+                cardName={card.bank || card.name}
+                className="block transition-transform duration-150 active:scale-[0.985]"
               >
                 <WalletCard
                   card={card}
@@ -127,7 +128,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
                   closeLabel={closeLabel}
                   dueLabel={dueLabel}
                 />
-              </Link>
+              </CardPressWrapper>
             </div>
           );
         })}
