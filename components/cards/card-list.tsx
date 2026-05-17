@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Archive } from "lucide-react";
 import { WalletCard } from "./wallet-card";
+import { CardPressWrapper } from "./card-press-wrapper";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
@@ -68,8 +68,10 @@ function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
         const isLast = i === cards.length - 1;
         return (
           <div key={card.id}>
-            <Link
+            <CardPressWrapper
               href={`/cards/${card.id}`}
+              cardId={card.id}
+              cardName={card.bank || card.name}
               className="block transition-transform duration-150 active:scale-[0.985]"
             >
               <WalletCard
@@ -78,7 +80,7 @@ function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
                 closeLabel={formatDate(period.end, "d MMM")}
                 dueLabel={formatDate(period.due, "d MMM")}
               />
-            </Link>
+            </CardPressWrapper>
             {!isLast && (
               <div className="flex justify-center py-2.5">
                 <div className="h-px w-12 rounded-full bg-border/50" />

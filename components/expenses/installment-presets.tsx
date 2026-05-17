@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const PRESETS = [1, 3, 6, 12, 18, 24] as const;
+const PRESETS = [1, 3, 6, 12, 18] as const;
 
 interface InstallmentPresetsProps {
   value: number;
@@ -83,7 +83,7 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
               : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
           )}
         >
-          Otra
+          + cuotas
         </button>
       </div>
 

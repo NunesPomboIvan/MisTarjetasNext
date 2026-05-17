@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CategoryDonut } from "@/components/stats/category-donut";
-import { ExpenseLineChart } from "@/components/stats/expense-line-chart";
+import { SpendBars } from "@/components/stats/spend-bars";
 import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
+import { es } from "date-fns/locale";
 import { BackButton } from "@/components/shared/back-button";
 import type { Expense, Category, Card } from "@/lib/supabase/database.types";
 
@@ -68,20 +69,24 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
     return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
   }, [filtered]);
 
-  const lineData = useMemo(() => {
-    const byDay = new Map<string, number>();
+  const byDay = range === "month";
+  const barData = useMemo(() => {
+    const map = new Map<string, number>();
     for (const e of filtered) {
-      const key = e.expense_date;
-      byDay.set(key, (byDay.get(key) ?? 0) + e.installment_amount);
+      const d = new Date(e.expense_date + "T00:00:00");
+      const key = byDay ? e.expense_date : format(d, "yyyy-MM");
+      map.set(key, (map.get(key) ?? 0) + e.installment_amount);
     }
-    return Array.from(byDay.entries())
+    return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, amount]) => ({
-        date,
-        label: format(new Date(date + "T00:00:00"), "d MMM"),
+      .map(([key, amount]) => ({
+        key,
+        label: byDay
+          ? format(new Date(key + "T00:00:00"), "d/M")
+          : format(new Date(key + "-01T00:00:00"), "MMM", { locale: es }),
         amount,
       }));
-  }, [filtered]);
+  }, [filtered, byDay]);
 
   if (expenses.length === 0) {
     return (
@@ -137,15 +142,17 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         <CategoryDonut categories={byCategory} total={total} />
       </section>
 
-      {/* Evolución */}
+      {/* Gasto por período */}
       <section className="rounded-[20px] border border-border bg-card p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-[14px] font-semibold text-foreground">Evolución de consumos</p>
+        <div className="mb-1 flex items-center justify-between">
+          <p className="text-[14px] font-semibold text-foreground">
+            {byDay ? "Gasto por día" : "Gasto por mes"}
+          </p>
           <span className="text-[12px] text-muted-foreground">
             {RANGES.find((r) => r.value === range)?.label}
           </span>
         </div>
-        <ExpenseLineChart data={lineData} />
+        <SpendBars data={barData} />
       </section>
 
       {/* Total */}

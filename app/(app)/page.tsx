@@ -3,10 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { ProximosPagosRotator } from "@/components/home/proximos-pagos-rotator";
-import { LocalUserName } from "@/components/shared/local-user";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
-import { getNextDuePeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -31,15 +30,26 @@ export default async function DashboardPage() {
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
 
-  // Totales por tarjeta: tomamos el período cuyo vencimiento es el inmediato
-  // siguiente a hoy (el saldo que toca pagar próximamente).
+  // Para "Próximos pagos" y "Próximo a pagar": usamos getNextDuePeriod
+  // (el período cuyo vencimiento no pasó aún).
+  // Para la tarjeta-imagen del carousel: usamos getCurrentPeriod
+  // (el período actual según la fecha de cierre), para que coincida con
+  // lo que muestra el detalle de tarjeta.
   const cardSummaries = cards.map((card) => {
     const period = getNextDuePeriod(card);
+    const currentPeriod = getCurrentPeriod(card);
+
     const periodExpenses = allExpenses.filter(
       (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
     );
     const total = periodExpenses.reduce((s, e) => s + e.installment_amount, 0);
-    return { card, period, total };
+
+    const currentExpenses = allExpenses.filter(
+      (e) => e.card_id === card.id && expenseFallsInPeriod(e, currentPeriod)
+    );
+    const currentTotal = currentExpenses.reduce((s, e) => s + e.installment_amount, 0);
+
+    return { card, period, total, currentPeriod, currentTotal };
   });
 
   const saldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
@@ -64,14 +74,6 @@ export default async function DashboardPage() {
   const cardMap = Object.fromEntries(cards.map((c) => [c.id, c.bank || c.name]));
   const recentExpenses = (allExpenses as ExpenseWithCategory[]).slice(0, 15);
 
-  // Nombre para el saludo
-  const rawName =
-    (user?.user_metadata?.full_name as string | undefined) ??
-    (user?.user_metadata?.name as string | undefined) ??
-    (user?.email?.split("@")[0] ?? "");
-  const firstName = rawName.split(/[\s._-]/)[0] ?? "";
-  const displayName = firstName ? capitalize(firstName) : "";
-
   const hour = today.getHours();
   const todayLabel = capitalize(formatDate(today, "EEEE d 'de' MMMM"));
 
@@ -79,13 +81,10 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       {/* Header personalizado */}
       <header className="min-w-0">
-        <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          {greeting(hour)}
-        </p>
-        <h1 className="mt-0.5 truncate font-display text-[24px] font-bold tracking-tight text-foreground">
-          Hola, <LocalUserName fallback={displayName || "Usuario"} /> 👋
+        <h1 className="font-display text-[26px] font-bold tracking-tight text-foreground">
+          {greeting(hour)} 👋
         </h1>
-        <p className="mt-0.5 text-[12.5px] text-muted-foreground">{todayLabel}</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">{todayLabel}</p>
       </header>
 
       {cards.length === 0 ? (
@@ -99,7 +98,7 @@ export default async function DashboardPage() {
         <>
           {/* Card resumen */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <p className="text-[12px] font-medium text-muted-foreground">Saldo total</p>
+            <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
             <Money
               amount={saldoTotal}
               className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
@@ -119,12 +118,12 @@ export default async function DashboardPage() {
 
             <HomeCardsCarousel
               items={[...cardSummaries]
-                .sort((a, b) => b.total - a.total)
-                .map(({ card, total, period }) => ({
+                .sort((a, b) => b.currentTotal - a.currentTotal)
+                .map(({ card, currentTotal, currentPeriod }) => ({
                   card,
-                  total,
-                  closeLabel: formatDate(period.end, "d MMM"),
-                  dueLabel: formatDate(period.due, "d MMM"),
+                  total: currentTotal,
+                  closeLabel: formatDate(currentPeriod.end, "d MMM"),
+                  dueLabel: formatDate(currentPeriod.due, "d MMM"),
                 }))}
             />
           </section>

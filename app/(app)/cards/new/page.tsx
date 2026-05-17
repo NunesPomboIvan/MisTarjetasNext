@@ -5,7 +5,16 @@ import { CardForm } from "@/components/cards/card-form";
 
 export const metadata = { title: "Nueva tarjeta" };
 
-export default async function NewCardPage() {
+export default async function NewCardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ return?: string }>;
+}) {
+  const { return: returnParam } = await searchParams;
+  const returnTo =
+    returnParam && returnParam.startsWith("/") ? returnParam : undefined;
+  const backHref = returnTo ?? "/cards";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -21,7 +30,7 @@ export default async function NewCardPage() {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <Link
-          href="/cards"
+          href={backHref}
           className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -33,7 +42,7 @@ export default async function NewCardPage() {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <CardForm availableParents={cards ?? []} />
+        <CardForm availableParents={cards ?? []} returnTo={returnTo} />
       </div>
     </div>
   );
