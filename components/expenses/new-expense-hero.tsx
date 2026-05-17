@@ -11,6 +11,7 @@ import { ChevronDown, Loader2, Plus } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import { createExpense } from "@/actions/expenses";
+import { createCategory } from "@/actions/categories";
 import { useLastCard } from "@/lib/hooks/use-last-card";
 
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,7 @@ export function NewExpenseHero({
     total_amount: number;
     payload: ExpenseFormData;
   } | null>(null);
+  const [localCategories, setLocalCategories] = React.useState<Category[]>(categories);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -301,9 +303,13 @@ export function NewExpenseHero({
             name="category_id"
             render={({ field }) => (
               <CategoryGrid
-                categories={categories}
+                categories={localCategories}
                 value={field.value ?? null}
                 onChange={field.onChange}
+                onCategoryCreated={(cat) => {
+                  setLocalCategories((prev) => [...prev, cat]);
+                  field.onChange(cat.id);
+                }}
               />
             )}
           />
@@ -668,71 +674,192 @@ function BorderlessDescription({ value, onChange, invalid }: BorderlessDescripti
   );
 }
 
+const COLOR_PAIRS = [
+  { bg: "#fef3c7", text: "#92400e" },
+  { bg: "#dbeafe", text: "#1e40af" },
+  { bg: "#dcfce7", text: "#166534" },
+  { bg: "#fce7f3", text: "#9d174d" },
+  { bg: "#f3e8ff", text: "#6b21a8" },
+  { bg: "#ffedd5", text: "#9a3412" },
+  { bg: "#e0f2fe", text: "#075985" },
+  { bg: "#f1f5f9", text: "#334155" },
+] as const;
+
 interface CategoryGridProps {
   categories: Category[];
   value: string | null;
   onChange: (id: string | null) => void;
+  onCategoryCreated?: (cat: Category) => void;
 }
 
-function CategoryGrid({ categories, value, onChange }: CategoryGridProps) {
+function CategoryGrid({ categories, value, onChange, onCategoryCreated }: CategoryGridProps) {
   const presets = categories.filter((c) => c.is_preset);
   const customs = categories.filter((c) => !c.is_preset);
   const ordered = [...presets, ...customs];
 
+  const [newOpen, setNewOpen] = React.useState(false);
+  const [newEmoji, setNewEmoji] = React.useState("✨");
+  const [newName, setNewName] = React.useState("");
+  const [newColor, setNewColor] = React.useState<(typeof COLOR_PAIRS)[number]>(COLOR_PAIRS[0]);
+  const [newError, setNewError] = React.useState("");
+  const [isPending, startTransition] = React.useTransition();
+
+  function handleCreate() {
+    if (!newName.trim()) { setNewError("El nombre es requerido"); return; }
+    setNewError("");
+    startTransition(async () => {
+      const result = await createCategory({
+        name: newName.trim(),
+        emoji: newEmoji || "✨",
+        color_bg: newColor.bg,
+        color_text: newColor.text,
+      });
+      if (result.success && result.category) {
+        onCategoryCreated?.(result.category as Category);
+        setNewOpen(false);
+        setNewName("");
+        setNewEmoji("✨");
+        setNewColor(COLOR_PAIRS[0]);
+      } else {
+        setNewError(("error" in result ? result.error : undefined) ?? "No se pudo crear");
+      }
+    });
+  }
+
   return (
-    <div className="grid grid-cols-4 gap-2">
-      {ordered.map((cat) => {
-        const isSelected = value === cat.id;
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => onChange(isSelected ? null : cat.id)}
-            className={cn(
-              "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-center transition-all",
-              isSelected
-                ? "shadow-sm"
-                : "border-border hover:border-primary/40 hover:bg-card/80"
-            )}
-            style={
-              isSelected
-                ? {
-                    borderColor: cat.color_text,
-                    borderWidth: "1.5px",
-                    backgroundColor: cat.color_bg + "55",
-                  }
-                : undefined
-            }
-          >
-            <span
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
-              style={{ backgroundColor: cat.color_bg }}
-            >
-              {cat.emoji}
-            </span>
-            <span
+    <>
+      <div className="grid grid-cols-4 gap-2">
+        {ordered.map((cat) => {
+          const isSelected = value === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onChange(isSelected ? null : cat.id)}
               className={cn(
-                "text-[11.5px] font-semibold leading-tight",
-                !isSelected && "text-foreground"
+                "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-center transition-all",
+                isSelected
+                  ? "shadow-sm"
+                  : "border-border hover:border-primary/40 hover:bg-card/80"
               )}
-              style={isSelected ? { color: cat.color_text } : undefined}
+              style={
+                isSelected
+                  ? {
+                      borderColor: cat.color_text,
+                      borderWidth: "1.5px",
+                      backgroundColor: cat.color_bg + "55",
+                    }
+                  : undefined
+              }
             >
-              {cat.name}
-            </span>
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
+                style={{ backgroundColor: cat.color_bg }}
+              >
+                {cat.emoji}
+              </span>
+              <span
+                className={cn(
+                  "text-[11.5px] font-semibold leading-tight",
+                  !isSelected && "text-foreground"
+                )}
+                style={isSelected ? { color: cat.color_text } : undefined}
+              >
+                {cat.name}
+              </span>
+            </button>
+          );
+        })}
+
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border bg-card/50 px-2 py-3 text-center text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <Plus className="h-5 w-5 rotate-45" />
+            <span className="text-[11.5px] font-medium">Quitar</span>
           </button>
-        );
-      })}
-      {/* Tile para limpiar selección si hay alguna activa */}
-      {value && (
+        )}
+
         <button
           type="button"
-          onClick={() => onChange(null)}
-          className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border bg-card/50 px-2 py-3 text-center text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          onClick={() => setNewOpen(true)}
+          className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-primary/40 bg-card/50 px-2 py-3 text-center text-primary transition-colors hover:border-primary hover:bg-primary/5"
         >
-          <Plus className="h-5 w-5 rotate-45" />
-          <span className="text-[11.5px] font-medium">Quitar</span>
+          <Plus className="h-5 w-5" />
+          <span className="text-[11.5px] font-medium">Nueva</span>
         </button>
-      )}
-    </div>
+      </div>
+
+      <Sheet open={newOpen} onOpenChange={setNewOpen}>
+        <SheetContent side="bottom" className="pb-safe">
+          <SheetHeader className="pb-3">
+            <SheetTitle>Nueva categoría</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 px-1 pb-2">
+            <div className="flex items-center gap-4">
+              <div
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
+                style={{ backgroundColor: newColor.bg }}
+              >
+                {newEmoji || "✨"}
+              </div>
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="nc-emoji">Emoji</Label>
+                <Input
+                  id="nc-emoji"
+                  value={newEmoji}
+                  onChange={(e) => setNewEmoji(e.target.value || "✨")}
+                  className="text-center text-xl"
+                  maxLength={4}
+                  placeholder="✨"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="nc-name">Nombre</Label>
+              <Input
+                id="nc-name"
+                placeholder="Ej: Mascota"
+                value={newName}
+                onChange={(e) => { setNewName(e.target.value); setNewError(""); }}
+                maxLength={30}
+                className={cn(newError && "border-destructive")}
+              />
+              {newError && <p className="text-xs text-destructive">{newError}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Color</Label>
+              <div className="flex gap-2.5">
+                {COLOR_PAIRS.map((pair, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setNewColor(pair)}
+                    className={cn(
+                      "h-8 w-8 rounded-full border-2 transition-transform",
+                      newColor === pair ? "scale-110 border-foreground shadow-sm" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: pair.bg }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              className="gradient-primary shadow-brand w-full"
+              onClick={handleCreate}
+              disabled={isPending}
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar categoría"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
