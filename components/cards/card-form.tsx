@@ -36,7 +36,7 @@ const CARD_TYPES = [
 ] as const;
 
 const COLOR_PRESETS = [
-  "#f97316", "#ef4444", "#eab308", "#22c55e",
+  "#f97316", "#ef4444", "#eab308", "#1a7a46",
   "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
 ];
 
