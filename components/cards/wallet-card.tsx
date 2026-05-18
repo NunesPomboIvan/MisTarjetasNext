@@ -171,7 +171,7 @@ export function WalletCard({
               <>
                 {bank && (
                   <div
-                    className="mb-0.5 text-[14px] font-bold uppercase"
+                    className="mb-0.5 text-[12px] font-bold uppercase"
                     style={{ color: fgMuted, letterSpacing: "0.15em" }}
                   >
                     {bank}
@@ -179,7 +179,7 @@ export function WalletCard({
                 )}
                 {(!bank || !sameAsBank) && name && (
                   <div
-                    className="text-[14px] font-bold uppercase"
+                    className="text-[12px] font-bold uppercase"
                     style={{ color: fgMuted, letterSpacing: "0.15em" }}
                   >
                     {name}
