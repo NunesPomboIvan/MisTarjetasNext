@@ -19,7 +19,12 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
-import { exportData, importData } from "@/actions/backup";
+import {
+  exportData,
+  importData,
+  exportExpensesCsv,
+  importExpensesCsv,
+} from "@/actions/backup";
 import { createClient } from "@/lib/supabase/client";
 import type { Category } from "@/lib/supabase/database.types";
 
@@ -129,6 +134,41 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
       const result = await importData(data);
       if (result.success) {
         toast.success("Datos importados correctamente");
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    } catch {
+      toast.error("Archivo inválido");
+    }
+    e.target.value = "";
+  }
+
+  async function handleExportCsv() {
+    const result = await exportExpensesCsv();
+    if (!result.success) return toast.error(result.error);
+    const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mis-tarjetas-consumos-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Consumos exportados");
+  }
+
+  async function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const result = await importExpensesCsv(text);
+      if (result.success) {
+        toast.success(
+          `${result.imported} consumos importados${
+            result.skipped ? ` · ${result.skipped} omitidos` : ""
+          }`
+        );
         router.refresh();
       } else {
         toast.error(result.error);
@@ -350,6 +390,34 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
         </div>
         <p className="text-xs text-muted-foreground">
           El backup incluye tarjetas, consumos y categorías. La importación no elimina datos existentes.
+        </p>
+
+        <Separator />
+
+        <p className="text-xs font-medium text-muted-foreground">
+          Consumos (Excel / CSV)
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar consumos (CSV)
+          </Button>
+          <label className="cursor-pointer">
+            <div className="flex h-9 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+              <Upload className="h-4 w-4" />
+              Importar consumos (CSV)
+            </div>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleImportCsv}
+            />
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          El CSV se abre en Excel. Para importar, la columna <strong>Tarjeta</strong>{" "}
+          debe coincidir con una tarjeta existente.
         </p>
       </section>
     </div>

@@ -54,7 +54,7 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
               invalid && !active && "border-destructive/50"
             )}
           >
-            {n === 1 ? "1 pago" : `${n}x`}
+            {n}
           </button>
         );
       })}

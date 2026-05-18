@@ -667,7 +667,7 @@ function BorderlessDescription({ value, onChange, invalid }: BorderlessDescripti
       <DescriptionAutocomplete
         value={value}
         onChange={onChange}
-        placeholder="Ej: Coto Caballito"
+        placeholder="Ingresá el comercio…"
         invalid={invalid}
       />
     </div>
@@ -760,27 +760,17 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
               </span>
               <span
                 className={cn(
-                  "text-[11.5px] font-semibold leading-tight",
+                  "line-clamp-2 w-full break-words text-[11.5px] font-semibold leading-tight",
                   !isSelected && "text-foreground"
                 )}
                 style={isSelected ? { color: cat.color_text } : undefined}
+                title={cat.name}
               >
                 {cat.name}
               </span>
             </button>
           );
         })}
-
-        {value && (
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-border bg-card/50 px-2 py-3 text-center text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            <Plus className="h-5 w-5 rotate-45" />
-            <span className="text-[11.5px] font-medium">Quitar</span>
-          </button>
-        )}
 
         <button
           type="button"

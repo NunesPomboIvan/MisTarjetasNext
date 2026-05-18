@@ -162,20 +162,35 @@ export function WalletCard({
       {/* TOP: nombre (izq) + logo de red (der) */}
       <div className="relative flex items-start justify-between gap-2">
         <div className="min-w-0">
-          {card.bank && (
-            <div
-              className="mb-0.5 text-[10px] font-bold uppercase"
-              style={{ color: fgMuted, letterSpacing: "0.15em" }}
-            >
-              {card.bank}
-            </div>
-          )}
-          <div
-            className="font-display text-[17px] font-semibold leading-tight"
-            style={{ letterSpacing: "-0.015em", color: fg }}
-          >
-            {card.name}
-          </div>
+          {(() => {
+            const bank = card.bank?.trim();
+            const name = card.name?.trim();
+            const sameAsBank =
+              !!bank && !!name && bank.toLowerCase() === name.toLowerCase();
+            return (
+              <>
+                {bank && (
+                  <div
+                    className="mb-0.5 text-[10px] font-bold uppercase"
+                    style={{ color: fgMuted, letterSpacing: "0.15em" }}
+                  >
+                    {bank}
+                  </div>
+                )}
+                {/* Solo mostramos el nombre grande si difiere del banco
+                    (ej: adicionales con nombre del titular). Para una tarjeta
+                    normal el banco gris ya alcanza. */}
+                {(!bank || !sameAsBank) && name && (
+                  <div
+                    className="font-display text-[17px] font-semibold leading-tight"
+                    style={{ letterSpacing: "-0.015em", color: fg }}
+                  >
+                    {name}
+                  </div>
+                )}
+              </>
+            );
+          })()}
           {card.is_extension && (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <span

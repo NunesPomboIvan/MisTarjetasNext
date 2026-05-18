@@ -49,6 +49,7 @@ export default async function CardDetailPage({
 
   const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
+  const currentPeriod = getPeriodByOffset(card, 0);
 
   const { data: expenses } = await supabase
     .from("expenses")
@@ -57,14 +58,22 @@ export default async function CardDetailPage({
     .eq("user_id", user!.id)
     .order("expense_date", { ascending: false });
 
-  const periodExpenses = (expenses ?? []).filter((e) =>
+  const allExpenses = (expenses ?? []) as ExpenseWithCategory[];
+
+  const periodExpenses = allExpenses.filter((e) =>
     expenseFallsInPeriod(e, period)
-  ) as ExpenseWithCategory[];
+  );
 
   const saldo = periodExpenses.reduce(
     (sum, e) => sum + getAmountInPeriod(e, period),
     0
   );
+
+  // La imagen de la tarjeta siempre muestra el período actual,
+  // sin importar qué período se esté navegando abajo.
+  const currentSaldo = allExpenses
+    .filter((e) => expenseFallsInPeriod(e, currentPeriod))
+    .reduce((sum, e) => sum + getAmountInPeriod(e, currentPeriod), 0);
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
   const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
@@ -90,9 +99,9 @@ export default async function CardDetailPage({
       {/* Wallet card */}
       <WalletCard
         card={card}
-        total={saldo}
-        closeLabel={formatDate(period.end, "d MMM")}
-        dueLabel={formatDate(period.due, "d MMM")}
+        total={currentSaldo}
+        closeLabel={formatDate(currentPeriod.end, "d MMM")}
+        dueLabel={formatDate(currentPeriod.due, "d MMM")}
       />
 
       {/* Period Navigator */}

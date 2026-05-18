@@ -11,17 +11,48 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface Option {
   id: string;
   label: string;
+}
+
+/** Grupo de opciones tipo "chips" separadas, con una opción "Todos/Todas". */
+function PillGroup({
+  options,
+  value,
+  onChange,
+  allLabel,
+}: {
+  options: Option[];
+  value: string;
+  onChange: (v: string) => void;
+  allLabel: string;
+}) {
+  const pills = [{ id: "", label: allLabel }, ...options];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {pills.map((p) => {
+        const active = value === p.id;
+        return (
+          <button
+            key={p.id || "__all"}
+            type="button"
+            onClick={() => onChange(p.id)}
+            className={cn(
+              "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all",
+              active
+                ? "border-primary bg-primary/10 text-primary shadow-sm"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+            )}
+          >
+            {p.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 interface MovimientosFiltersProps {
@@ -31,8 +62,6 @@ interface MovimientosFiltersProps {
   cards?: Option[];
   categories: Option[];
 }
-
-const ALL = "all";
 
 export function MovimientosFilters({
   basePath,
@@ -123,45 +152,25 @@ export function MovimientosFilters({
 
           <div className="space-y-4 px-1 pb-2">
             {cards && cards.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label>Tarjeta</Label>
-                <Select
-                  value={cardId || ALL}
-                  onValueChange={(v) => setCardId(v && v !== ALL ? v : "")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL}>Todas</SelectItem>
-                    {cards.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PillGroup
+                  options={cards}
+                  value={cardId}
+                  onChange={setCardId}
+                  allLabel="Todas"
+                />
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Categoría</Label>
-              <Select
-                value={categoryId || ALL}
-                onValueChange={(v) => setCategoryId(v && v !== ALL ? v : "")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>Todas</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <PillGroup
+                options={categories}
+                value={categoryId}
+                onChange={setCategoryId}
+                allLabel="Todas"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -187,21 +196,17 @@ export function MovimientosFilters({
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Tipo de pago</Label>
-              <Select
-                value={cuotas || ALL}
-                onValueChange={(v) => setCuotas(v && v !== ALL ? v : "")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>Todos</SelectItem>
-                  <SelectItem value="multi">En cuotas</SelectItem>
-                  <SelectItem value="single">Pago único</SelectItem>
-                </SelectContent>
-              </Select>
+              <PillGroup
+                options={[
+                  { id: "multi", label: "En cuotas" },
+                  { id: "single", label: "Pago único" },
+                ]}
+                value={cuotas}
+                onChange={setCuotas}
+                allLabel="Todos"
+              />
             </div>
 
             <div className="flex gap-2 pt-2">

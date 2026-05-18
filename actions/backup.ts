@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { expenseSchema } from "@/lib/schemas/expense";
 import type { ActionResult } from "./cards";
 
 export interface BackupData {
@@ -40,6 +42,237 @@ export async function exportData(): Promise<{ success: true; data: BackupData } 
       budgets: budgets.data ?? [],
     },
   };
+}
+
+/* ─── Export / Import de consumos en CSV ──────────────────── */
+
+const CSV_HEADERS = [
+  "Fecha",
+  "Comercio",
+  "Tarjeta",
+  "Categoria",
+  "MontoTotal",
+  "Cuotas",
+  "MontoCuota",
+  "Moneda",
+  "Notas",
+  "Tags",
+] as const;
+
+function csvCell(value: unknown): string {
+  const s = value == null ? "" : String(value);
+  if (/[",\n;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/** Parser de CSV simple con soporte de campos entrecomillados (separador coma). */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  const src = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (src[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
+}
+
+/** Exporta los consumos del usuario como CSV (legible/editable en Excel). */
+export async function exportExpensesCsv(): Promise<
+  { success: true; csv: string } | { success: false; error: string }
+> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*, category:categories(name), card:cards(name, last_four)")
+    .eq("user_id", user.id)
+    .order("expense_date", { ascending: false });
+
+  if (error) return { success: false, error: "Error al exportar consumos" };
+
+  const lines = [CSV_HEADERS.join(",")];
+  for (const e of data ?? []) {
+    const card = (e as { card?: { name?: string; last_four?: string } }).card;
+    const cat = (e as { category?: { name?: string } }).category;
+    lines.push(
+      [
+        e.expense_date,
+        e.description,
+        card ? `${card.name} ····${card.last_four}` : "",
+        cat?.name ?? "",
+        e.total_amount,
+        e.installments,
+        e.installment_amount,
+        e.currency,
+        e.notes ?? "",
+        (e.tags ?? []).join("|"),
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+  }
+
+  return { success: true, csv: "﻿" + lines.join("\r\n") };
+}
+
+/** Importa consumos desde un CSV con las mismas columnas que la exportación. */
+export async function importExpensesCsv(
+  csvText: string
+): Promise<ActionResult & { imported?: number; skipped?: number }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const rows = parseCsv(csvText.replace(/^﻿/, ""));
+  if (rows.length < 2) {
+    return { success: false, error: "El archivo no tiene filas para importar" };
+  }
+
+  const header = rows[0].map((h) => h.trim().toLowerCase());
+  const col = (name: string) => header.indexOf(name.toLowerCase());
+  const idx = {
+    fecha: col("Fecha"),
+    comercio: col("Comercio"),
+    tarjeta: col("Tarjeta"),
+    categoria: col("Categoria"),
+    total: col("MontoTotal"),
+    cuotas: col("Cuotas"),
+    cuota: col("MontoCuota"),
+    moneda: col("Moneda"),
+    notas: col("Notas"),
+    tags: col("Tags"),
+  };
+
+  if (idx.fecha < 0 || idx.comercio < 0 || idx.tarjeta < 0 || idx.total < 0) {
+    return {
+      success: false,
+      error: "Faltan columnas requeridas: Fecha, Comercio, Tarjeta, MontoTotal",
+    };
+  }
+
+  const [cardsRes, catsRes] = await Promise.all([
+    supabase.from("cards").select("id, name, last_four").eq("user_id", user.id),
+    supabase
+      .from("categories")
+      .select("id, name")
+      .or(`user_id.eq.${user.id},user_id.is.null`),
+  ]);
+
+  const cards = cardsRes.data ?? [];
+  const cats = catsRes.data ?? [];
+
+  const findCard = (raw: string) => {
+    const v = raw.trim().toLowerCase();
+    const last4 = v.match(/(\d{4})\s*$/)?.[1];
+    const name = v.replace(/[·•\s]*\d{4}\s*$/, "").trim();
+    return (
+      cards.find(
+        (c) =>
+          c.name.toLowerCase() === name &&
+          (!last4 || c.last_four === last4)
+      ) ?? cards.find((c) => c.name.toLowerCase() === name)
+    );
+  };
+  const findCat = (raw: string) => {
+    const v = raw.trim().toLowerCase();
+    if (!v) return null;
+    return cats.find((c) => c.name.toLowerCase() === v) ?? null;
+  };
+
+  const parseNum = (raw: string): number => {
+    const s = raw.trim().replace(/\s/g, "");
+    if (s.includes(",") && s.includes(".")) {
+      // formato 1.234,56 → 1234.56
+      return parseFloat(s.replace(/\./g, "").replace(",", "."));
+    }
+    return parseFloat(s.replace(",", "."));
+  };
+
+  let imported = 0;
+  let skipped = 0;
+  const toInsert: Record<string, unknown>[] = [];
+
+  for (const r of rows.slice(1)) {
+    const get = (i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
+    const card = findCard(get(idx.tarjeta));
+    const total = parseNum(get(idx.total));
+    const installments = Math.max(1, parseInt(get(idx.cuotas) || "1", 10) || 1);
+    const cuotaRaw = get(idx.cuota);
+    const installment_amount = cuotaRaw
+      ? parseNum(cuotaRaw)
+      : parseFloat((total / installments).toFixed(2));
+    const tagsRaw = get(idx.tags);
+
+    const candidate = {
+      card_id: card?.id ?? "",
+      category_id: findCat(get(idx.categoria))?.id ?? null,
+      description: get(idx.comercio),
+      total_amount: total,
+      installments,
+      installment_amount,
+      expense_date: get(idx.fecha),
+      currency: (get(idx.moneda) || "ARS").toUpperCase(),
+      notes: get(idx.notas) || null,
+      tags: tagsRaw
+        ? tagsRaw.split(/[|;]/).map((t) => t.trim()).filter(Boolean)
+        : [],
+    };
+
+    const parsed = expenseSchema.safeParse(candidate);
+    if (!card || !parsed.success) {
+      skipped++;
+      continue;
+    }
+    toInsert.push({ ...parsed.data, user_id: user.id });
+    imported++;
+  }
+
+  if (toInsert.length === 0) {
+    return {
+      success: false,
+      error: `No se importó ningún consumo (${skipped} filas inválidas o sin tarjeta coincidente)`,
+    };
+  }
+
+  const { error } = await supabase.from("expenses").insert(toInsert as never);
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/expenses");
+  revalidatePath("/");
+  return { success: true, imported, skipped };
 }
 
 /** Importa datos desde un JSON de backup */

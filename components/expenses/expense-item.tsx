@@ -1,16 +1,17 @@
 "use client";
 
+import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, MoreVertical, Copy } from "lucide-react";
+import { Trash2, Pencil, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,21 +41,87 @@ interface ExpenseItemProps {
   cardName?: string;
 }
 
-export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardId, cardName }: ExpenseItemProps) {
+const LONG_PRESS_MS = 450;
+const MOVE_THRESHOLD = 10;
+
+export function ExpenseItem({
+  expense,
+  onEdit,
+  editHref,
+  installmentIndex,
+  cardId,
+  cardName,
+}: ExpenseItemProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const cat = expense.category;
 
-  function handleDelete() {
-    startTransition(async () => {
-      const result = await deleteExpense(expense.id, expense.card_id);
-      if (!result.success) toast.error(result.error);
-      else toast.success("Consumo eliminado");
-      setDeleteOpen(false);
-    });
+  // Detalle del consumo, conservando contexto de tarjeta/cuota
+  const detailParams = new URLSearchParams();
+  if (cardId) detailParams.set("card_id", cardId);
+  if (installmentIndex !== undefined && installmentIndex >= 0)
+    detailParams.set("installment", String(installmentIndex));
+  const detailHref = `/expenses/${expense.id}${
+    detailParams.toString() ? `?${detailParams.toString()}` : ""
+  }`;
+
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRef = React.useRef<{ x: number; y: number } | null>(null);
+  const longPressedRef = React.useRef(false);
+  const movedRef = React.useRef(false);
+
+  const clearTimer = React.useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  function onPointerDown(e: React.PointerEvent) {
+    if (e.button === 2) return;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    longPressedRef.current = false;
+    movedRef.current = false;
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      longPressedRef.current = true;
+      setMenuOpen(true);
+    }, LONG_PRESS_MS);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!startRef.current) return;
+    const dx = Math.abs(e.clientX - startRef.current.x);
+    const dy = Math.abs(e.clientY - startRef.current.y);
+    if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+      movedRef.current = true;
+      clearTimer();
+    }
+  }
+
+  function onPointerUp() {
+    clearTimer();
+    if (!longPressedRef.current && !movedRef.current) {
+      router.push(detailHref);
+    }
+    startRef.current = null;
+  }
+
+  function onPointerCancel() {
+    clearTimer();
+    startRef.current = null;
+  }
+
+  function handleEdit() {
+    setMenuOpen(false);
+    if (editHref) router.push(editHref);
+    else onEdit?.(expense.id);
   }
 
   function handleClone() {
+    setMenuOpen(false);
     startTransition(async () => {
       const result = await cloneExpense(expense.id);
       if (!result.success) toast.error(result.error);
@@ -62,12 +129,21 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
     });
   }
 
-  const showInstallmentBadge =
-    expense.installments > 1 && installmentIndex !== undefined && installmentIndex >= 0;
+  function handleDelete() {
+    startTransition(async () => {
+      const result = await deleteExpense(expense.id, expense.card_id);
+      if (!result.success) toast.error(result.error);
+      else toast.success("Consumo eliminado");
+      setDeleteOpen(false);
+      setMenuOpen(false);
+    });
+  }
 
-  // Si estamos en contexto de un período (installmentIndex definido), usamos el monto
-  // específico de esa cuota (puede tener override en installment_amounts).
-  // Si no, mostramos el monto base (installment_amount).
+  const showInstallmentBadge =
+    expense.installments > 1 &&
+    installmentIndex !== undefined &&
+    installmentIndex >= 0;
+
   const displayAmount =
     installmentIndex !== undefined && installmentIndex >= 0
       ? getInstallmentAmountForIndex(expense, installmentIndex)
@@ -76,10 +152,29 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
   return (
     <>
       <div
+        role="button"
+        tabIndex={0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onContextMenu={(e) => e.preventDefault()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push(detailHref);
+          }
+        }}
         className={cn(
-          "group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-opacity",
+          "group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all active:scale-[0.99]",
           isPending && "opacity-40"
         )}
+        style={{
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          cursor: "pointer",
+        }}
       >
         {/* Category emoji */}
         {cat ? (
@@ -96,23 +191,22 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
         {/* Info */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{expense.description}</p>
-          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground">
               {formatDate(expense.expense_date + "T00:00:00")}
             </span>
 
-            {/* Cuota N/Total cuando se visualiza en el contexto de un período */}
             {showInstallmentBadge ? (
               <Badge
                 variant="secondary"
-                className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                className="h-4 bg-amber-100 px-1.5 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
               >
                 Cuota {installmentIndex! + 1}/{expense.installments}
               </Badge>
             ) : expense.installments > 1 ? (
               <Badge
                 variant="secondary"
-                className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                className="h-4 bg-amber-100 px-1.5 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
               >
                 {expense.installments} cuotas
               </Badge>
@@ -127,9 +221,10 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
               </span>
             )}
 
-            {/* Tarjeta (visible solo en listas globales) */}
             {cardName && (
-              <span className="text-[10px] text-muted-foreground">💳 {cardName}</span>
+              <span className="text-[10px] text-muted-foreground">
+                💳 {cardName}
+              </span>
             )}
 
             {expense.tags?.map((tag) => (
@@ -147,44 +242,44 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}
         </div>
-
-        {/* Actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Opciones"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {(onEdit || editHref) && (
-              <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (editHref) window.location.href = editHref;
-                    else onEdit?.(expense.id);
-                  }}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuItem onClick={handleClone}>
-              <Copy className="mr-2 h-4 w-4" />
-              Repetir hoy
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
+
+      {/* Menú al mantener apretado */}
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="bottom" showCloseButton={false} className="px-0 pb-safe">
+          <SheetHeader className="px-5 pb-1">
+            <SheetTitle className="truncate">{expense.description}</SheetTitle>
+          </SheetHeader>
+          <div className="divide-y divide-border/50">
+            {(editHref || onEdit) && (
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-foreground transition-colors active:bg-muted/60"
+              >
+                <Pencil className="h-5 w-5 text-muted-foreground" />
+                Editar consumo
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleClone}
+              className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-foreground transition-colors active:bg-muted/60"
+            >
+              <Copy className="h-5 w-5 text-muted-foreground" />
+              Repetir hoy
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-destructive transition-colors active:bg-muted/60"
+            >
+              <Trash2 className="h-5 w-5" />
+              Eliminar consumo
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -192,7 +287,8 @@ export function ExpenseItem({ expense, onEdit, editHref, installmentIndex, cardI
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se puede deshacer.
+              Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se
+              puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

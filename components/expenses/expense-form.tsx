@@ -288,7 +288,7 @@ export function ExpenseForm({
                 id="description"
                 value={field.value ?? ""}
                 onChange={field.onChange}
-                placeholder="Ej: Supermercado Coto"
+                placeholder="Ingresá el comercio…"
                 invalid={!!errors.description}
                 autoFocus={!expense}
               />
