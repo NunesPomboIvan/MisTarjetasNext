@@ -171,19 +171,16 @@ export function WalletCard({
               <>
                 {bank && (
                   <div
-                    className="mb-0.5 text-[10px] font-bold uppercase"
+                    className="mb-0.5 text-[12px] font-bold uppercase"
                     style={{ color: fgMuted, letterSpacing: "0.15em" }}
                   >
                     {bank}
                   </div>
                 )}
-                {/* Solo mostramos el nombre grande si difiere del banco
-                    (ej: adicionales con nombre del titular). Para una tarjeta
-                    normal el banco gris ya alcanza. */}
                 {(!bank || !sameAsBank) && name && (
                   <div
-                    className="font-display text-[17px] font-semibold leading-tight"
-                    style={{ letterSpacing: "-0.015em", color: fg }}
+                    className="text-[12px] font-bold uppercase"
+                    style={{ color: fgMuted, letterSpacing: "0.15em" }}
                   >
                     {name}
                   </div>
