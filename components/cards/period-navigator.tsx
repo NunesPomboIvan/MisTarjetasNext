@@ -11,6 +11,10 @@ import type { CardForPeriod, Period } from "@/lib/periods/calculate";
 interface PeriodNavigatorProps {
   card: CardForPeriod;
   currentPeriod: Period;
+  /** Fechas pre-formateadas en el servidor para evitar shift de TZ al serializar Date */
+  startLabel?: string;
+  endLabel?: string;
+  dueLabel?: string;
 }
 
 const STATUS_STYLES = {
@@ -19,7 +23,7 @@ const STATUS_STYLES = {
   future:  "border-orange-400 text-orange-500",
 };
 
-export function PeriodNavigator({ card, currentPeriod }: PeriodNavigatorProps) {
+export function PeriodNavigator({ card, currentPeriod, startLabel, endLabel, dueLabel }: PeriodNavigatorProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -64,7 +68,7 @@ export function PeriodNavigator({ card, currentPeriod }: PeriodNavigatorProps) {
           </Badge>
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatDate(currentPeriod.start, "d MMM")} → {formatDate(currentPeriod.end, "d MMM")} · vence {formatDate(currentPeriod.due, "d/M")}
+          {startLabel ?? formatDate(currentPeriod.start, "d MMM")} → {endLabel ?? formatDate(currentPeriod.end, "d MMM")} · vence {dueLabel ?? formatDate(currentPeriod.due, "d/M")}
         </span>
         {!isCurrentMonth && (
           <button

@@ -105,7 +105,13 @@ export default async function CardDetailPage({
       />
 
       {/* Period Navigator */}
-      <PeriodNavigator card={card} currentPeriod={period} />
+      <PeriodNavigator
+        card={card}
+        currentPeriod={period}
+        startLabel={formatDate(period.start, "d MMM")}
+        endLabel={formatDate(period.end, "d MMM")}
+        dueLabel={formatDate(period.due, "d/M")}
+      />
 
       {/* Stats card: Límite + Saldo side by side, donut a la derecha */}
       <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
