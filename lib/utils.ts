@@ -24,6 +24,36 @@ export function formatCurrency(amount: number, currency: "ARS" | "USD" = "ARS"):
 }
 
 /**
+ * Devuelve un Date que, leído en la zona horaria del servidor con getDate/getHours,
+ * devuelve los componentes de fecha y hora de Argentina (UTC-3, sin DST).
+ *
+ * Se usa para que el SSR no muestre la fecha del servidor (UTC en Vercel) cuando
+ * en Argentina ya es otro día.
+ */
+export function nowInArgentina(): Date {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const m: Record<string, string> = {};
+  for (const p of fmt.formatToParts(new Date())) m[p.type] = p.value;
+  return new Date(
+    Number(m.year),
+    Number(m.month) - 1,
+    Number(m.day),
+    Number(m.hour),
+    Number(m.minute),
+    Number(m.second),
+  );
+}
+
+/**
  * Formatea una fecha con locale español
  */
 export function formatDate(date: Date | string, fmt = "dd/MM/yyyy"): string {
@@ -101,13 +131,16 @@ export function formatAmountInput(raw: string): string {
   const lastDot = cleaned.lastIndexOf(".");
   let decimalIdx = -1;
   if (lastComma > -1 && lastComma > lastDot) decimalIdx = lastComma;
-  // Sólo tratamos un punto como decimal si NO hay comas y hay dígitos después
-  // (el punto es separador de miles en Argentina, salvo que sea el único separador)
-  // Para facilidad de uso, si el usuario tipea "1500.5" lo tomamos como decimal.
+  // Sólo tratamos un punto como decimal si NO hay comas, hay un único punto,
+  // y a continuación hay como máximo 2 dígitos (típico de decimales).
+  // Si hay 3+ dígitos después, asumimos que es separador de miles (ej "1.500").
+  // Esto evita que "1.500" se reduzca a "1,50" tras formateo.
   else if (lastDot > -1 && lastComma === -1) {
-    // sólo si hay un único punto y va al final (decimal)
     const pointCount = (cleaned.match(/\./g) ?? []).length;
-    if (pointCount === 1) decimalIdx = lastDot;
+    const digitsAfter = cleaned.length - lastDot - 1;
+    if (pointCount === 1 && digitsAfter >= 1 && digitsAfter <= 2) {
+      decimalIdx = lastDot;
+    }
   }
 
   let intPart = "";

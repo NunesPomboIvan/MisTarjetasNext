@@ -81,7 +81,7 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
           }}
           className="h-9 w-full rounded-lg border border-border bg-card px-2 text-sm font-semibold text-muted-foreground transition-all hover:border-primary/40 hover:text-foreground"
         >
-          + cuotas
+          +
         </button>
       )}
     </div>

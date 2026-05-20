@@ -44,8 +44,8 @@ export default function MorePage() {
       <nav className="overflow-hidden rounded-[18px] border border-border bg-card">
         <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" />
         <MoreRow href="/settings" icon={<Settings className="h-5 w-5" />} label="Ajustes generales" />
-        <MoreRow href="#" icon={<Shield className="h-5 w-5" />} label="Privacidad y seguridad" />
-        <MoreRow href="#" icon={<HelpCircle className="h-5 w-5" />} label="Ayuda" last />
+        <MoreRow href="/security" icon={<Shield className="h-5 w-5" />} label="Privacidad y seguridad" />
+        <MoreRow href="/help" icon={<HelpCircle className="h-5 w-5" />} label="Ayuda" last />
       </nav>
 
       <SignOutButton />

@@ -71,20 +71,22 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  /** Fechas iniciales: si estamos editando, mostramos el período actual de esa tarjeta.
-   *  Las dos fechas se muestran en el MISMO mes (el del cierre del período actual)
-   *  porque para el cálculo solo importa el día — así el form queda visualmente coherente.
+  /** Fechas iniciales: si estamos editando, mostramos las fechas reales del período
+   *  actual de esa tarjeta — el cierre cae en el mes del cierre y el vencimiento
+   *  en el mes siguiente (que es como funciona el período en realidad).
    *  Si es nueva, dejamos vacío y el usuario las elige. */
   const initialPeriodDates = useMemo(() => {
     if (!card) return { close_date: "", due_date: "" };
     const p = getCurrentPeriod(card);
     const closeDay = parseLocalDate(card.close_date).getDate();
     const dueDay = parseLocalDate(card.due_date).getDate();
-    const refYear = p.end.getFullYear();
-    const refMonth = p.end.getMonth(); // 0-based
+    const closeYear = p.end.getFullYear();
+    const closeMonth = p.end.getMonth(); // 0-based
+    const dueYear = closeMonth === 11 ? closeYear + 1 : closeYear;
+    const dueMonth = closeMonth === 11 ? 0 : closeMonth + 1;
     return {
-      close_date: toLocalDateStr(new Date(refYear, refMonth, closeDay)),
-      due_date: toLocalDateStr(new Date(refYear, refMonth, dueDay)),
+      close_date: toLocalDateStr(new Date(closeYear, closeMonth, closeDay)),
+      due_date: toLocalDateStr(new Date(dueYear, dueMonth, dueDay)),
     };
   }, [card]);
 

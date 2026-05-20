@@ -51,7 +51,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
     const container = scrollRef.current;
     if (!container) return;
     const child = container.querySelectorAll<HTMLElement>("[data-card-item]")[index];
-    child?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
+    child?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, []);
 
   // Drag sobre la barra de dots para moverse entre tarjetas
@@ -95,25 +95,12 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
           touchAction: "pan-x",
         }}
       >
-        {items.map(({ card, total, closeLabel, dueLabel }, i) => {
-          const isActive = i === activeIndex;
-          const isLast = i === items.length - 1;
+        {items.map(({ card, total, closeLabel, dueLabel }) => {
           return (
             <div
               key={card.id}
               data-card-item
-              className={
-                !multi
-                  ? "w-full flex-shrink-0 snap-center"
-                  : isLast
-                    ? "w-[88%] flex-shrink-0 snap-end"
-                    : "w-[88%] flex-shrink-0 snap-start"
-              }
-              style={{
-                transition: "transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.35s ease",
-                transform: multi && !isActive ? "scale(0.94)" : "scale(1)",
-                opacity: multi && !isActive ? 0.7 : 1,
-              }}
+              className="w-full flex-shrink-0 snap-center"
             >
               <CardPressWrapper
                 href={`/cards/${card.id}`}

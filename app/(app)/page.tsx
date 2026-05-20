@@ -3,10 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { ProximosPagosRotator } from "@/components/home/proximos-pagos-rotator";
+import { ClosingCardsBillboard } from "@/components/home/closing-cards-billboard";
+import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
 import { getNextDuePeriod, getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
-import { formatDate, capitalize } from "@/lib/utils";
+import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
+import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -54,8 +57,11 @@ export default async function DashboardPage() {
 
   const saldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
 
-  // Pagos próximos: tarjetas con saldo, ordenadas por fecha de vencimiento
-  const today = new Date();
+  // Pagos próximos: tarjetas con saldo, ordenadas por fecha de vencimiento.
+  // `today` se calcula en zona horaria de Argentina para que el SSR no
+  // muestre la fecha del servidor (UTC en Vercel) cuando en Argentina aún es otro día.
+  const today = nowInArgentina();
+  const todayStart = startOfDay(today);
   const upcoming = cardSummaries
     .filter((c) => c.total > 0)
     .sort((a, b) => a.period.due.getTime() - b.period.due.getTime())
@@ -65,10 +71,30 @@ export default async function DashboardPage() {
       cardColor: card.color,
       total,
       dueLabel: capitalize(formatDate(period.due, "EEEE d 'de' MMMM")),
-      daysUntilDue: Math.ceil(
-        (period.due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      ),
+      daysUntilDue: differenceInCalendarDays(period.due, todayStart),
     }));
+
+  // Tarjetas que vencen hoy → para alerta pop-up
+  const dueToday = cardSummaries
+    .filter((c) => differenceInCalendarDays(c.period.due, todayStart) === 0)
+    .map(({ card, total }) => ({
+      cardId: card.id,
+      cardName: card.bank || card.name,
+      total,
+    }));
+
+  // Tarjetas que cierran en los próximos 7 días → cartelera rotativa
+  const CLOSING_WINDOW_DAYS = 7;
+  const closingSoon = cardSummaries
+    .map(({ card, currentPeriod }) => ({
+      cardId: card.id,
+      cardName: card.bank || card.name,
+      cardColor: card.color,
+      closeLabel: capitalize(formatDate(currentPeriod.end, "EEEE d 'de' MMM")),
+      daysUntilClose: differenceInCalendarDays(currentPeriod.end, todayStart),
+    }))
+    .filter((c) => c.daysUntilClose >= 0 && c.daysUntilClose <= CLOSING_WINDOW_DAYS)
+    .sort((a, b) => a.daysUntilClose - b.daysUntilClose);
 
   // Mapa id→nombre de tarjeta para el listado de consumos
   const cardMap = Object.fromEntries(cards.map((c) => [c.id, c.bank || c.name]));
@@ -76,6 +102,7 @@ export default async function DashboardPage() {
 
   const hour = today.getHours();
   const todayLabel = capitalize(formatDate(today, "EEEE d 'de' MMMM"));
+  const todayKey = format(today, "yyyy-MM-dd");
 
   return (
     <div className="space-y-5">
@@ -96,13 +123,27 @@ export default async function DashboardPage() {
         />
       ) : (
         <>
-          {/* Card resumen */}
-          <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
-            <Money
-              amount={saldoTotal}
-              className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-            />
+          <DueTodayAlert todayKey={todayKey} cards={dueToday} />
+
+          {/* Resumen: saldo + cartelera de cierre */}
+          <section
+            className={
+              closingSoon.length > 0
+                ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-3"
+                : ""
+            }
+          >
+            <div className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+              <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
+              <Money
+                amount={saldoTotal}
+                className="mt-0.5 block font-display text-[24px] font-bold leading-none tracking-tight text-foreground"
+              />
+            </div>
+
+            {closingSoon.length > 0 && (
+              <ClosingCardsBillboard items={closingSoon} />
+            )}
           </section>
 
           {/* Mis tarjetas */}

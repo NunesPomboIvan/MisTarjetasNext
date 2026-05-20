@@ -92,15 +92,12 @@ export function WalletCard({
       style={{
         width: "100%",
         height: cardH,
+        backgroundColor: g1,
         background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
         color: fg,
-        boxShadow: [
-          "0 1px 0 rgba(255,255,255,0.18) inset",
-          "0 -1px 0 rgba(0,0,0,0.18) inset",
-          "0 1px 3px rgba(0,0,0,0.14)",
-          `0 12px 40px -8px rgba(${r},${g},${b},0.60)`,
-          "0 4px 16px -4px rgba(0,0,0,0.22)",
-        ].join(", "),
+        // Sombra única, suave y radial — sin contornos rectos que dibujen
+        // un rectángulo alrededor de las esquinas redondeadas.
+        boxShadow: `0 18px 40px -16px rgba(${r},${g},${b},0.45)`,
       }}
     >
       {/* Shine diagonal */}

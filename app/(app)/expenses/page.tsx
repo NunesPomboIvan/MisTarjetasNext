@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -139,15 +139,6 @@ export default async function ExpensesPage({
           })}
         </div>
       )}
-
-      {/* Floating add button */}
-      <Link
-        href="/expenses/new"
-        aria-label="Nuevo movimiento"
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-[20px] gradient-primary text-white shadow-brand-glow transition-transform active:scale-95"
-      >
-        <Plus className="h-6 w-6" strokeWidth={2.5} />
-      </Link>
     </div>
   );
 }

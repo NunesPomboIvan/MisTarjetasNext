@@ -130,15 +130,18 @@ export function ExpenseForm({
       : 0;
   const precioFinal = totalAmount ? Math.max(0, totalAmount - discountCalculado) : 0;
 
-  // Auto-calcular cuota
+  // Auto-calcular cuota a partir del total — solo cuando NO estamos editando
+  // una cuota específica. Si estamos editando una cuota individual, el valor
+  // que escribe el usuario es ese (no se hace la operación matemática).
   useEffect(() => {
+    if (installmentIndex !== undefined) return;
     const base = discountActive ? precioFinal : totalAmount;
     if (base && installments && installments >= 1) {
       const cuota = parseFloat((base / installments).toFixed(2));
       setValue("installment_amount", cuota);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalAmount, installments, discountActive, discountPct, discountCap, setValue]);
+  }, [totalAmount, installments, discountActive, discountPct, discountCap, setValue, installmentIndex]);
 
   function toggleDiscount(active: boolean) {
     setDiscountActive(active);
@@ -244,6 +247,23 @@ export function ExpenseForm({
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Botón guardar arriba — para no tener que scrollear hasta el final */}
+        <div className="sticky top-0 z-30 -mx-5 -mt-5 flex justify-end border-b border-border/50 bg-card/85 px-5 py-2 backdrop-blur supports-backdrop-filter:bg-card/70">
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="gradient-primary shadow-brand h-9 rounded-full px-5 text-sm font-semibold"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : expense ? (
+              "Guardar"
+            ) : (
+              "Registrar"
+            )}
+          </Button>
+        </div>
+
         {/* Tarjeta */}
         <div className="space-y-1.5">
           <Label>Tarjeta</Label>

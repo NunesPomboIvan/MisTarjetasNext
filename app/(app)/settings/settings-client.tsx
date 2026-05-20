@@ -219,7 +219,6 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{userEmail}</p>
-          <p className="text-[13px] opacity-85">Plan personal</p>
         </div>
         <Button
           variant="ghost"
@@ -272,7 +271,20 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
             />
             <div>
               <p className="text-xs text-muted-foreground mb-1.5">Emoji</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={catEmoji}
+                  onChange={(e) => setCatEmoji(e.target.value)}
+                  className="h-9 w-14 text-center text-lg"
+                  maxLength={4}
+                  placeholder="🎯"
+                  aria-label="Emoji personalizado"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Editá libremente o elegí uno
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {EMOJI_OPTIONS.map((e) => (
                   <button
                     key={e}
