@@ -127,11 +127,15 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo arriba + cartelera de cierre como pie */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
-            <Money
-              amount={saldoTotal}
-              className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-            />
+            <div className="flex flex-col items-start">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Próximo a pagar
+              </p>
+              <Money
+                amount={saldoTotal}
+                className="mt-1 block font-display text-[28px] font-bold leading-none text-foreground"
+              />
+            </div>
 
             {closingSoon.length > 0 && (
               <>
