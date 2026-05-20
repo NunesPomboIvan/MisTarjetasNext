@@ -14,5 +14,5 @@ export default async function SettingsPage() {
     .order("is_preset", { ascending: false })
     .order("name");
 
-  return <SettingsClient categories={categories ?? []} userEmail={user!.email ?? ""} />;
+  return <SettingsClient categories={categories ?? []} />;
 }

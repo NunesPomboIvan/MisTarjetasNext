@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Moon, Sun, Monitor, LogOut, Download, Upload,
+  Moon, Sun, Monitor, Download, Upload,
   Plus, Trash2, Pencil, Check, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,6 @@ import {
   exportExpensesCsv,
   importExpensesCsv,
 } from "@/actions/backup";
-import { createClient } from "@/lib/supabase/client";
 import type { Category } from "@/lib/supabase/database.types";
 
 const THEMES = [
@@ -48,10 +47,9 @@ const COLOR_PAIRS: Array<{ bg: string; text: string; label: string }> = [
 
 interface SettingsClientProps {
   categories: Category[];
-  userEmail: string;
 }
 
-export function SettingsClient({ categories: initialCategories, userEmail }: SettingsClientProps) {
+export function SettingsClient({ categories: initialCategories }: SettingsClientProps) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -179,56 +177,11 @@ export function SettingsClient({ categories: initialCategories, userEmail }: Set
     e.target.value = "";
   }
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
-  // Iniciales para el avatar del card de perfil
-  const initials = userEmail
-    .split("@")[0]
-    .split(/[._-]/)
-    .map((s) => s.charAt(0).toUpperCase())
-    .slice(0, 2)
-    .join("");
-
   return (
     <div className="space-y-5">
       <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
         Ajustes
       </h1>
-
-      {/* Profile card — gradiente cálido */}
-      <section
-        className="relative flex items-center gap-4 overflow-hidden rounded-[26px] p-5 text-white"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.62 0.16 35) 0%, oklch(0.55 0.18 25) 100%)",
-          boxShadow: "0 8px 24px oklch(0.55 0.18 25 / 0.3)",
-        }}
-      >
-        <div
-          className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full font-display text-[22px] font-semibold"
-          style={{
-            background: "rgba(255,255,255,0.25)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          {initials || "•"}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{userEmail}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-white hover:bg-white/15"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </section>
 
       {/* Tema */}
       <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
