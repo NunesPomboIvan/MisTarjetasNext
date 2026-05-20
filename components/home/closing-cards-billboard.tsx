@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CalendarClock } from "lucide-react";
 
 export interface ClosingCardItem {
@@ -18,15 +18,18 @@ interface ClosingCardsBillboardProps {
   intervalMs?: number;
 }
 
+const ROW_H = 30;
+
 /**
- * Cartelera estilo "publicidad rotativa" para mostrar tarjetas que están por
- * cerrar. Si hay una sola, se muestra fija. Si hay varias, rotan con un efecto
- * vertical de abajo hacia arriba (como cartelera digital).
+ * Tira "cartelera" — pensada para vivir como pie de la card de saldo en el
+ * homepage. Si hay una sola tarjeta cerrando, queda fija; si hay varias rotan
+ * con efecto vertical (de abajo hacia arriba).
  */
 export function ClosingCardsBillboard({
   items,
   intervalMs = 3200,
 }: ClosingCardsBillboardProps) {
+  const router = useRouter();
   const [index, setIndex] = React.useState(0);
   const itemsLen = items.length;
 
@@ -45,105 +48,104 @@ export function ClosingCardsBillboard({
   if (itemsLen === 0) return null;
 
   const current = items[index];
-  const urgent = current.daysUntilClose <= 1;
   const accent = current.cardColor || "#6366f1";
 
   return (
-    <Link
-      href={`/cards/${current.cardId}`}
-      className="relative block overflow-hidden rounded-[20px] border border-border bg-card p-4 shadow-sm transition-transform active:scale-[0.985]"
-      style={{ minHeight: 96 }}
+    <button
+      type="button"
+      onClick={() => router.push(`/cards/${current.cardId}`)}
+      className="group flex w-full items-center gap-3 text-left transition-colors"
+      aria-label={`Ver tarjeta ${current.cardName}`}
     >
-      <div className="flex items-center gap-3">
+      <div
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+        style={{ background: `${accent}20`, color: accent }}
+      >
+        <CalendarClock className="h-4 w-4" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Cierra pronto
+        </p>
         <div
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
-          style={{ background: `${accent}20`, color: accent }}
+          className="relative overflow-hidden"
+          style={{ height: ROW_H }}
         >
-          <CalendarClock className="h-5 w-5" />
-        </div>
-
-        <div className="relative flex-1 min-w-0">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Cierra pronto
-          </p>
-
-          {/* Contenedor con rotación vertical: cada item ocupa la misma altura
-              y los animamos con translateY para crear el efecto de cartelera. */}
           <div
-            className="relative mt-1 overflow-hidden"
-            style={{ height: 38 }}
+            className="absolute inset-0 will-change-transform"
+            style={{
+              transform: `translateY(-${index * ROW_H}px)`,
+              transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
+            }}
           >
-            <div
-              className="absolute inset-0 will-change-transform"
-              style={{
-                transform: `translateY(-${index * 38}px)`,
-                transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
-              }}
-            >
-              {items.map((it) => (
-                <div
-                  key={it.cardId + it.closeLabel}
-                  className="flex h-[38px] flex-col justify-center"
-                >
-                  <p className="truncate text-[14.5px] font-semibold leading-tight text-foreground">
-                    {it.cardName}
-                  </p>
-                  <p className="text-[11px] leading-tight text-muted-foreground tabular-nums">
-                    Cierra el {it.closeLabel}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 text-right">
-          <div
-            className="overflow-hidden"
-            style={{ height: 38 }}
-          >
-            <div
-              className="will-change-transform"
-              style={{
-                transform: `translateY(-${index * 38}px)`,
-                transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
-              }}
-            >
-              {items.map((it) => {
-                const isUrgent = it.daysUntilClose <= 1;
-                return (
-                  <div
-                    key={it.cardId + "-days"}
-                    className="flex h-[38px] flex-col items-end justify-center"
-                  >
-                    <p
-                      className={
-                        "text-[20px] font-display font-bold leading-none tabular-nums " +
-                        (isUrgent ? "text-destructive" : "text-foreground")
-                      }
-                    >
-                      {it.daysUntilClose <= 0 ? "Hoy" : it.daysUntilClose}
-                    </p>
-                    {it.daysUntilClose > 0 && (
-                      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {it.daysUntilClose === 1 ? "día" : "días"}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {items.map((it) => (
+              <div
+                key={it.cardId + "-name"}
+                className="flex flex-col justify-center"
+                style={{ height: ROW_H }}
+              >
+                <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
+                  {it.cardName}
+                  <span className="ml-1.5 font-normal text-muted-foreground">
+                    · {it.closeLabel}
+                  </span>
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {urgent && (
+      <div
+        className="flex-shrink-0 overflow-hidden text-right"
+        style={{ height: ROW_H }}
+      >
         <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5"
-          style={{ background: "var(--destructive)" }}
-        />
-      )}
-    </Link>
+          className="will-change-transform"
+          style={{
+            transform: `translateY(-${index * ROW_H}px)`,
+            transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
+          }}
+        >
+          {items.map((it) => {
+            const isToday = it.daysUntilClose <= 0;
+            const isUrgent = it.daysUntilClose <= 1;
+            return (
+              <div
+                key={it.cardId + "-days"}
+                className="flex flex-col items-end justify-center"
+                style={{ height: ROW_H }}
+              >
+                {isToday ? (
+                  <p
+                    className={
+                      "font-display text-[15px] font-bold leading-none " +
+                      (isUrgent ? "text-destructive" : "text-foreground")
+                    }
+                  >
+                    Hoy
+                  </p>
+                ) : (
+                  <div className="flex items-baseline gap-1">
+                    <p
+                      className={
+                        "font-display text-[17px] font-bold leading-none tabular-nums " +
+                        (isUrgent ? "text-destructive" : "text-foreground")
+                      }
+                    >
+                      {it.daysUntilClose}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {it.daysUntilClose === 1 ? "día" : "días"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </button>
   );
 }

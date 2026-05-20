@@ -125,24 +125,19 @@ export default async function DashboardPage() {
         <>
           <DueTodayAlert todayKey={todayKey} cards={dueToday} />
 
-          {/* Resumen: saldo + cartelera de cierre */}
-          <section
-            className={
-              closingSoon.length > 0
-                ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-3"
-                : ""
-            }
-          >
-            <div className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-              <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
-              <Money
-                amount={saldoTotal}
-                className="mt-0.5 block font-display text-[24px] font-bold leading-none tracking-tight text-foreground"
-              />
-            </div>
+          {/* Card resumen: saldo arriba + cartelera de cierre como pie */}
+          <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+            <p className="text-[12px] font-medium text-muted-foreground">Próximo a pagar</p>
+            <Money
+              amount={saldoTotal}
+              className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
+            />
 
             {closingSoon.length > 0 && (
-              <ClosingCardsBillboard items={closingSoon} />
+              <>
+                <div className="my-4 h-px bg-border" />
+                <ClosingCardsBillboard items={closingSoon} />
+              </>
             )}
           </section>
 
