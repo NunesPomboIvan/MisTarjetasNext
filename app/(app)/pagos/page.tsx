@@ -3,8 +3,9 @@ import { Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
-import { formatDate, capitalize } from "@/lib/utils";
+import { getNextDuePeriod, expenseFallsInPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
+import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
+import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Próximos pagos" };
@@ -21,18 +22,16 @@ export default async function PagosPage() {
   const allCards = (cards ?? []) as Card[];
   const allExpenses = (expenses ?? []) as Expense[];
 
-  const today = new Date();
+  const todayStart = startOfDay(nowInArgentina());
 
   const upcoming = allCards
     .map((card) => {
-      const period = getCurrentPeriod(card);
+      const period = getNextDuePeriod(card);
       const cardExpenses = allExpenses.filter(
         (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
       );
       const total = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
-      const daysUntil = Math.ceil(
-        (period.due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const daysUntil = differenceInCalendarDays(period.due, todayStart);
       return { card, period, total, daysUntil };
     })
     .filter((x) => x.total > 0)
@@ -89,7 +88,7 @@ export default async function PagosPage() {
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[14px] font-semibold text-foreground">
-                        {card.bank ?? card.name}
+                        {card.bank || card.name}
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {capitalize(formatDate(period.due, "EEEE d 'de' MMM"))}

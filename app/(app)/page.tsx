@@ -7,7 +7,7 @@ import { ClosingCardsBillboard } from "@/components/home/closing-cards-billboard
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
-import { getNextDuePeriod, getCurrentPeriod, expenseFallsInPeriod } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -45,12 +45,12 @@ export default async function DashboardPage() {
     const periodExpenses = allExpenses.filter(
       (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
     );
-    const total = periodExpenses.reduce((s, e) => s + e.installment_amount, 0);
+    const total = periodExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
 
     const currentExpenses = allExpenses.filter(
       (e) => e.card_id === card.id && expenseFallsInPeriod(e, currentPeriod)
     );
-    const currentTotal = currentExpenses.reduce((s, e) => s + e.installment_amount, 0);
+    const currentTotal = currentExpenses.reduce((s, e) => s + getAmountInPeriod(e, currentPeriod), 0);
 
     return { card, period, total, currentPeriod, currentTotal };
   });
