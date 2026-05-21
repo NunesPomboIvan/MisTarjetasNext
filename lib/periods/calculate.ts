@@ -275,6 +275,33 @@ export function getNextDuePeriod(card: CardForPeriod): Period {
 }
 
 /**
+ * Pago próximo de una tarjeta: el período de menor `due` cuyo vencimiento no
+ * pasó (incluye hoy) Y que tenga saldo > 0.
+ *
+ * A diferencia de `getNextDuePeriod`, salta los períodos vacíos. Esto evita
+ * ocultar una tarjeta cuando su período más próximo a vencer ya cerró sin
+ * consumos pero un período posterior (todavía abierto) sí tiene saldo a pagar.
+ *
+ * `cardExpenses` deben ser los gastos de ESA tarjeta (ya filtrados por card_id).
+ * Devuelve null si la tarjeta no tiene ningún pago pendiente.
+ */
+export function getNextPayment(
+  card: CardForPeriod,
+  cardExpenses: (ExpenseForPeriod & { installment_amount: number })[]
+): { period: Period; total: number } | null {
+  const todayStart = startOfDay(nowAr());
+  let best: { period: Period; total: number } | null = null;
+  for (let offset = -6; offset <= 6; offset++) {
+    const period = getPeriodByOffset(card, offset);
+    if (isBefore(period.due, todayStart)) continue; // ya venció
+    const total = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
+    if (total <= 0) continue; // período sin saldo → lo saltamos
+    if (!best || isBefore(period.due, best.period.due)) best = { period, total };
+  }
+  return best;
+}
+
+/**
  * Determina si la cuota `installmentIndex` (0-based) de un gasto cae dentro del período.
  * Si no se pasa installmentIndex, retorna true si CUALQUIER cuota cae en el período.
  */

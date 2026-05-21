@@ -7,7 +7,7 @@ import { ClosingCardsBillboard } from "@/components/home/closing-cards-billboard
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
-import { getNextDuePeriod, getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -39,18 +39,16 @@ export default async function DashboardPage() {
   // (el período actual según la fecha de cierre), para que coincida con
   // lo que muestra el detalle de tarjeta.
   const cardSummaries = cards.map((card) => {
-    const period = getNextDuePeriod(card);
+    const cardExpenses = allExpenses.filter((e) => e.card_id === card.id);
+
+    // Próximo pago: período más cercano a vencer CON saldo (salta los vacíos).
+    const payment = getNextPayment(card, cardExpenses);
+    const period = payment?.period ?? getNextDuePeriod(card);
+    const total = payment?.total ?? 0;
+
+    // Período actual (según cierre) para la tarjeta-imagen del carousel.
     const currentPeriod = getCurrentPeriod(card);
-
-    const periodExpenses = allExpenses.filter(
-      (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
-    );
-    const total = periodExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
-
-    const currentExpenses = allExpenses.filter(
-      (e) => e.card_id === card.id && expenseFallsInPeriod(e, currentPeriod)
-    );
-    const currentTotal = currentExpenses.reduce((s, e) => s + getAmountInPeriod(e, currentPeriod), 0);
+    const currentTotal = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, currentPeriod), 0);
 
     return { card, period, total, currentPeriod, currentTotal };
   });
@@ -76,7 +74,7 @@ export default async function DashboardPage() {
 
   // Tarjetas que vencen hoy → para alerta pop-up
   const dueToday = cardSummaries
-    .filter((c) => differenceInCalendarDays(c.period.due, todayStart) === 0)
+    .filter((c) => c.total > 0 && differenceInCalendarDays(c.period.due, todayStart) === 0)
     .map(({ card, total }) => ({
       cardId: card.id,
       cardName: card.bank || card.name,

@@ -16,6 +16,7 @@ import {
   getPeriods,
   expenseFallsInPeriod,
   getInstallmentDates,
+  getNextPayment,
   parseLocalDate,
   type CardForPeriod,
   type Period,
@@ -410,5 +411,65 @@ describe("CARD_1_20 — cierra el día 1", () => {
 
     const period = getPeriodForDate(CARD_1_20, d(2026, 3, 2));
     expect(period.key).toBe("2026-04");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// SUITE 11: getNextPayment — próximo pago con saldo
+// ─────────────────────────────────────────────────────────────
+
+describe("getNextPayment — CARD_23_10", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("salta el período más próximo a vencer si está vacío y devuelve el siguiente con saldo", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 5, 15));
+
+    // Período más próximo a vencer (2026-05, vence 10/jun) NO tiene consumos.
+    // El consumo cae en 2026-06 (vence 10/jul).
+    const expenses = [
+      { expense_date: "2026-06-01", installments: 1, installment_amount: 1000 },
+    ];
+
+    const payment = getNextPayment(CARD_23_10, expenses);
+    expect(payment).not.toBeNull();
+    expect(payment!.period.key).toBe("2026-06");
+    expect(payment!.total).toBe(1000);
+    expect(payment!.period.due).toEqual(d(2026, 7, 10));
+  });
+
+  it("devuelve el período más próximo a vencer cuando tiene saldo", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 5, 15));
+
+    const expenses = [
+      { expense_date: "2026-05-01", installments: 1, installment_amount: 500 },
+    ];
+
+    const payment = getNextPayment(CARD_23_10, expenses);
+    expect(payment!.period.key).toBe("2026-05");
+    expect(payment!.total).toBe(500);
+    expect(payment!.period.due).toEqual(d(2026, 6, 10));
+  });
+
+  it("incluye el período que vence HOY si tiene saldo", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 6, 10)); // = vencimiento del período 2026-05
+
+    const expenses = [
+      { expense_date: "2026-05-01", installments: 1, installment_amount: 500 },
+    ];
+
+    const payment = getNextPayment(CARD_23_10, expenses);
+    expect(payment!.period.key).toBe("2026-05");
+    expect(payment!.period.due).toEqual(d(2026, 6, 10));
+    expect(payment!.total).toBe(500);
+  });
+
+  it("devuelve null cuando la tarjeta no tiene pagos pendientes", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 5, 15));
+
+    expect(getNextPayment(CARD_23_10, [])).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import { Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getNextDuePeriod, expenseFallsInPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getNextPayment } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
@@ -26,15 +26,13 @@ export default async function PagosPage() {
 
   const upcoming = allCards
     .map((card) => {
-      const period = getNextDuePeriod(card);
-      const cardExpenses = allExpenses.filter(
-        (e) => e.card_id === card.id && expenseFallsInPeriod(e, period)
-      );
-      const total = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
-      const daysUntil = differenceInCalendarDays(period.due, todayStart);
-      return { card, period, total, daysUntil };
+      const cardExpenses = allExpenses.filter((e) => e.card_id === card.id);
+      const payment = getNextPayment(card, cardExpenses);
+      if (!payment) return null;
+      const daysUntil = differenceInCalendarDays(payment.period.due, todayStart);
+      return { card, period: payment.period, total: payment.total, daysUntil };
     })
-    .filter((x) => x.total > 0)
+    .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => a.period.due.getTime() - b.period.due.getTime());
 
   const totalPagos = upcoming.reduce((s, u) => s + u.total, 0);
