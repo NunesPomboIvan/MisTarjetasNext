@@ -129,8 +129,8 @@ describe("getPeriodForDate — CARD_23_10", () => {
     vi.setSystemTime(d(2026, 4, 10));
 
     const period = getPeriodForDate(CARD_23_10, d(2026, 3, 15));
-    // Período marzo cierra el 23/mar → vence el 11/abr (due_day 10 + 1 día)
-    expect(period.due).toEqual(d(2026, 4, 11));
+    // Período marzo cierra el 23/mar → vence el 10/abr (due_day = 10, sin offset)
+    expect(period.due).toEqual(d(2026, 4, 10));
   });
 
   it("período de diciembre tiene due date en enero del año siguiente", () => {
@@ -139,7 +139,7 @@ describe("getPeriodForDate — CARD_23_10", () => {
 
     const period = getPeriodForDate(CARD_23_10, d(2025, 12, 15));
     expect(period.key).toBe("2025-12");
-    expect(period.due).toEqual(d(2026, 1, 11));
+    expect(period.due).toEqual(d(2026, 1, 10));
   });
 
   it("compra en enero después del cierre va a febrero", () => {

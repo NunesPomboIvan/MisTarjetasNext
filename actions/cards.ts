@@ -40,6 +40,7 @@ export async function createCard(formData: CardFormData): Promise<ActionResult> 
 
   revalidatePath("/cards");
   revalidatePath("/");
+  revalidatePath("/pagos");
   return { success: true, id: data.id };
 }
 
@@ -74,6 +75,7 @@ export async function updateCard(id: string, formData: CardFormData): Promise<Ac
   revalidatePath(`/cards/${id}`);
   revalidatePath("/cards");
   revalidatePath("/");
+  revalidatePath("/pagos");
   return { success: true };
 }
 
@@ -121,6 +123,7 @@ export async function updateCardPeriod(
   revalidatePath(`/cards/${id}`);
   revalidatePath("/cards");
   revalidatePath("/");
+  revalidatePath("/pagos");
   return { success: true };
 }
 
@@ -140,5 +143,6 @@ export async function deleteCard(id: string): Promise<ActionResult> {
 
   revalidatePath("/cards");
   revalidatePath("/");
+  revalidatePath("/pagos");
   redirect("/cards");
 }

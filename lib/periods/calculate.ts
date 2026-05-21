@@ -30,6 +30,35 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 
+/**
+ * "Ahora" en zona horaria de Argentina (UTC-3, sin DST). El servidor de
+ * producción corre en UTC; si usáramos `new Date()` directamente, después de
+ * las 21:00 hora argentina el server interpretaría que ya es el día siguiente
+ * y el período "actual" se adelantaría un mes.
+ */
+function nowAr(): Date {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const m: Record<string, string> = {};
+  for (const p of fmt.formatToParts(new Date())) m[p.type] = p.value;
+  return new Date(
+    Number(m.year),
+    Number(m.month) - 1,
+    Number(m.day),
+    Number(m.hour),
+    Number(m.minute),
+    Number(m.second),
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────
@@ -122,12 +151,11 @@ function buildPeriod(
   const prevClose = setDayOfMonth(prev.year, prev.month, closeDay);
   const start = startOfDay(addDays(prevClose, 1));
 
-  // due = due_day del mes siguiente al cierre.
-  // +1 día: la fecha real de pago del banco es un día después del due_day
-  // almacenado. Se aplica acá para que todas las vistas (tarjeta, próximos
-  // pagos, días para vencer) muestren la misma fecha.
+  // due = due_day del mes siguiente al cierre — sin offset.
+  // El día que pone el usuario en el form ES el día que se muestra en toda
+  // la app (tarjeta, próximos pagos, días para vencer, alerta de vencimiento).
   const next = nextYearMonth(closeYear, closeMonth);
-  const due = addDays(setDayOfMonth(next.year, next.month, dueDay), 1);
+  const due = setDayOfMonth(next.year, next.month, dueDay);
 
   // Status (comparamos inicio del día para consistencia)
   const nowDay = startOfDay(now);
@@ -161,7 +189,7 @@ function buildPeriod(
  *        si la fecha >  close_day del mes de la fecha → período del mes siguiente
  */
 export function getPeriodForDate(card: CardForPeriod, date: Date): Period {
-  const now = new Date();
+  const now = nowAr();
   const d = startOfDay(date);
   const year = d.getFullYear();
   const month = d.getMonth() + 1; // 1-based
@@ -190,7 +218,7 @@ export function getPeriodForDate(card: CardForPeriod, date: Date): Period {
  * Período actual de la tarjeta (según la fecha de hoy).
  */
 export function getCurrentPeriod(card: CardForPeriod): Period {
-  return getPeriodForDate(card, new Date());
+  return getPeriodForDate(card, nowAr());
 }
 
 /**
@@ -205,7 +233,7 @@ export function getPeriodByOffset(card: CardForPeriod, offsetMonths: number): Pe
   const base = new Date(parseInt(yearStr), parseInt(monthStr) - 1, 1);
   const target = addMonths(base, offsetMonths);
 
-  return buildPeriod(card, target.getFullYear(), target.getMonth() + 1, new Date());
+  return buildPeriod(card, target.getFullYear(), target.getMonth() + 1, nowAr());
 }
 
 /**
@@ -236,7 +264,7 @@ export function getPeriods(
  * Si todos los vencimientos ya pasaron, cae al período actual.
  */
 export function getNextDuePeriod(card: CardForPeriod): Period {
-  const todayStart = startOfDay(new Date());
+  const todayStart = startOfDay(nowAr());
   let best: Period | null = null;
   for (let offset = -6; offset <= 6; offset++) {
     const p = getPeriodByOffset(card, offset);
@@ -308,7 +336,7 @@ export function getInstallmentDates(expense: ExpenseForPeriod): Date[] {
  */
 export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
   const closeDate = parseLocalDate(card.close_date);
-  return isBefore(closeDate, startOfDay(new Date()));
+  return isBefore(closeDate, startOfDay(nowAr()));
 }
 
 /**
