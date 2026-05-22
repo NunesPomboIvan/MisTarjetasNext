@@ -68,6 +68,7 @@ export default async function DashboardPage() {
       id: card.id,
       accent: card.color,
       primary: card.bank || card.name,
+      suffix: card.last_four,
       days: differenceInCalendarDays(currentPeriod.due, todayStart),
     }));
 
@@ -86,6 +87,7 @@ export default async function DashboardPage() {
       id: card.id,
       accent: card.color,
       primary: card.bank || card.name,
+      suffix: card.last_four,
       days: differenceInCalendarDays(currentPeriod.end, todayStart),
     }))
     .sort((a, b) => a.days - b.days);

@@ -16,8 +16,10 @@ export interface BillboardItem {
   id: string;
   /** Color de acento del ícono */
   accent: string;
-  /** Texto principal (ej: nombre de la tarjeta) */
+  /** Texto principal (ej: nombre del banco) */
   primary: string;
+  /** Sufijo opcional (ej: últimos 4 dígitos) para distinguir tarjetas */
+  suffix?: string;
   /** Días restantes (para cerrar o vencer). <=0 = "Hoy" */
   days: number;
 }
@@ -110,6 +112,11 @@ export function CardsBillboard({
                 >
                   <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight text-foreground">
                     {it.primary}
+                    {it.suffix && (
+                      <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">
+                        •••• {it.suffix}
+                      </span>
+                    )}
                   </p>
                   <div className="flex-shrink-0 text-right">
                     {isToday ? (
