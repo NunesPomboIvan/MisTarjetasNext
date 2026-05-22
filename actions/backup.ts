@@ -49,7 +49,8 @@ export async function exportData(): Promise<{ success: true; data: BackupData } 
 const CSV_HEADERS = [
   "Fecha",
   "Comercio",
-  "Tarjeta",
+  "Banco",
+  "NumeroTarjeta",
   "Categoria",
   "MontoTotal",
   "Cuotas",
@@ -117,7 +118,7 @@ export async function exportExpensesCsv(): Promise<
 
   const { data, error } = await supabase
     .from("expenses")
-    .select("*, category:categories(name), card:cards(name, last_four)")
+    .select("*, category:categories(name), card:cards(name, bank, last_four)")
     .eq("user_id", user.id)
     .order("expense_date", { ascending: false });
 
@@ -125,13 +126,14 @@ export async function exportExpensesCsv(): Promise<
 
   const lines = [CSV_HEADERS.join(",")];
   for (const e of data ?? []) {
-    const card = (e as { card?: { name?: string; last_four?: string } }).card;
+    const card = (e as { card?: { name?: string; bank?: string; last_four?: string } }).card;
     const cat = (e as { category?: { name?: string } }).category;
     lines.push(
       [
         e.expense_date,
         e.description,
-        card ? `${card.name} ····${card.last_four}` : "",
+        card ? (card.bank || card.name || "") : "",
+        card?.last_four ?? "",
         cat?.name ?? "",
         e.total_amount,
         e.installments,
@@ -166,6 +168,10 @@ export async function importExpensesCsv(
   const idx = {
     fecha: col("Fecha"),
     comercio: col("Comercio"),
+    banco: col("Banco"),
+    numero: col("NumeroTarjeta"),
+    // Compatibilidad con el formato anterior: una sola columna "Tarjeta"
+    // que combinaba nombre + últimos 4 dígitos ("Santander ····1234").
     tarjeta: col("Tarjeta"),
     categoria: col("Categoria"),
     total: col("MontoTotal"),
@@ -176,15 +182,16 @@ export async function importExpensesCsv(
     tags: col("Tags"),
   };
 
-  if (idx.fecha < 0 || idx.comercio < 0 || idx.tarjeta < 0 || idx.total < 0) {
+  const hasCardColumn = idx.banco >= 0 || idx.numero >= 0 || idx.tarjeta >= 0;
+  if (idx.fecha < 0 || idx.comercio < 0 || !hasCardColumn || idx.total < 0) {
     return {
       success: false,
-      error: "Faltan columnas requeridas: Fecha, Comercio, Tarjeta, MontoTotal",
+      error: "Faltan columnas requeridas: Fecha, Comercio, Banco/NumeroTarjeta, MontoTotal",
     };
   }
 
   const [cardsRes, catsRes] = await Promise.all([
-    supabase.from("cards").select("id, name, last_four").eq("user_id", user.id),
+    supabase.from("cards").select("id, name, bank, last_four").eq("user_id", user.id),
     supabase
       .from("categories")
       .select("id, name")
@@ -194,17 +201,33 @@ export async function importExpensesCsv(
   const cards = cardsRes.data ?? [];
   const cats = catsRes.data ?? [];
 
-  const findCard = (raw: string) => {
-    const v = raw.trim().toLowerCase();
-    const last4 = v.match(/(\d{4})\s*$/)?.[1];
-    const name = v.replace(/[·•\s]*\d{4}\s*$/, "").trim();
-    return (
-      cards.find(
-        (c) =>
-          c.name.toLowerCase() === name &&
-          (!last4 || c.last_four === last4)
-      ) ?? cards.find((c) => c.name.toLowerCase() === name)
-    );
+  const norm = (s: string) => s.trim().toLowerCase();
+  const cardMatchesBank = (c: (typeof cards)[number], bank: string) =>
+    norm(c.bank ?? "") === bank || norm(c.name) === bank;
+
+  /**
+   * Busca la tarjeta por banco y/o número (cada uno en su columna). Si solo
+   * viene la columna combinada antigua, la descompone en banco + últimos 4.
+   */
+  const findCard = (bankRaw: string, numberRaw: string, comboRaw: string) => {
+    let bank = norm(bankRaw);
+    let last4 = numberRaw.replace(/\D/g, "").slice(-4);
+
+    if (!bank && !last4 && comboRaw) {
+      last4 = comboRaw.match(/(\d{4})\s*$/)?.[1] ?? "";
+      bank = norm(comboRaw.replace(/[·•\s]*\d{4}\s*$/, ""));
+    }
+
+    if (bank && last4) {
+      return (
+        cards.find((c) => cardMatchesBank(c, bank) && c.last_four === last4) ??
+        cards.find((c) => c.last_four === last4) ??
+        cards.find((c) => cardMatchesBank(c, bank))
+      );
+    }
+    if (last4) return cards.find((c) => c.last_four === last4);
+    if (bank) return cards.find((c) => cardMatchesBank(c, bank));
+    return undefined;
   };
   const findCat = (raw: string) => {
     const v = raw.trim().toLowerCase();
@@ -227,7 +250,7 @@ export async function importExpensesCsv(
 
   for (const r of rows.slice(1)) {
     const get = (i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
-    const card = findCard(get(idx.tarjeta));
+    const card = findCard(get(idx.banco), get(idx.numero), get(idx.tarjeta));
     const total = parseNum(get(idx.total));
     const installments = Math.max(1, parseInt(get(idx.cuotas) || "1", 10) || 1);
     const cuotaRaw = get(idx.cuota);
