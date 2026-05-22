@@ -9,7 +9,7 @@ import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Próximos cierres" };
+export const metadata = { title: "Cierre de tarjetas" };
 
 export default async function CierresPage() {
   const supabase = await createClient();
@@ -43,7 +43,7 @@ export default async function CierresPage() {
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="font-display text-[20px] font-semibold text-foreground">
-          Próximos cierres
+          Cierre de tarjetas
         </h1>
         <div className="w-10" />
       </div>

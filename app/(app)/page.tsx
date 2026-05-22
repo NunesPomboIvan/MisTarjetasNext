@@ -180,12 +180,12 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Próximos cierres — cartelera de cierres */}
+          {/* Cierre de tarjetas — cartelera de cierres */}
           {closingSoon.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-[16px] font-semibold text-foreground">
-                  Próximos cierres
+                  Cierre de tarjetas
                 </h2>
                 <Link href="/cierres" className="text-[13px] font-semibold text-primary">
                   Ver todos
@@ -195,7 +195,7 @@ export default async function DashboardPage() {
               <div className="rounded-[18px] border border-border bg-card p-4">
                 <CardsBillboard
                   items={closingSoon}
-                  label="Próximos cierres"
+                  label="Cierre de tarjetas"
                   href="/cierres"
                   icon="calendar-clock"
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
