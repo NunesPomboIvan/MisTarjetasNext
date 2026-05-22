@@ -182,6 +182,11 @@ export async function importExpensesCsv(
     tags: col("Tags"),
   };
 
+  // Algunas exportaciones (Excel/planillas) dejan la columna de fecha sin
+  // encabezado (la fila empieza con ","). Si no hay "Fecha" pero la 1ª columna
+  // está vacía, la usamos como fecha.
+  if (idx.fecha < 0 && header[0] === "") idx.fecha = 0;
+
   const hasCardColumn = idx.banco >= 0 || idx.numero >= 0 || idx.tarjeta >= 0;
   if (idx.fecha < 0 || idx.comercio < 0 || !hasCardColumn || idx.total < 0) {
     return {
@@ -244,6 +249,21 @@ export async function importExpensesCsv(
     return parseFloat(s.replace(",", "."));
   };
 
+  // Normaliza la fecha a YYYY-MM-DD. Acepta YYYY-MM-DD y DD/MM/YYYY (o con
+  // guiones/puntos), que es como Excel reescribe las fechas en es-AR.
+  const toIsoDate = (raw: string): string => {
+    const s = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
+    if (m) {
+      const dd = m[1].padStart(2, "0");
+      const mm = m[2].padStart(2, "0");
+      const yy = m[3].length === 2 ? `20${m[3]}` : m[3];
+      return `${yy}-${mm}-${dd}`;
+    }
+    return s; // si no la reconocemos, dejamos que la validación la rechace
+  };
+
   let imported = 0;
   let skipped = 0;
   const toInsert: Record<string, unknown>[] = [];
@@ -266,7 +286,7 @@ export async function importExpensesCsv(
       total_amount: total,
       installments,
       installment_amount,
-      expense_date: get(idx.fecha),
+      expense_date: toIsoDate(get(idx.fecha)),
       currency: (get(idx.moneda) || "ARS").toUpperCase(),
       notes: get(idx.notas) || null,
       tags: tagsRaw
