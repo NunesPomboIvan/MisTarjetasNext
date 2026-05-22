@@ -56,7 +56,7 @@ export async function createExpense(
 
   revalidatePath(`/cards/${parsed.data.card_id}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true, id: data.id };
 }
 
@@ -143,7 +143,7 @@ export async function updateExpense(
 
   revalidatePath(`/cards/${parsed.data.card_id}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -187,7 +187,7 @@ export async function updateInstallmentAmount(
 
   revalidatePath(`/cards/${cardId}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -216,7 +216,7 @@ export async function updateAllInstallmentAmounts(
 
   revalidatePath(`/cards/${cardId}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -268,7 +268,7 @@ export async function cloneExpense(id: string): Promise<ActionResult> {
 
   revalidatePath(`/cards/${original.card_id}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true, id: data.id };
 }
 
@@ -288,6 +288,6 @@ export async function deleteExpense(id: string, cardId: string): Promise<ActionR
 
   revalidatePath(`/cards/${cardId}`);
   revalidatePath("/expenses");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { success: true };
 }

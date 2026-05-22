@@ -6,7 +6,7 @@ import { Home, CreditCard, PieChart, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/",         label: "Resumen",  icon: Home,            match: (p: string) => p === "/" },
+  { href: "/",         label: "Resumen",  icon: Home,            match: (p: string) => p === "/" || p.startsWith("/cierres") },
   { href: "/cards",    label: "Tarjetas", icon: CreditCard,      match: (p: string) => p.startsWith("/cards") },
   { href: "/expenses", label: "Consumos",  icon: PieChart,        match: (p: string) => p.startsWith("/expenses") },
   { href: "/more",     label: "Más",      icon: MoreHorizontal,  match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") },

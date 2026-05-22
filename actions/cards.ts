@@ -38,9 +38,9 @@ export async function createCard(formData: CardFormData): Promise<ActionResult> 
     return { success: false, error: error.message };
   }
 
-  revalidatePath("/cards");
-  revalidatePath("/");
-  revalidatePath("/pagos");
+  // Purga el client cache e invalida TODAS las rutas: las imágenes de tarjeta
+  // (que derivan del período actual) se actualizan al instante en toda la app.
+  revalidatePath("/", "layout");
   return { success: true, id: data.id };
 }
 
@@ -72,10 +72,7 @@ export async function updateCard(id: string, formData: CardFormData): Promise<Ac
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/cards/${id}`);
-  revalidatePath("/cards");
-  revalidatePath("/");
-  revalidatePath("/pagos");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -93,8 +90,7 @@ export async function toggleCardArchived(id: string, archived: boolean): Promise
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/cards");
-  revalidatePath(`/cards/${id}`);
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -120,10 +116,7 @@ export async function updateCardPeriod(
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath(`/cards/${id}`);
-  revalidatePath("/cards");
-  revalidatePath("/");
-  revalidatePath("/pagos");
+  revalidatePath("/", "layout");
   return { success: true };
 }
 
@@ -141,8 +134,6 @@ export async function deleteCard(id: string): Promise<ActionResult> {
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/cards");
-  revalidatePath("/");
-  revalidatePath("/pagos");
+  revalidatePath("/", "layout");
   redirect("/cards");
 }

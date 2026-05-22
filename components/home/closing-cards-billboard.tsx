@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ChevronRight } from "lucide-react";
 
 export interface ClosingCardItem {
   cardId: string;
@@ -53,9 +53,9 @@ export function ClosingCardsBillboard({
   return (
     <button
       type="button"
-      onClick={() => router.push(`/cards/${current.cardId}`)}
+      onClick={() => router.push("/cierres")}
       className="group flex w-full items-center gap-3 text-left transition-colors"
-      aria-label={`Ver tarjeta ${current.cardName}`}
+      aria-label="Ver cierres de todas las tarjetas"
     >
       <div
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
@@ -146,6 +146,8 @@ export function ClosingCardsBillboard({
           })}
         </div>
       </div>
+
+      <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
     </button>
   );
 }
