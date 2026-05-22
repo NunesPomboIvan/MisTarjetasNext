@@ -9,6 +9,7 @@ import { BackButton } from "@/components/shared/back-button";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { ExpenseItem } from "@/components/expenses/expense-item";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
+import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getPeriodByOffset,
@@ -47,6 +48,21 @@ export default async function CardDetailPage({
 
   if (!card) notFound();
 
+  // Orden de tarjetas (activas) para navegar con swipe entre detalles.
+  const { data: cardOrder } = await supabase
+    .from("cards")
+    .select("id")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("created_at");
+  const orderedIds = (cardOrder ?? []).map((c) => c.id);
+  const currentIndex = orderedIds.indexOf(id);
+  const prevId = currentIndex > 0 ? orderedIds[currentIndex - 1] : null;
+  const nextId =
+    currentIndex >= 0 && currentIndex < orderedIds.length - 1
+      ? orderedIds[currentIndex + 1]
+      : null;
+
   const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
   const currentPeriod = getPeriodByOffset(card, 0);
@@ -79,6 +95,12 @@ export default async function CardDetailPage({
   const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
 
   return (
+    <CardDetailSwipe
+      prevId={prevId}
+      nextId={nextId}
+      position={currentIndex >= 0 ? currentIndex + 1 : undefined}
+      total={orderedIds.length}
+    >
     <div className="space-y-5">
       {periodExpired && (
         <PeriodRenewalDialog
@@ -226,5 +248,6 @@ export default async function CardDetailPage({
         )}
       </section>
     </div>
+    </CardDetailSwipe>
   );
 }
