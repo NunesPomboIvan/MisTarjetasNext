@@ -2,8 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
-import { ProximosPagosRotator } from "@/components/home/proximos-pagos-rotator";
-import { ClosingCardsBillboard } from "@/components/home/closing-cards-billboard";
+import { CardsBillboard } from "@/components/home/cards-billboard";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ExpenseItem } from "@/components/expenses/expense-item";
@@ -63,13 +62,12 @@ export default async function DashboardPage() {
   const upcoming = cardSummaries
     .filter((c) => c.total > 0)
     .sort((a, b) => a.period.due.getTime() - b.period.due.getTime())
-    .map(({ card, period, total }) => ({
-      cardId: card.id,
-      cardName: card.bank || card.name,
-      cardColor: card.color,
-      total,
-      dueLabel: capitalize(formatDate(period.due, "EEEE d 'de' MMMM")),
-      daysUntilDue: differenceInCalendarDays(period.due, todayStart),
+    .map(({ card, period }) => ({
+      id: card.id,
+      accent: card.color,
+      primary: card.bank || card.name,
+      secondary: capitalize(formatDate(period.due, "EEEE d 'de' MMM")),
+      days: differenceInCalendarDays(period.due, todayStart),
     }));
 
   // Tarjetas que vencen hoy → para alerta pop-up
@@ -85,14 +83,14 @@ export default async function DashboardPage() {
   const CLOSING_WINDOW_DAYS = 7;
   const closingSoon = cardSummaries
     .map(({ card, currentPeriod }) => ({
-      cardId: card.id,
-      cardName: card.bank || card.name,
-      cardColor: card.color,
-      closeLabel: capitalize(formatDate(currentPeriod.end, "EEEE d 'de' MMM")),
-      daysUntilClose: differenceInCalendarDays(currentPeriod.end, todayStart),
+      id: card.id,
+      accent: card.color,
+      primary: card.bank || card.name,
+      secondary: capitalize(formatDate(currentPeriod.end, "EEEE d 'de' MMM")),
+      days: differenceInCalendarDays(currentPeriod.end, todayStart),
     }))
-    .filter((c) => c.daysUntilClose >= 0 && c.daysUntilClose <= CLOSING_WINDOW_DAYS)
-    .sort((a, b) => a.daysUntilClose - b.daysUntilClose);
+    .filter((c) => c.days >= 0 && c.days <= CLOSING_WINDOW_DAYS)
+    .sort((a, b) => a.days - b.days);
 
   // Mapa id→nombre de tarjeta para el listado de consumos
   const cardMap = Object.fromEntries(cards.map((c) => [c.id, c.bank || c.name]));
@@ -148,7 +146,13 @@ export default async function DashboardPage() {
             {upcoming.length > 0 && (
               <>
                 <div className="my-4 h-px bg-border" />
-                <ProximosPagosRotator items={upcoming} flat />
+                <CardsBillboard
+                  items={upcoming}
+                  label="Próximos pagos"
+                  href="/pagos"
+                  icon="calendar"
+                  ariaLabel="Ver próximos pagos de todas las tarjetas"
+                />
               </>
             )}
           </section>
@@ -176,12 +180,12 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Cierra pronto — cartelera de cierres */}
+          {/* Próximos cierres — cartelera de cierres */}
           {closingSoon.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-[16px] font-semibold text-foreground">
-                  Cierra pronto
+                  Próximos cierres
                 </h2>
                 <Link href="/cierres" className="text-[13px] font-semibold text-primary">
                   Ver todos
@@ -189,7 +193,14 @@ export default async function DashboardPage() {
               </div>
 
               <div className="rounded-[18px] border border-border bg-card p-4">
-                <ClosingCardsBillboard items={closingSoon} showLabel={false} />
+                <CardsBillboard
+                  items={closingSoon}
+                  label="Próximos cierres"
+                  href="/cierres"
+                  icon="calendar-clock"
+                  ariaLabel="Ver próximos cierres de todas las tarjetas"
+                  showLabel={false}
+                />
               </div>
             </section>
           )}

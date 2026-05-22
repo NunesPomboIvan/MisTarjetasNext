@@ -2,36 +2,60 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, ChevronRight } from "lucide-react";
+import { ChevronRight, Calendar, CalendarClock } from "lucide-react";
 
-export interface ClosingCardItem {
-  cardId: string;
-  cardName: string;
-  cardColor: string;
-  closeLabel: string;
-  daysUntilClose: number;
+const ICONS = {
+  calendar: Calendar,
+  "calendar-clock": CalendarClock,
+} as const;
+
+export type BillboardIcon = keyof typeof ICONS;
+
+export interface BillboardItem {
+  /** Identificador único (para keys) */
+  id: string;
+  /** Color de acento del ícono */
+  accent: string;
+  /** Texto principal (ej: nombre de la tarjeta) */
+  primary: string;
+  /** Texto secundario (ej: fecha de cierre/vencimiento) */
+  secondary: string;
+  /** Días restantes (para cerrar o vencer). <=0 = "Hoy" */
+  days: number;
 }
 
-interface ClosingCardsBillboardProps {
-  items: ClosingCardItem[];
+interface CardsBillboardProps {
+  items: BillboardItem[];
+  /** Rótulo interno (ej: "Próximos pagos") */
+  label: string;
+  /** Destino al tocar la cartelera */
+  href: string;
+  /** Ícono a mostrar a la izquierda (clave serializable, no el componente) */
+  icon: BillboardIcon;
+  /** Texto accesible del botón */
+  ariaLabel?: string;
   /** Milisegundos entre rotaciones */
   intervalMs?: number;
-  /** Muestra el rótulo interno "Cierra pronto" (ocultar si ya hay encabezado) */
+  /** Muestra el rótulo interno (ocultar si ya hay encabezado) */
   showLabel?: boolean;
 }
 
 const ROW_H = 30;
 
 /**
- * Tira "cartelera" — pensada para vivir como pie de la card de saldo en el
- * homepage. Si hay una sola tarjeta cerrando, queda fija; si hay varias rotan
- * con efecto vertical (de abajo hacia arriba).
+ * Cartelera con rotación vertical (de abajo hacia arriba). Si hay un solo item
+ * queda fija; con varios rota. Toda la tira es tocable y navega a `href`.
  */
-export function ClosingCardsBillboard({
+export function CardsBillboard({
   items,
+  label,
+  href,
+  icon,
+  ariaLabel,
   intervalMs = 3200,
   showLabel = true,
-}: ClosingCardsBillboardProps) {
+}: CardsBillboardProps) {
+  const Icon = ICONS[icon];
   const router = useRouter();
   const [index, setIndex] = React.useState(0);
   const itemsLen = items.length;
@@ -44,56 +68,52 @@ export function ClosingCardsBillboard({
     return () => clearInterval(id);
   }, [itemsLen, intervalMs]);
 
-  React.useEffect(() => {
-    if (index >= itemsLen) setIndex(0);
-  }, [itemsLen, index]);
-
   if (itemsLen === 0) return null;
 
-  const current = items[index];
-  const accent = current.cardColor || "#6366f1";
+  // Índice acotado: si la cantidad de items cambió y `index` quedó fuera de
+  // rango, lo normalizamos sin necesidad de un efecto que llame a setState.
+  const active = index % itemsLen;
+  const current = items[active];
+  const accent = current.accent || "#6366f1";
 
   return (
     <button
       type="button"
-      onClick={() => router.push("/cierres")}
+      onClick={() => router.push(href)}
       className="group flex w-full items-center gap-3 text-left transition-colors"
-      aria-label="Ver cierres de todas las tarjetas"
+      aria-label={ariaLabel ?? label}
     >
       <div
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
         style={{ background: `${accent}20`, color: accent }}
       >
-        <CalendarClock className="h-4 w-4" />
+        <Icon className="h-4 w-4" />
       </div>
 
       <div className="min-w-0 flex-1">
         {showLabel && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Cierra pronto
+            {label}
           </p>
         )}
-        <div
-          className="relative overflow-hidden"
-          style={{ height: ROW_H }}
-        >
+        <div className="relative overflow-hidden" style={{ height: ROW_H }}>
           <div
             className="absolute inset-0 will-change-transform"
             style={{
-              transform: `translateY(-${index * ROW_H}px)`,
+              transform: `translateY(-${active * ROW_H}px)`,
               transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
             }}
           >
             {items.map((it) => (
               <div
-                key={it.cardId + "-name"}
+                key={it.id + "-name"}
                 className="flex flex-col justify-center"
                 style={{ height: ROW_H }}
               >
                 <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
-                  {it.cardName}
+                  {it.primary}
                   <span className="ml-1.5 font-normal text-muted-foreground">
-                    · {it.closeLabel}
+                    · {it.secondary}
                   </span>
                 </p>
               </div>
@@ -114,11 +134,11 @@ export function ClosingCardsBillboard({
           }}
         >
           {items.map((it) => {
-            const isToday = it.daysUntilClose <= 0;
-            const isUrgent = it.daysUntilClose <= 1;
+            const isToday = it.days <= 0;
+            const isUrgent = it.days <= 1;
             return (
               <div
-                key={it.cardId + "-days"}
+                key={it.id + "-days"}
                 className="flex flex-col items-end justify-center"
                 style={{ height: ROW_H }}
               >
@@ -139,10 +159,10 @@ export function ClosingCardsBillboard({
                         (isUrgent ? "text-destructive" : "text-foreground")
                       }
                     >
-                      {it.daysUntilClose}
+                      {it.days}
                     </p>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {it.daysUntilClose === 1 ? "día" : "días"}
+                      {it.days === 1 ? "día" : "días"}
                     </p>
                   </div>
                 )}
