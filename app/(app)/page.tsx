@@ -98,7 +98,7 @@ export default async function DashboardPage() {
 
   const hour = today.getHours();
   const weekdayLabel = capitalize(formatDate(today, "EEEE"));
-  const dayMonthLabel = `${formatDate(today, "d")} de ${capitalize(formatDate(today, "MMMM"))}`;
+  const dayMonthLabel = formatDate(today, "dd/MM/yyyy");
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
