@@ -40,8 +40,6 @@ interface CardsBillboardProps {
   showLabel?: boolean;
 }
 
-const ROW_H = 30;
-
 /**
  * Cartelera con rotación vertical (de abajo hacia arriba). Si hay un solo item
  * queda fija; con varios rota. Toda la tira es tocable y navega a `href`.
@@ -96,79 +94,58 @@ export function CardsBillboard({
             {label}
           </p>
         )}
-        <div className="relative overflow-hidden" style={{ height: ROW_H }}>
+        <div className="relative overflow-hidden">
           <div
-            className="absolute inset-0 will-change-transform"
+            className="flex will-change-transform"
             style={{
-              transform: `translateY(-${active * ROW_H}px)`,
-              transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
+              transform: `translateX(-${active * 100}%)`,
+              transition: "transform 0.5s cubic-bezier(0.65,0,0.35,1)",
             }}
           >
-            {items.map((it) => (
-              <div
-                key={it.id + "-name"}
-                className="flex flex-col justify-center"
-                style={{ height: ROW_H }}
-              >
-                <p className="truncate text-[13.5px] font-semibold leading-tight text-foreground">
-                  {it.primary}
-                  <span className="ml-1.5 font-normal text-muted-foreground">
-                    · {it.secondary}
-                  </span>
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="flex-shrink-0 overflow-hidden text-right"
-        style={{ height: ROW_H }}
-      >
-        <div
-          className="will-change-transform"
-          style={{
-            transform: `translateY(-${index * ROW_H}px)`,
-            transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)",
-          }}
-        >
-          {items.map((it) => {
-            const isToday = it.days <= 0;
-            const isUrgent = it.days <= 1;
-            return (
-              <div
-                key={it.id + "-days"}
-                className="flex flex-col items-end justify-center"
-                style={{ height: ROW_H }}
-              >
-                {isToday ? (
-                  <p
-                    className={
-                      "font-display text-[15px] font-bold leading-none " +
-                      (isUrgent ? "text-destructive" : "text-foreground")
-                    }
-                  >
-                    Hoy
+            {items.map((it) => {
+              const isToday = it.days <= 0;
+              const isUrgent = it.days <= 1;
+              return (
+                <div
+                  key={it.id}
+                  className="flex w-full flex-shrink-0 items-center justify-between gap-2"
+                >
+                  <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight text-foreground">
+                    {it.primary}
+                    <span className="ml-1.5 font-normal text-muted-foreground">
+                      · {it.secondary}
+                    </span>
                   </p>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <p
-                      className={
-                        "font-display text-[17px] font-bold leading-none tabular-nums " +
-                        (isUrgent ? "text-destructive" : "text-foreground")
-                      }
-                    >
-                      {it.days}
-                    </p>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {it.days === 1 ? "día" : "días"}
-                    </p>
+                  <div className="flex-shrink-0 text-right">
+                    {isToday ? (
+                      <p
+                        className={
+                          "font-display text-[15px] font-bold leading-none " +
+                          (isUrgent ? "text-destructive" : "text-foreground")
+                        }
+                      >
+                        Hoy
+                      </p>
+                    ) : (
+                      <div className="flex items-baseline justify-end gap-1">
+                        <p
+                          className={
+                            "font-display text-[17px] font-bold leading-none tabular-nums " +
+                            (isUrgent ? "text-destructive" : "text-foreground")
+                          }
+                        >
+                          {it.days}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                          {it.days === 1 ? "día" : "días"}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

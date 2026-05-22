@@ -123,7 +123,7 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy arriba, próximos pagos como pie */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Próximo a pagar
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {weekdayLabel}
                 </p>
-                <p className="mt-1 text-[19px] font-bold leading-none text-foreground">
+                <p className="mt-1 text-[15px] font-bold leading-none text-foreground tabular-nums">
                   {dayMonthLabel}
                 </p>
               </div>
@@ -160,7 +160,7 @@ export default async function DashboardPage() {
           {/* Mis tarjetas */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-[16px] font-semibold text-foreground">
+              <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Mis tarjetas
               </h2>
               <Link href="/cards" className="text-[13px] font-semibold text-primary">
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
           {closingSoon.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="font-display text-[16px] font-semibold text-foreground">
+                <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Cierre de tarjetas
                 </h2>
                 <Link href="/cierres" className="text-[13px] font-semibold text-primary">
