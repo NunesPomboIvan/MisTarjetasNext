@@ -8,7 +8,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
-import { getActiveTitularId } from "@/lib/titulares/server";
+import { resolveTitulares } from "@/lib/titulares/server";
+import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -23,7 +24,7 @@ function greeting(hour: number): string {
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const activeTitularId = await getActiveTitularId();
+  const { titulares, activeId: activeTitularId } = await resolveTitulares();
 
   let cardsQuery = supabase
     .from("cards")
@@ -111,10 +112,13 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* Header personalizado */}
-      <header className="min-w-0">
-        <h1 className="font-display text-[26px] font-bold tracking-tight text-foreground">
+      <header className="flex min-w-0 items-center justify-between gap-3">
+        <h1 className="min-w-0 truncate font-display text-[26px] font-bold tracking-tight text-foreground">
           {greeting(hour)} 👋
         </h1>
+        {titulares.length > 0 && (
+          <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
+        )}
       </header>
 
       {cards.length === 0 ? (
