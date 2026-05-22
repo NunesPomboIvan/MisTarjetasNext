@@ -66,7 +66,6 @@ export default async function DashboardPage() {
       id: card.id,
       accent: card.color,
       primary: card.bank || card.name,
-      secondary: capitalize(formatDate(period.due, "EEEE d 'de' MMM")),
       days: differenceInCalendarDays(period.due, todayStart),
     }));
 
@@ -86,7 +85,6 @@ export default async function DashboardPage() {
       id: card.id,
       accent: card.color,
       primary: card.bank || card.name,
-      secondary: capitalize(formatDate(currentPeriod.end, "EEEE d 'de' MMM")),
       days: differenceInCalendarDays(currentPeriod.end, todayStart),
     }))
     .filter((c) => c.days >= 0 && c.days <= CLOSING_WINDOW_DAYS)

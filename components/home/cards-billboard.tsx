@@ -18,8 +18,6 @@ export interface BillboardItem {
   accent: string;
   /** Texto principal (ej: nombre de la tarjeta) */
   primary: string;
-  /** Texto secundario (ej: fecha de cierre/vencimiento) */
-  secondary: string;
   /** Días restantes (para cerrar o vencer). <=0 = "Hoy" */
   days: number;
 }
@@ -112,9 +110,6 @@ export function CardsBillboard({
                 >
                   <p className="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight text-foreground">
                     {it.primary}
-                    <span className="ml-1.5 font-normal text-muted-foreground">
-                      · {it.secondary}
-                    </span>
                   </p>
                   <div className="flex-shrink-0 text-right">
                     {isToday ? (
