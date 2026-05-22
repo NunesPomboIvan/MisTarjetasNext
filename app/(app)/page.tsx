@@ -59,8 +59,9 @@ export default async function DashboardPage() {
   // muestre la fecha del servidor (UTC en Vercel) cuando en Argentina aún es otro día.
   const today = nowInArgentina();
   const todayStart = startOfDay(today);
+  // Próximos pagos: TODAS las tarjetas, ordenadas por su próximo vencimiento.
   const upcoming = cardSummaries
-    .filter((c) => c.total > 0)
+    .slice()
     .sort((a, b) => a.period.due.getTime() - b.period.due.getTime())
     .map(({ card, period }) => ({
       id: card.id,
@@ -78,8 +79,7 @@ export default async function DashboardPage() {
       total,
     }));
 
-  // Tarjetas que cierran en los próximos 7 días → cartelera rotativa
-  const CLOSING_WINDOW_DAYS = 7;
+  // Cierre de tarjetas: TODAS las tarjetas, ordenadas por proximidad de cierre.
   const closingSoon = cardSummaries
     .map(({ card, currentPeriod }) => ({
       id: card.id,
@@ -87,7 +87,6 @@ export default async function DashboardPage() {
       primary: card.bank || card.name,
       days: differenceInCalendarDays(currentPeriod.end, todayStart),
     }))
-    .filter((c) => c.days >= 0 && c.days <= CLOSING_WINDOW_DAYS)
     .sort((a, b) => a.days - b.days);
 
   // Mapa id→nombre de tarjeta para el listado de consumos
