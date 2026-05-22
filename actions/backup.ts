@@ -150,6 +150,20 @@ export async function exportExpensesCsv(): Promise<
   return { success: true, csv: "﻿" + lines.join("\r\n") };
 }
 
+/**
+ * Genera una plantilla CSV (mismas columnas que la exportación) con filas de
+ * ejemplo, para que el usuario la complete e importe.
+ */
+export async function exportCsvTemplate(): Promise<{ success: true; csv: string }> {
+  const examples: string[][] = [
+    ["31/05/2026", "Ejemplo: Fravega", "Nacion", "1086", "Tecnología", "120000", "3", "40000", "ARS", "", ""],
+    ["26/05/2026", "Ejemplo: Supermercado", "Macro", "6426", "Supermercado", "15499.90", "1", "", "ARS", "nota opcional", "tag1|tag2"],
+  ];
+  const lines = [CSV_HEADERS.join(",")];
+  for (const row of examples) lines.push(row.map(csvCell).join(","));
+  return { success: true, csv: "﻿" + lines.join("\r\n") };
+}
+
 /** Importa consumos desde un CSV con las mismas columnas que la exportación. */
 export async function importExpensesCsv(
   csvText: string

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Moon, Sun, Monitor, Download, Upload,
-  Plus, Trash2, Pencil, Check, X,
+  Plus, Trash2, Pencil, Check, X, FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
   importData,
   exportExpensesCsv,
   importExpensesCsv,
+  exportCsvTemplate,
 } from "@/actions/backup";
 import type { Category } from "@/lib/supabase/database.types";
 
@@ -154,6 +155,18 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Consumos exportados");
+  }
+
+  async function handleDownloadTemplate() {
+    const result = await exportCsvTemplate();
+    const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plantilla-consumos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Plantilla descargada");
   }
 
   async function handleImportCsv(e: React.ChangeEvent<HTMLInputElement>) {
@@ -367,6 +380,10 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
           Consumos (Excel / CSV)
         </p>
         <div className="flex flex-col gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Descargar plantilla (CSV)
+          </Button>
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
             <Download className="mr-2 h-4 w-4" />
             Exportar consumos (CSV)
@@ -385,8 +402,10 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
           </label>
         </div>
         <p className="text-xs text-muted-foreground">
-          El CSV se abre en Excel. Para importar, la columna <strong>Tarjeta</strong>{" "}
-          debe coincidir con una tarjeta existente.
+          El CSV se abre en Excel y tiene las mismas columnas que la exportación.
+          Para importar, el <strong>Banco</strong> y el <strong>NumeroTarjeta</strong>{" "}
+          deben coincidir con una tarjeta existente. La fecha admite{" "}
+          <strong>DD/MM/AAAA</strong>.
         </p>
       </section>
     </div>
