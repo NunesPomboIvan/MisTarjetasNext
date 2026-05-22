@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {weekdayLabel}
                 </p>
-                <p className="mt-1 font-display text-[19px] font-bold leading-none tracking-tight text-foreground">
+                <p className="mt-1 text-[19px] font-bold leading-none text-foreground">
                   {dayMonthLabel}
                 </p>
               </div>
