@@ -1,6 +1,13 @@
 import { BottomNav } from "@/components/shared/bottom-nav";
 import { AuthGate } from "@/components/shared/auth-gate";
 
+// El cliente de Supabase usa un user_id fijo (sin cookies), así que Next no
+// detecta APIs dinámicas y prerenderizaría estas páginas en build time. Eso
+// congela los datos y, peor, calcula "días para vencer/cerrar" con la fecha
+// del build. Forzamos render dinámico para que siempre use datos y fecha
+// actuales en cada request.
+export const dynamic = "force-dynamic";
+
 export default function AppLayout({
   children,
 }: {
