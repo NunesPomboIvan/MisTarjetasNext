@@ -93,7 +93,7 @@ export default async function CardDetailPage({
       <div className="flex items-center justify-between">
         <BackButton />
         <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
-        <CardActionsMenu cardId={id} />
+        <CardActionsMenu cardId={id} cardName={card.bank || card.name} />
       </div>
 
       {/* Wallet card */}
