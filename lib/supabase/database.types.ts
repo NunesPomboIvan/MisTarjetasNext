@@ -28,6 +28,7 @@ export interface Database {
           credit_limit: number | null;
           holder_name: string | null;
           expiry: string | null;
+          titular_id: string | null;
           archived: boolean;
           created_at: string;
           updated_at: string;
@@ -47,6 +48,7 @@ export interface Database {
           credit_limit?: number | null;
           holder_name?: string | null;
           expiry?: string | null;
+          titular_id?: string | null;
           archived?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -66,8 +68,33 @@ export interface Database {
           credit_limit?: number | null;
           holder_name?: string | null;
           expiry?: string | null;
+          titular_id?: string | null;
           archived?: boolean;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      titulares: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          color?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          color?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -231,6 +258,10 @@ export type TablesUpdate<T extends keyof Database["public"]["Tables"]> =
 export type Card = Tables<"cards">;
 export type CardInsert = TablesInsert<"cards">;
 export type CardUpdate = TablesUpdate<"cards">;
+
+export type Titular = Tables<"titulares">;
+export type TitularInsert = TablesInsert<"titulares">;
+export type TitularUpdate = TablesUpdate<"titulares">;
 
 export type Category = Tables<"categories">;
 export type CategoryInsert = TablesInsert<"categories">;

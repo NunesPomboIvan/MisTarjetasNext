@@ -222,31 +222,32 @@ export function NewExpenseHero({
           )}
         </div>
 
-        {/* Card: comercio / tarjeta / cuotas */}
-        <div className="rounded-2xl border border-border bg-card divide-y divide-border/70 shadow-sm">
-          {/* Comercio */}
-          <div className="px-4 py-3">
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Comercio
-            </span>
-            <div className="mt-1">
-              <Controller
-                control={control}
-                name="description"
-                render={({ field }) => (
-                  <BorderlessDescription
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    invalid={!!errors.description}
-                  />
-                )}
-              />
-            </div>
-            {errors.description && (
-              <p className="mt-1 text-xs text-destructive">{errors.description.message}</p>
-            )}
+        {/* Comercio — campo prominente, primero a completar */}
+        <div className="space-y-2">
+          <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
+            Comercio
+          </span>
+          <div className="[&_input]:h-12 [&_input]:rounded-2xl [&_input]:text-base [&_input]:font-medium">
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <DescriptionAutocomplete
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="¿Dónde compraste?"
+                  invalid={!!errors.description}
+                />
+              )}
+            />
           </div>
+          {errors.description && (
+            <p className="text-xs text-destructive">{errors.description.message}</p>
+          )}
+        </div>
 
+        {/* Card: tarjeta / cuotas */}
+        <div className="rounded-2xl border border-border bg-card divide-y divide-border/70 shadow-sm">
           {/* Tarjeta */}
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="text-sm font-medium text-foreground">Tarjeta</span>
@@ -651,29 +652,6 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
   );
 }
 
-interface BorderlessDescriptionProps {
-  value: string;
-  onChange: (v: string) => void;
-  invalid?: boolean;
-}
-
-/**
- * Variante "ghost" (sin borde) del autocomplete de descripción, para integrarse
- * dentro de la card del hero como una row más.
- */
-function BorderlessDescription({ value, onChange, invalid }: BorderlessDescriptionProps) {
-  return (
-    <div className="[&_input]:h-auto [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-0 [&_input]:py-0 [&_input]:text-base [&_input]:font-medium [&_input]:focus-visible:border-0 [&_input]:focus-visible:ring-0">
-      <DescriptionAutocomplete
-        value={value}
-        onChange={onChange}
-        placeholder="Ingresá el comercio…"
-        invalid={invalid}
-      />
-    </div>
-  );
-}
-
 const COLOR_PAIRS = [
   { bg: "#fef3c7", text: "#92400e" },
   { bg: "#dbeafe", text: "#1e40af" },
@@ -841,7 +819,7 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
 
             <Button
               type="button"
-              className="gradient-primary shadow-brand w-full"
+              className="gradient-primary shadow-brand w-full text-white"
               onClick={handleCreate}
               disabled={isPending}
             >

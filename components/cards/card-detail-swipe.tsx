@@ -70,36 +70,34 @@ export function CardDetailSwipe({
     >
       {children}
 
-      {/* Flecha izquierda */}
-      {prevId && (
-        <button
-          type="button"
-          onClick={goPrev}
-          aria-label="Tarjeta anterior"
-          className="fixed left-1.5 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card/80 text-foreground/70 shadow-sm backdrop-blur transition-colors hover:text-foreground active:scale-95"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-      )}
+      {/* Pager en flujo (no tapa el contenido): ‹  2 / 5  › */}
+      {(prevId || nextId) && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={goPrev}
+            disabled={!prevId}
+            aria-label="Tarjeta anterior"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
 
-      {/* Flecha derecha */}
-      {nextId && (
-        <button
-          type="button"
-          onClick={goNext}
-          aria-label="Tarjeta siguiente"
-          className="fixed right-1.5 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card/80 text-foreground/70 shadow-sm backdrop-blur transition-colors hover:text-foreground active:scale-95"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      )}
+          {total != null && total > 1 && position != null && (
+            <span className="rounded-full bg-muted px-3 py-1 text-[12px] font-medium tabular-nums text-muted-foreground">
+              {position} / {total}
+            </span>
+          )}
 
-      {/* Indicador de posición */}
-      {total != null && total > 1 && position != null && (
-        <div className="pointer-events-none mt-1 flex items-center justify-center">
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-            {position} / {total}
-          </span>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!nextId}
+            aria-label="Tarjeta siguiente"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-30"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       )}
     </div>

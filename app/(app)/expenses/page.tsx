@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
@@ -28,6 +29,18 @@ export default async function ExpensesPage({
   const filters = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  // Tarjetas del titular activo: acotan tanto los movimientos como el filtro de tarjeta.
+  let titularCardIds: string[] | null = null;
+  if (activeTitularId) {
+    const { data: titularCards } = await supabase
+      .from("cards")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("titular_id", activeTitularId);
+    titularCardIds = (titularCards ?? []).map((c) => c.id);
+  }
 
   let query = supabase
     .from("expenses")
@@ -36,6 +49,7 @@ export default async function ExpensesPage({
     .order("expense_date", { ascending: false })
     .limit(200);
 
+  if (titularCardIds) query = query.in("card_id", titularCardIds);
   if (filters.card_id) query = query.eq("card_id", filters.card_id);
   if (filters.category_id) query = query.eq("category_id", filters.category_id);
   if (filters.date_from) query = query.gte("expense_date", filters.date_from);
@@ -47,12 +61,20 @@ export default async function ExpensesPage({
   const [{ data: expensesData }, cardsResult, categoriesResult] =
     await Promise.all([
       query,
-      supabase
-        .from("cards")
-        .select("id, name, last_four")
-        .eq("user_id", user!.id)
-        .eq("archived", false)
-        .order("name"),
+      (activeTitularId
+        ? supabase
+            .from("cards")
+            .select("id, name, last_four")
+            .eq("user_id", user!.id)
+            .eq("archived", false)
+            .eq("titular_id", activeTitularId)
+            .order("name")
+        : supabase
+            .from("cards")
+            .select("id, name, last_four")
+            .eq("user_id", user!.id)
+            .eq("archived", false)
+            .order("name")),
       supabase
         .from("categories")
         .select("id, name, emoji")

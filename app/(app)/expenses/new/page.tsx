@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
 
 export const metadata = { title: "Nuevo consumo" };
@@ -13,14 +14,18 @@ export default async function NewExpensePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let cardsQuery = supabase
+    .from("cards")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("name");
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
   const [cardsResult, categoriesResult] = await Promise.all([
-    supabase
-      .from("cards")
-      .select("*")
-      .eq("user_id", user!.id)
-      .eq("archived", false)
-      .order("name"),
+    cardsQuery,
     supabase
       .from("categories")
       .select("*")

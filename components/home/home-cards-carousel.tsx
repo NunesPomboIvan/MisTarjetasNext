@@ -100,7 +100,8 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
             <div
               key={card.id}
               data-card-item
-              className="w-full flex-shrink-0 snap-center"
+              className="snap-center"
+              style={{ flex: multi ? "0 0 calc(100% - 3rem)" : "0 0 100%" }}
             >
               <CardPressWrapper
                 href={`/cards/${card.id}`}

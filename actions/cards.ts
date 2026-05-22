@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { cardSchema } from "@/lib/schemas/card";
 import type { CardFormData } from "@/lib/schemas/card";
 
@@ -25,9 +26,13 @@ export async function createCard(formData: CardFormData): Promise<ActionResult> 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // La tarjeta nueva se asigna al titular activo, así queda agrupada con la
+  // persona que se está gestionando en ese momento.
+  const titularId = await getActiveTitularId();
+
   const { data, error } = await supabase
     .from("cards")
-    .insert({ ...parsed.data, user_id: user.id })
+    .insert({ ...parsed.data, user_id: user.id, titular_id: titularId })
     .select("id")
     .single();
 

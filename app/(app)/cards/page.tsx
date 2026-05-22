@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { CardList } from "@/components/cards/card-list";
 
 export const metadata = { title: "Tarjetas" };
@@ -8,13 +9,17 @@ export const metadata = { title: "Tarjetas" };
 export default async function CardsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
 
-  const { data: cards } = await supabase
+  let cardsQuery = supabase
     .from("cards")
     .select(`*, expenses (*)`)
     .eq("user_id", user!.id)
     .order("archived", { ascending: true })
     .order("created_at", { ascending: true });
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
+
+  const { data: cards } = await cardsQuery;
 
   return (
     <div className="space-y-5">

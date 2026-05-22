@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -22,9 +23,18 @@ function greeting(hour: number): string {
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let cardsQuery = supabase
+    .from("cards")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("created_at");
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
   const [cardsResult, expensesResult] = await Promise.all([
-    supabase.from("cards").select("*").eq("user_id", user!.id).eq("archived", false).order("created_at"),
+    cardsQuery,
     supabase.from("expenses").select("*, category:categories(*)").eq("user_id", user!.id).order("expense_date", { ascending: false }),
   ]);
 
@@ -118,7 +128,7 @@ export default async function DashboardPage() {
         <>
           <DueTodayAlert todayKey={todayKey} cards={dueToday} />
 
-          {/* Card resumen: saldo + fecha de hoy arriba, próximos pagos como pie */}
+          {/* Card resumen: saldo + fecha de hoy */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
             <div className="flex items-end justify-between gap-3">
               <div className="min-w-0">
@@ -139,19 +149,6 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-
-            {upcoming.length > 0 && (
-              <>
-                <div className="my-4 h-px bg-border" />
-                <CardsBillboard
-                  items={upcoming}
-                  label="Próximos pagos"
-                  href="/pagos"
-                  icon="calendar"
-                  ariaLabel="Ver próximos pagos de todas las tarjetas"
-                />
-              </>
-            )}
           </section>
 
           {/* Mis tarjetas */}
@@ -177,30 +174,35 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Cierre de tarjetas — cartelera de cierres */}
-          {closingSoon.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Cierre de tarjetas
-                </h2>
-                <Link href="/cierres" className="text-[13px] font-semibold text-primary">
-                  Ver todos
-                </Link>
-              </div>
+          {/* Próximos pagos + Cierre de tarjetas */}
+          {(upcoming.length > 0 || closingSoon.length > 0) && (
+            <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+              {upcoming.length > 0 && (
+                <CardsBillboard
+                  items={upcoming}
+                  label="Próximos pagos"
+                  href="/pagos"
+                  icon="calendar"
+                  ariaLabel="Ver próximos pagos de todas las tarjetas"
+                />
+              )}
 
-              <div className="rounded-[18px] border border-border bg-card p-4">
+              {upcoming.length > 0 && closingSoon.length > 0 && (
+                <div className="my-4 h-px bg-border" />
+              )}
+
+              {closingSoon.length > 0 && (
                 <CardsBillboard
                   items={closingSoon}
                   label="Cierre de tarjetas"
                   href="/cierres"
                   icon="calendar-clock"
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
-                  showLabel={false}
                 />
-              </div>
+              )}
             </section>
           )}
+
         </>
       )}
     </div>

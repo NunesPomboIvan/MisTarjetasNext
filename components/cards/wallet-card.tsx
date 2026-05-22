@@ -98,6 +98,10 @@ export function WalletCard({
         // Sombra única, suave y radial — sin contornos rectos que dibujen
         // un rectángulo alrededor de las esquinas redondeadas.
         boxShadow: `0 18px 40px -16px rgba(${r},${g},${b},0.45)`,
+        // Forzar capa propia: evita que las esquinas rectas asomen cuando un
+        // ancestro con transform (active:scale del carrusel) recorta mal el radius.
+        transform: "translateZ(0)",
+        WebkitBackfaceVisibility: "hidden",
       }}
     >
       {/* Shine diagonal */}

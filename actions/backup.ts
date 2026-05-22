@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { expenseSchema } from "@/lib/schemas/expense";
 import type { ActionResult } from "./cards";
 
@@ -356,9 +357,13 @@ export async function importData(backup: BackupData): Promise<ActionResult> {
     }
 
     if (backup.cards?.length) {
+      // Las tarjetas restauradas se asignan al titular activo: evita FKs rotas
+      // por titular_id viejos y que queden ocultas al filtrar por titular.
+      const titularId = await getActiveTitularId();
       const cards = (backup.cards as Array<Record<string, unknown>>).map((c) => ({
         ...c,
         user_id: user.id,
+        titular_id: titularId,
       }));
       await supabase.from("cards").upsert(cards as never, { onConflict: "id", ignoreDuplicates: false });
     }

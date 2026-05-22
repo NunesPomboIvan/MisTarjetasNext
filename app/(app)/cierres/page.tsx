@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
@@ -14,9 +15,18 @@ export const metadata = { title: "Cierre de tarjetas" };
 export default async function CierresPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let cardsQuery = supabase
+    .from("cards")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("created_at");
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
   const [{ data: cards }, { data: expenses }] = await Promise.all([
-    supabase.from("cards").select("*").eq("user_id", user!.id).eq("archived", false).order("created_at"),
+    cardsQuery,
     supabase.from("expenses").select("*").eq("user_id", user!.id),
   ]);
 

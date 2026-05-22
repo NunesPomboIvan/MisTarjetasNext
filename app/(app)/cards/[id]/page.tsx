@@ -48,13 +48,15 @@ export default async function CardDetailPage({
 
   if (!card) notFound();
 
-  // Orden de tarjetas (activas) para navegar con swipe entre detalles.
-  const { data: cardOrder } = await supabase
+  // Orden de tarjetas (activas del mismo titular) para navegar con swipe entre detalles.
+  let cardOrderQuery = supabase
     .from("cards")
     .select("id")
     .eq("user_id", user!.id)
     .eq("archived", false)
     .order("created_at");
+  if (card.titular_id) cardOrderQuery = cardOrderQuery.eq("titular_id", card.titular_id);
+  const { data: cardOrder } = await cardOrderQuery;
   const orderedIds = (cardOrder ?? []).map((c) => c.id);
   const currentIndex = orderedIds.indexOf(id);
   const prevId = currentIndex > 0 ? orderedIds[currentIndex - 1] : null;
@@ -135,17 +137,24 @@ export default async function CardDetailPage({
         dueLabel={formatDate(period.due, "d/M")}
       />
 
-      {/* Stats card: Límite + Saldo side by side, donut a la derecha */}
+      {/* Stats card: límite/saldo + anillo, y disponible/cierre/vencimiento */}
       <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-4">
-          {/* Límite + Saldo lado a lado */}
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-3">
+          {/* Saldo + Límite apilados (ancho completo → entran enteros) */}
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
+              <Money
+                amount={saldo}
+                className="mt-0.5 block font-display text-[22px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+              />
+            </div>
             <div className="min-w-0">
               <p className="text-[11px] font-medium text-muted-foreground">Límite total</p>
               {limite > 0 ? (
                 <Money
                   amount={limite}
-                  className="mt-0.5 block font-display text-[18px] font-bold leading-tight tracking-tight text-foreground truncate"
+                  className="mt-0.5 block font-display text-[18px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
                 />
               ) : (
                 <Link
@@ -155,13 +164,6 @@ export default async function CardDetailPage({
                   Definir límite
                 </Link>
               )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
-              <Money
-                amount={saldo}
-                className="mt-0.5 block font-display text-[18px] font-bold leading-tight text-foreground truncate"
-              />
             </div>
           </div>
 
@@ -174,29 +176,30 @@ export default async function CardDetailPage({
             />
           )}
         </div>
-      </section>
 
-      {/* Stats 3 columnas */}
-      <section className="grid grid-cols-3 gap-2.5">
-        <div className="rounded-[14px] border border-border bg-card p-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
-          <Money
-            amount={disponible}
-            className="mt-1 block text-[14px] font-bold leading-none tabular-nums"
-            style={{ color: "#10b981" }}
-          />
-        </div>
-        <div className="rounded-[14px] border border-border bg-card p-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
-          <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
-            {capitalize(formatDate(period.end, "d 'de' MMM"))}
-          </p>
-        </div>
-        <div className="rounded-[14px] border border-border bg-card p-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
-          <p className="mt-1 text-[14px] font-bold leading-none text-foreground tabular-nums">
-            {capitalize(formatDate(period.due, "d 'de' MMM"))}
-          </p>
+        <div className="my-4 h-px bg-border" />
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
+            <Money
+              amount={disponible}
+              className="mt-1 block text-[14px] font-bold leading-tight tabular-nums"
+              style={{ color: "#10b981" }}
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
+            <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+              {capitalize(formatDate(period.end, "d 'de' MMM"))}
+            </p>
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
+            <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+              {capitalize(formatDate(period.due, "d 'de' MMM"))}
+            </p>
+          </div>
         </div>
       </section>
 
