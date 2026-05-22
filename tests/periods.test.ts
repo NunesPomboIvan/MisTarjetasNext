@@ -36,6 +36,9 @@ const CARD_31_15: CardForPeriod = { close_date: "2026-01-31", due_date: "2026-01
 /** Tarjeta que cierra el 1 (borde inferior) */
 const CARD_1_20: CardForPeriod = { close_date: "2026-01-01", due_date: "2026-01-20" };
 
+/** Tarjeta que cierra el 5 y vence el 19 del MISMO mes (due_day >= close_day) */
+const CARD_5_19: CardForPeriod = { close_date: "2026-01-05", due_date: "2026-01-19" };
+
 // ─── Helper ──────────────────────────────────────────────────
 
 function d(year: number, month: number, day: number): Date {
@@ -141,6 +144,18 @@ describe("getPeriodForDate — CARD_23_10", () => {
     const period = getPeriodForDate(CARD_23_10, d(2025, 12, 15));
     expect(period.key).toBe("2025-12");
     expect(period.due).toEqual(d(2026, 1, 10));
+  });
+
+  it("vence el MISMO mes cuando due_day >= close_day (cierra 05, vence 19)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 7, 10));
+
+    // Período de julio: cierra 05/jul → vence 19/jul (mismo mes)
+    const period = getPeriodForDate(CARD_5_19, d(2026, 7, 3));
+    expect(period.key).toBe("2026-07");
+    expect(period.end.getMonth()).toBe(6); // julio
+    expect(period.end.getDate()).toBe(5);
+    expect(period.due).toEqual(d(2026, 7, 19));
   });
 
   it("compra en enero después del cierre va a febrero", () => {

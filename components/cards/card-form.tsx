@@ -77,16 +77,13 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
    *  Si es nueva, dejamos vacío y el usuario las elige. */
   const initialPeriodDates = useMemo(() => {
     if (!card) return { close_date: "", due_date: "" };
+    // Mostramos las fechas reales del período actual tal como las calcula la
+    // lógica (el vencimiento puede caer en el mismo mes que el cierre o en el
+    // siguiente, según los días elegidos).
     const p = getCurrentPeriod(card);
-    const closeDay = parseLocalDate(card.close_date).getDate();
-    const dueDay = parseLocalDate(card.due_date).getDate();
-    const closeYear = p.end.getFullYear();
-    const closeMonth = p.end.getMonth(); // 0-based
-    const dueYear = closeMonth === 11 ? closeYear + 1 : closeYear;
-    const dueMonth = closeMonth === 11 ? 0 : closeMonth + 1;
     return {
-      close_date: toLocalDateStr(new Date(closeYear, closeMonth, closeDay)),
-      due_date: toLocalDateStr(new Date(dueYear, dueMonth, dueDay)),
+      close_date: toLocalDateStr(p.end),
+      due_date: toLocalDateStr(p.due),
     };
   }, [card]);
 
@@ -428,7 +425,9 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
         </div>
       </div>
       <p className="text-xs text-muted-foreground -mt-3">
-        Solo importa el <strong>día del mes</strong>. Cada mes el período cierra y vence en esos días.
+        Solo importa el <strong>día del mes</strong>. Si el día de vencimiento es
+        igual o posterior al de cierre, vence el mismo mes (ej: cierra 05, vence 19);
+        si es anterior, vence el mes siguiente.
       </p>
 
       {/* Color */}

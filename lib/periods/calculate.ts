@@ -131,7 +131,8 @@ function nextYearMonth(year: number, month: number): { year: number; month: numb
  * Período "closeMonth/closeYear":
  *   start = (close_day + 1) del mes anterior, 00:00
  *   end   = close_day del closeMonth, 23:59:59.999
- *   due   = due_day del mes siguiente al cierre, 00:00
+ *   due   = due_day del MISMO mes si due_day >= close_day; del mes siguiente
+ *           si due_day < close_day (el vencimiento "envuelve"), 00:00
  */
 function buildPeriod(
   card: CardForPeriod,
@@ -151,11 +152,18 @@ function buildPeriod(
   const prevClose = setDayOfMonth(prev.year, prev.month, closeDay);
   const start = startOfDay(addDays(prevClose, 1));
 
-  // due = due_day del mes siguiente al cierre — sin offset.
-  // El día que pone el usuario en el form ES el día que se muestra en toda
-  // la app (tarjeta, próximos pagos, días para vencer, alerta de vencimiento).
-  const next = nextYearMonth(closeYear, closeMonth);
-  const due = setDayOfMonth(next.year, next.month, dueDay);
+  // Vencimiento: si el día de vencimiento es MAYOR O IGUAL al día de cierre,
+  // la tarjeta vence en el MISMO mes que cierra (ej: cierra 05, vence 19).
+  // Si el día de vencimiento es MENOR, el vencimiento "envuelve" al mes
+  // siguiente (ej: cierra 23, vence 10 → 10 del mes siguiente).
+  let dueYear = closeYear;
+  let dueMonth = closeMonth;
+  if (dueDay < closeDay) {
+    const next = nextYearMonth(closeYear, closeMonth);
+    dueYear = next.year;
+    dueMonth = next.month;
+  }
+  const due = setDayOfMonth(dueYear, dueMonth, dueDay);
 
   // Status (comparamos inicio del día para consistencia)
   const nowDay = startOfDay(now);

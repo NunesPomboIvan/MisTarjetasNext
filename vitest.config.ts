@@ -8,6 +8,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     globals: true,
+    // Solo los tests del proyecto; ignoramos copias en worktrees (.claude/worktrees).
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
   },
   resolve: {
     alias: {
