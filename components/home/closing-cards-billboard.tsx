@@ -16,6 +16,8 @@ interface ClosingCardsBillboardProps {
   items: ClosingCardItem[];
   /** Milisegundos entre rotaciones */
   intervalMs?: number;
+  /** Muestra el rótulo interno "Cierra pronto" (ocultar si ya hay encabezado) */
+  showLabel?: boolean;
 }
 
 const ROW_H = 30;
@@ -28,6 +30,7 @@ const ROW_H = 30;
 export function ClosingCardsBillboard({
   items,
   intervalMs = 3200,
+  showLabel = true,
 }: ClosingCardsBillboardProps) {
   const router = useRouter();
   const [index, setIndex] = React.useState(0);
@@ -65,9 +68,11 @@ export function ClosingCardsBillboard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Cierra pronto
-        </p>
+        {showLabel && (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Cierra pronto
+          </p>
+        )}
         <div
           className="relative overflow-hidden"
           style={{ height: ROW_H }}

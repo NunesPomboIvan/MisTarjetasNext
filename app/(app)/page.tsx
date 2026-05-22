@@ -99,7 +99,8 @@ export default async function DashboardPage() {
   const recentExpenses = (allExpenses as ExpenseWithCategory[]).slice(0, 15);
 
   const hour = today.getHours();
-  const todayLabel = capitalize(formatDate(today, "EEEE d 'de' MMMM"));
+  const weekdayLabel = capitalize(formatDate(today, "EEEE"));
+  const dayMonthLabel = `${formatDate(today, "d")} de ${capitalize(formatDate(today, "MMMM"))}`;
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
@@ -109,7 +110,6 @@ export default async function DashboardPage() {
         <h1 className="font-display text-[26px] font-bold tracking-tight text-foreground">
           {greeting(hour)} 👋
         </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">{todayLabel}</p>
       </header>
 
       {cards.length === 0 ? (
@@ -123,22 +123,32 @@ export default async function DashboardPage() {
         <>
           <DueTodayAlert todayKey={todayKey} cards={dueToday} />
 
-          {/* Card resumen: saldo arriba + cartelera de cierre como pie */}
+          {/* Card resumen: saldo + fecha de hoy arriba, próximos pagos como pie */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <div className="flex flex-col items-start">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Próximo a pagar
-              </p>
-              <Money
-                amount={saldoTotal}
-                className="mt-1 block font-display text-[28px] font-bold leading-none text-foreground"
-              />
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Próximo a pagar
+                </p>
+                <Money
+                  amount={saldoTotal}
+                  className="mt-1 block font-display text-[28px] font-bold leading-none text-foreground"
+                />
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {weekdayLabel}
+                </p>
+                <p className="mt-1 font-display text-[19px] font-bold leading-none tracking-tight text-foreground">
+                  {dayMonthLabel}
+                </p>
+              </div>
             </div>
 
-            {closingSoon.length > 0 && (
+            {upcoming.length > 0 && (
               <>
                 <div className="my-4 h-px bg-border" />
-                <ClosingCardsBillboard items={closingSoon} />
+                <ProximosPagosRotator items={upcoming} flat />
               </>
             )}
           </section>
@@ -166,19 +176,21 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Próximos pagos — rotador */}
-          {upcoming.length > 0 && (
+          {/* Cierra pronto — cartelera de cierres */}
+          {closingSoon.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-[16px] font-semibold text-foreground">
-                  Próximos pagos
+                  Cierra pronto
                 </h2>
-                <Link href="/pagos" className="text-[13px] font-semibold text-primary">
+                <Link href="/cierres" className="text-[13px] font-semibold text-primary">
                   Ver todos
                 </Link>
               </div>
 
-              <ProximosPagosRotator items={upcoming} />
+              <div className="rounded-[18px] border border-border bg-card p-4">
+                <ClosingCardsBillboard items={closingSoon} showLabel={false} />
+              </div>
             </section>
           )}
 

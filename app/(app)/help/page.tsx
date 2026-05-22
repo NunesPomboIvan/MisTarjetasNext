@@ -52,25 +52,60 @@ const SECTIONS: Array<{
 
 export default function HelpPage() {
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
+    <div className="relative space-y-5">
+      {/* Luz ambiental roja en la parte superior */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -z-0 h-72 w-[140%] -translate-x-1/2"
+        style={{
+          top: -120,
+          background:
+            "radial-gradient(60% 60% at 50% 40%, oklch(0.62 0.21 25 / 0.45) 0%, oklch(0.62 0.21 25 / 0.12) 38%, transparent 72%)",
+          filter: "blur(28px)",
+        }}
+      />
+
+      <div className="relative flex items-center gap-3">
         <BackButton />
         <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
           Ayuda
         </h1>
       </div>
 
-      <section className="relative overflow-hidden rounded-[20px] border border-border bg-card p-5">
+      <section
+        className="relative overflow-hidden rounded-[20px] border border-border p-5"
+        style={{
+          background:
+            "linear-gradient(140deg, oklch(0.62 0.21 25 / 0.16) 0%, var(--card) 55%)",
+        }}
+      >
+        {/* Glow superior-derecho */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full"
+          className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full"
           style={{
             background:
-              "radial-gradient(circle, oklch(0.62 0.16 35 / 0.18) 0%, transparent 70%)",
+              "radial-gradient(circle, oklch(0.62 0.21 25 / 0.55) 0%, transparent 68%)",
+            filter: "blur(12px)",
+          }}
+        />
+        {/* Brillo diagonal sutil */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(120deg, rgba(255,255,255,0.10) 0%, transparent 45%)",
           }}
         />
         <div className="relative flex items-start gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl text-white shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, oklch(0.68 0.2 30), oklch(0.55 0.22 22))",
+              boxShadow: "0 8px 22px -8px oklch(0.62 0.21 25 / 0.7)",
+            }}
+          >
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -95,7 +130,7 @@ export default function HelpPage() {
         {SECTIONS.map((s, i) => (
           <article
             key={i}
-            className="rounded-[18px] border border-border bg-card p-4"
+            className="rounded-[18px] border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
           >
             <header className="flex items-center gap-3">
               <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">

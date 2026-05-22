@@ -166,6 +166,9 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
         } else {
           router.push(result.id ? `/cards/${result.id}` : "/cards");
         }
+        // Refresca los server components de la pantalla destino para que
+        // muestre los datos recién modificados (período, fechas, etc.).
+        router.refresh();
       } else {
         toast.error(result.error);
       }

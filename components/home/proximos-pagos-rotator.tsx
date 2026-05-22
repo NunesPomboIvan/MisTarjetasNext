@@ -18,6 +18,8 @@ interface ProximosPagosRotatorProps {
   items: ProximoPagoItem[];
   /** Milisegundos entre rotaciones */
   intervalMs?: number;
+  /** Sin card propia (borde/fondo): para usarlo como pie de otra card */
+  flat?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ interface ProximosPagosRotatorProps {
 export function ProximosPagosRotator({
   items,
   intervalMs = 2200,
+  flat = false,
 }: ProximosPagosRotatorProps) {
   const [index, setIndex] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
@@ -131,7 +134,11 @@ export function ProximosPagosRotator({
         <Link
           key={current.cardId + index}
           href={`/cards/${current.cardId}`}
-          className="block rounded-[18px] border border-border bg-card p-4 transition-all active:scale-[0.985] hover:border-primary/40 animate-in fade-in slide-in-from-right-2 duration-300"
+          className={
+            flat
+              ? "block transition-all active:scale-[0.99] animate-in fade-in slide-in-from-right-2 duration-300"
+              : "block rounded-[18px] border border-border bg-card p-4 transition-all active:scale-[0.985] hover:border-primary/40 animate-in fade-in slide-in-from-right-2 duration-300"
+          }
         >
           <div className="flex items-center gap-3">
             <div

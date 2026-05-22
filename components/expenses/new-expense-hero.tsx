@@ -800,7 +800,7 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
                 <Input
                   id="nc-emoji"
                   value={newEmoji}
-                  onChange={(e) => setNewEmoji(e.target.value || "✨")}
+                  onChange={(e) => setNewEmoji(e.target.value)}
                   className="text-center text-xl"
                   maxLength={4}
                   placeholder="✨"
