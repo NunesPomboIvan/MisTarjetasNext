@@ -5,11 +5,10 @@ import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { CardsBillboard } from "@/components/home/cards-billboard";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
-import { ExpenseItem } from "@/components/expenses/expense-item";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
-import type { Card, Expense, Category, ExpenseWithCategory } from "@/lib/supabase/database.types";
+import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
 
@@ -93,10 +92,6 @@ export default async function DashboardPage() {
       days: differenceInCalendarDays(currentPeriod.end, todayStart),
     }))
     .sort((a, b) => a.days - b.days);
-
-  // Mapa id→nombre de tarjeta para el listado de consumos
-  const cardMap = Object.fromEntries(cards.map((c) => [c.id, c.bank || c.name]));
-  const recentExpenses = (allExpenses as ExpenseWithCategory[]).slice(0, 15);
 
   const hour = today.getHours();
   const weekdayLabel = capitalize(formatDate(today, "EEEE"));
@@ -203,31 +198,6 @@ export default async function DashboardPage() {
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
                   showLabel={false}
                 />
-              </div>
-            </section>
-          )}
-
-          {/* Últimos consumos */}
-          {recentExpenses.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display text-[16px] font-semibold text-foreground">
-                  Últimos consumos
-                </h2>
-                <Link href="/expenses" className="text-[13px] font-semibold text-primary">
-                  Ver todos
-                </Link>
-              </div>
-
-              <div className="space-y-2">
-                {recentExpenses.map((expense) => (
-                  <ExpenseItem
-                    key={expense.id}
-                    expense={expense}
-                    cardName={cardMap[expense.card_id]}
-                    editHref={`/expenses/${expense.id}/edit`}
-                  />
-                ))}
               </div>
             </section>
           )}
