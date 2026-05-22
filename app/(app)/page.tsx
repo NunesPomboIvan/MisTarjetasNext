@@ -59,10 +59,10 @@ export default async function DashboardPage() {
   // muestre la fecha del servidor (UTC en Vercel) cuando en Argentina aún es otro día.
   const today = nowInArgentina();
   const todayStart = startOfDay(today);
-  // Próximos pagos: TODAS las tarjetas, según el vencimiento de su PERÍODO
-  // ACTUAL, ordenadas por proximidad de vencimiento.
+  // Próximos pagos: tarjetas CON consumos en su período actual, según el
+  // vencimiento de ese período, ordenadas por proximidad de vencimiento.
   const upcoming = cardSummaries
-    .slice()
+    .filter((c) => c.currentTotal > 0)
     .sort((a, b) => a.currentPeriod.due.getTime() - b.currentPeriod.due.getTime())
     .map(({ card, currentPeriod }) => ({
       id: card.id,
@@ -81,8 +81,10 @@ export default async function DashboardPage() {
       total,
     }));
 
-  // Cierre de tarjetas: TODAS las tarjetas, ordenadas por proximidad de cierre.
+  // Cierre de tarjetas: tarjetas CON consumos en su período actual, ordenadas
+  // por proximidad de cierre.
   const closingSoon = cardSummaries
+    .filter((c) => c.currentTotal > 0)
     .map(({ card, currentPeriod }) => ({
       id: card.id,
       accent: card.color,
