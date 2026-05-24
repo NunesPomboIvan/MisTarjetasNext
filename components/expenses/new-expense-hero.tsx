@@ -7,7 +7,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ChevronDown, Loader2, Plus } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import { createExpense } from "@/actions/expenses";
@@ -652,15 +652,17 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
   );
 }
 
+const EMOJI_OPTIONS = ["🛒","🍔","🚗","💊","🎬","👕","⚡","✈️","💻","📦","🏠","🐾","🎮","📚","🍷","💈","🏋️","🎁"];
+
 const COLOR_PAIRS = [
-  { bg: "#fef3c7", text: "#92400e" },
-  { bg: "#dbeafe", text: "#1e40af" },
-  { bg: "#dcfce7", text: "#166534" },
-  { bg: "#fce7f3", text: "#9d174d" },
-  { bg: "#f3e8ff", text: "#6b21a8" },
-  { bg: "#ffedd5", text: "#9a3412" },
-  { bg: "#e0f2fe", text: "#075985" },
-  { bg: "#f1f5f9", text: "#334155" },
+  { bg: "#dcfce7", text: "#15803d", label: "Verde"    },
+  { bg: "#fef9c3", text: "#a16207", label: "Amarillo" },
+  { bg: "#dbeafe", text: "#1d4ed8", label: "Azul"     },
+  { bg: "#fce7f3", text: "#9d174d", label: "Rosa"     },
+  { bg: "#ede9fe", text: "#6d28d9", label: "Violeta"  },
+  { bg: "#fef3c7", text: "#d97706", label: "Naranja"  },
+  { bg: "#e0f2fe", text: "#0369a1", label: "Celeste"  },
+  { bg: "#f5f5f4", text: "#57534e", label: "Gris"     },
 ] as const;
 
 interface CategoryGridProps {
@@ -765,66 +767,83 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
           <SheetHeader className="pb-3">
             <SheetTitle>Nueva categoría</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 px-1 pb-2">
-            <div className="flex items-center gap-4">
-              <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
-                style={{ backgroundColor: newColor.bg }}
-              >
-                {newEmoji || "✨"}
-              </div>
-              <div className="flex-1 space-y-1">
-                <Label htmlFor="nc-emoji">Emoji</Label>
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+            <Input
+              placeholder="Nombre de la categoría"
+              value={newName}
+              onChange={(e) => { setNewName(e.target.value); setNewError(""); }}
+              maxLength={30}
+              autoFocus
+              className={cn(newError && "border-destructive")}
+            />
+            {newError && <p className="text-xs text-destructive">{newError}</p>}
+
+            <div>
+              <p className="text-xs text-muted-foreground mb-1.5">Emoji</p>
+              <div className="flex items-center gap-2">
                 <Input
-                  id="nc-emoji"
                   value={newEmoji}
                   onChange={(e) => setNewEmoji(e.target.value)}
-                  className="text-center text-xl"
+                  className="h-9 w-14 text-center text-lg"
                   maxLength={4}
-                  placeholder="✨"
+                  placeholder="🎯"
+                  aria-label="Emoji personalizado"
                 />
+                <span className="text-xs text-muted-foreground">
+                  Editá libremente o elegí uno
+                </span>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="nc-name">Nombre</Label>
-              <Input
-                id="nc-name"
-                placeholder="Ej: Mascota"
-                value={newName}
-                onChange={(e) => { setNewName(e.target.value); setNewError(""); }}
-                maxLength={30}
-                className={cn(newError && "border-destructive")}
-              />
-              {newError && <p className="text-xs text-destructive">{newError}</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Color</Label>
-              <div className="flex gap-2.5">
-                {COLOR_PAIRS.map((pair, i) => (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {EMOJI_OPTIONS.map((e) => (
                   <button
-                    key={i}
+                    key={e}
                     type="button"
-                    onClick={() => setNewColor(pair)}
+                    onClick={() => setNewEmoji(e)}
                     className={cn(
-                      "h-8 w-8 rounded-full border-2 transition-transform",
-                      newColor === pair ? "scale-110 border-foreground shadow-sm" : "border-transparent"
+                      "h-8 w-8 rounded-lg text-lg transition-all",
+                      newEmoji === e ? "ring-2 ring-primary scale-110" : "hover:scale-105"
                     )}
-                    style={{ backgroundColor: pair.bg }}
-                  />
+                  >
+                    {e}
+                  </button>
                 ))}
               </div>
             </div>
 
-            <Button
-              type="button"
-              className="gradient-primary shadow-brand w-full text-white"
-              onClick={handleCreate}
-              disabled={isPending}
-            >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar categoría"}
-            </Button>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1.5">Color</p>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_PAIRS.map((pair) => (
+                  <button
+                    key={pair.bg}
+                    type="button"
+                    onClick={() => setNewColor(pair)}
+                    className={cn(
+                      "rounded-lg px-2 py-1 text-xs font-medium transition-all",
+                      newColor.bg === pair.bg && "ring-2 ring-primary scale-105"
+                    )}
+                    style={{ backgroundColor: pair.bg, color: pair.text }}
+                  >
+                    {pair.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="gradient-primary shadow-brand"
+                onClick={handleCreate}
+                disabled={isPending}
+              >
+                {isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+                Guardar
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setNewOpen(false)}>
+                <X className="mr-1 h-4 w-4" /> Cancelar
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
