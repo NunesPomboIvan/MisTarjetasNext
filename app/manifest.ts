@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gestión personal de tarjetas de crédito y gastos",
     start_url: "/",
     display: "standalone",
-    background_color: "#fffbf5",
-    theme_color: "#f97316",
+    background_color: "#0b0a14",
+    theme_color: "#6366f1",
     orientation: "portrait",
     categories: ["finance", "productivity"],
     icons: [
