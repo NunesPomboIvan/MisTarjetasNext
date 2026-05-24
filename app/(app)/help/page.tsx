@@ -53,15 +53,20 @@ const SECTIONS: Array<{
 export default function HelpPage() {
   return (
     <div className="relative space-y-5">
-      {/* Luz ambiental roja en la parte superior */}
+      {/* Luz ambiental roja distribuida en toda la página */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 -z-0 h-72 w-[140%] -translate-x-1/2"
+        className="pointer-events-none absolute inset-x-0 -inset-y-16 -z-0 overflow-hidden"
         style={{
-          top: -120,
-          background:
-            "radial-gradient(60% 60% at 50% 40%, oklch(0.62 0.21 25 / 0.45) 0%, oklch(0.62 0.21 25 / 0.12) 38%, transparent 72%)",
-          filter: "blur(28px)",
+          background: [
+            "radial-gradient(45% 14% at 50% 3%, oklch(0.62 0.21 25 / 0.45) 0%, transparent 72%)",
+            "radial-gradient(38% 12% at 12% 22%, oklch(0.62 0.21 25 / 0.32) 0%, transparent 75%)",
+            "radial-gradient(40% 12% at 88% 42%, oklch(0.62 0.21 25 / 0.30) 0%, transparent 75%)",
+            "radial-gradient(42% 14% at 18% 62%, oklch(0.62 0.21 25 / 0.28) 0%, transparent 75%)",
+            "radial-gradient(40% 12% at 85% 80%, oklch(0.62 0.21 25 / 0.30) 0%, transparent 75%)",
+            "radial-gradient(45% 14% at 50% 98%, oklch(0.62 0.21 25 / 0.32) 0%, transparent 72%)",
+          ].join(", "),
+          filter: "blur(38px)",
         }}
       />
 
@@ -122,32 +127,60 @@ export default function HelpPage() {
         </div>
       </section>
 
-      <h2 className="px-1 font-display text-[16px] font-semibold text-foreground">
+      <h2 className="relative px-1 font-display text-[16px] font-semibold text-foreground">
         Manual de uso
       </h2>
 
-      <div className="space-y-3">
-        {SECTIONS.map((s, i) => (
-          <article
-            key={i}
-            className="rounded-[18px] border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-          >
-            <header className="flex items-center gap-3">
-              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                {s.icon}
-              </span>
-              <h3 className="text-[15px] font-semibold text-foreground">
-                {s.title}
-              </h3>
-            </header>
-            <p className="mt-2 whitespace-pre-line text-[13px] leading-relaxed text-muted-foreground">
-              {s.body}
-            </p>
-          </article>
-        ))}
+      <div className="relative space-y-3">
+        {SECTIONS.map((s, i) => {
+          const fromLeft = i % 2 === 0;
+          return (
+            <article
+              key={i}
+              className="relative overflow-hidden rounded-[18px] border border-border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+              style={{
+                background: fromLeft
+                  ? "linear-gradient(120deg, oklch(0.62 0.21 25 / 0.10) 0%, var(--card) 55%)"
+                  : "linear-gradient(240deg, oklch(0.62 0.21 25 / 0.10) 0%, var(--card) 55%)",
+              }}
+            >
+              {/* Glow lateral en la esquina */}
+              <div
+                aria-hidden
+                className={`pointer-events-none absolute -top-10 h-28 w-28 rounded-full ${fromLeft ? "-left-10" : "-right-10"}`}
+                style={{
+                  background:
+                    "radial-gradient(circle, oklch(0.62 0.21 25 / 0.40) 0%, transparent 70%)",
+                  filter: "blur(14px)",
+                }}
+              />
+              {/* Brillo diagonal sutil */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: fromLeft
+                    ? "linear-gradient(120deg, rgba(255,255,255,0.06) 0%, transparent 45%)"
+                    : "linear-gradient(240deg, rgba(255,255,255,0.06) 0%, transparent 45%)",
+                }}
+              />
+              <header className="relative flex items-center gap-3">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  {s.icon}
+                </span>
+                <h3 className="text-[15px] font-semibold text-foreground">
+                  {s.title}
+                </h3>
+              </header>
+              <p className="relative mt-2 whitespace-pre-line text-[13px] leading-relaxed text-muted-foreground">
+                {s.body}
+              </p>
+            </article>
+          );
+        })}
       </div>
 
-      <p className="px-1 pb-2 text-center text-[11px] text-muted-foreground">
+      <p className="relative px-1 pb-2 text-center text-[11px] text-muted-foreground">
         ¿Encontraste un problema o tenés una sugerencia? Escribinos para
         contarnos cómo podemos mejorar.
       </p>
