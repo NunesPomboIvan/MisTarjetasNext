@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, Plus, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -117,15 +117,14 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
+        className="flex items-center rounded-lg border px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
         style={{
-          background: `linear-gradient(135deg, ${active.color}26 0%, var(--card) 62%)`,
-          borderColor: `${active.color}55`,
+          background: `linear-gradient(135deg, ${active.color}1f 0%, var(--card) 75%)`,
+          borderColor: `${active.color}40`,
         }}
         aria-label="Cambiar de titular"
       >
         <span className="max-w-[140px] truncate">{active.name}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-y-0.5" />
       </button>
 
       <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) cancelEdit(); }}>

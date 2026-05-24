@@ -134,21 +134,22 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy */}
           <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0">
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Próximo a pagar
+                  Saldo a pagar
                 </p>
                 <Money
                   amount={saldoTotal}
-                  className="mt-1 block font-display text-[28px] font-bold leading-none text-foreground"
+                  className="mt-1 block font-display text-[20px] font-bold leading-none text-foreground"
                 />
               </div>
-              <div className="shrink-0 text-right">
+
+              <div className="flex-shrink-0 text-right">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {weekdayLabel}
                 </p>
-                <p className="mt-1 text-[15px] font-bold leading-none text-foreground tabular-nums">
+                <p className="mt-1 text-[17px] font-bold leading-none tabular-nums text-foreground">
                   {dayMonthLabel}
                 </p>
               </div>
@@ -158,7 +159,7 @@ export default async function DashboardPage() {
           {/* Mis tarjetas */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
                 Mis tarjetas
               </h2>
               <Link href="/cards" className="text-[13px] font-semibold text-primary">
@@ -178,9 +179,13 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Vencimiento de Tarjetas (upcoming) + Cierre de tarjetas (closingSoon) */}
+          {/* Próximas fechas: Vencimiento de Tarjetas + Cierre de tarjetas */}
           {(upcoming.length > 0 || closingSoon.length > 0) && (
-            <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+            <section className="space-y-3">
+              <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
+                Datos Adicionales
+              </h2>
+              <div className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}
@@ -204,6 +209,7 @@ export default async function DashboardPage() {
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
                 />
               )}
+              </div>
             </section>
           )}
 
