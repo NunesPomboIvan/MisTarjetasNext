@@ -117,15 +117,15 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground transition-colors active:scale-95"
+        className="group flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
+        style={{
+          background: `linear-gradient(135deg, ${active.color}26 0%, var(--card) 62%)`,
+          borderColor: `${active.color}55`,
+        }}
         aria-label="Cambiar de titular"
       >
-        <span
-          className="h-2.5 w-2.5 shrink-0 rounded-full"
-          style={{ backgroundColor: active.color }}
-        />
-        <span className="max-w-[120px] truncate">{active.name}</span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="max-w-[140px] truncate">{active.name}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-y-0.5" />
       </button>
 
       <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) cancelEdit(); }}>

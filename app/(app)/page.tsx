@@ -184,7 +184,7 @@ export default async function DashboardPage() {
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}
-                  label="Vencimiento de Tarjetas"
+                  label="Vencimientos de tarjetas"
                   href="/pagos"
                   icon="calendar"
                   ariaLabel="Ver próximos pagos de todas las tarjetas"
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
               {closingSoon.length > 0 && (
                 <CardsBillboard
                   items={closingSoon}
-                  label="Cierre de tarjetas"
+                  label="Cierre de Tarjetas"
                   href="/cierres"
                   icon="calendar-clock"
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
