@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -113,9 +114,19 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       {/* Header personalizado */}
       <header className="flex min-w-0 items-center justify-between gap-3">
-        <h1 className="min-w-0 truncate font-display text-[26px] font-bold tracking-tight text-foreground">
-          {greeting(hour)} 👋
-        </h1>
+        <div className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/app-icon.png"
+            alt="Mis Tarjetas"
+            width={44}
+            height={44}
+            className="h-11 w-11 shrink-0 rounded-[12px]"
+            priority
+          />
+          <h1 className="min-w-0 truncate font-display text-[26px] font-bold tracking-tight text-foreground">
+            {greeting(hour)}
+          </h1>
+        </div>
         {titulares.length > 0 && (
           <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
         )}
