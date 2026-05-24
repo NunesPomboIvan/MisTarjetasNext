@@ -198,7 +198,7 @@ export default async function DashboardPage() {
               {closingSoon.length > 0 && (
                 <CardsBillboard
                   items={closingSoon}
-                  label="Cierre de tarjetas"
+                  label="Vencimiento de Tarjetas"
                   href="/cierres"
                   icon="calendar-clock"
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
