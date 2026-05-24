@@ -178,13 +178,13 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Próximos pagos + Cierre de tarjetas */}
+          {/* Vencimiento de Tarjetas (upcoming) + Cierre de tarjetas (closingSoon) */}
           {(upcoming.length > 0 || closingSoon.length > 0) && (
             <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}
-                  label="Próximos pagos"
+                  label="Vencimiento de Tarjetas"
                   href="/pagos"
                   icon="calendar"
                   ariaLabel="Ver próximos pagos de todas las tarjetas"
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
               {closingSoon.length > 0 && (
                 <CardsBillboard
                   items={closingSoon}
-                  label="Vencimiento de Tarjetas"
+                  label="Cierre de tarjetas"
                   href="/cierres"
                   icon="calendar-clock"
                   ariaLabel="Ver próximos cierres de todas las tarjetas"
