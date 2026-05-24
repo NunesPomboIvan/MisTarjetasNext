@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Sparkles, TrendingUp, Receipt } from "lucide-react";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CategoryDonut } from "@/components/stats/category-donut";
@@ -155,13 +156,104 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         <SpendBars data={barData} />
       </section>
 
-      {/* Total */}
-      <section className="rounded-[18px] gradient-card p-5 text-center text-white">
-        <p className="text-[12px] font-medium opacity-80">Total del período</p>
-        <Money
-          amount={total}
-          className="mt-1 block font-display text-[26px] font-bold leading-none"
+      {/* Total del período — card con detalles */}
+      <section
+        className="relative overflow-hidden rounded-[20px] border p-5"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.62 0.21 25 / 0.20) 0%, oklch(0.6 0.22 330 / 0.14) 45%, var(--card) 78%)",
+          borderColor: "oklch(0.62 0.21 25 / 0.25)",
+        }}
+      >
+        {/* Glow coral superior-derecho */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, oklch(0.62 0.21 25 / 0.50) 0%, transparent 70%)",
+            filter: "blur(20px)",
+          }}
         />
+        {/* Glow magenta inferior-izquierdo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, oklch(0.66 0.22 340 / 0.45) 0%, transparent 70%)",
+            filter: "blur(18px)",
+          }}
+        />
+        {/* Brillo diagonal */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(120deg, rgba(255,255,255,0.10) 0%, transparent 50%)",
+          }}
+        />
+
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-full text-white shadow-sm"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.68 0.2 30), oklch(0.6 0.22 330))",
+                boxShadow: "0 6px 16px -6px oklch(0.62 0.21 25 / 0.6)",
+              }}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Total del período
+            </p>
+          </div>
+
+          <Money
+            amount={total}
+            className="mt-3 block font-display text-[32px] font-bold leading-none text-foreground"
+          />
+
+          <div className="mt-4 flex items-stretch gap-3 border-t border-border/50 pt-3">
+            <div className="flex flex-1 items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                <Receipt className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Consumos
+                </p>
+                <p className="text-[14px] font-bold tabular-nums text-foreground">
+                  {filtered.length}
+                </p>
+              </div>
+            </div>
+            <div className="w-px bg-border/60" />
+            <div className="flex flex-1 items-center gap-2">
+              <span
+                className="flex h-7 w-7 items-center justify-center rounded-lg"
+                style={{
+                  background: "oklch(0.66 0.22 340 / 0.15)",
+                  color: "oklch(0.66 0.22 340)",
+                }}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Promedio
+                </p>
+                <Money
+                  amount={filtered.length > 0 ? total / filtered.length : 0}
+                  className="text-[14px] font-bold tabular-nums text-foreground"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
