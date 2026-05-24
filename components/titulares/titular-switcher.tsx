@@ -117,7 +117,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
+        className="group flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
         style={{
           background: `linear-gradient(135deg, ${active.color}26 0%, var(--card) 62%)`,
           borderColor: `${active.color}55`,
@@ -134,11 +134,18 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
             <SheetTitle>Titular</SheetTitle>
           </SheetHeader>
 
-          <div className="divide-y divide-border/50">
+          <div className="space-y-2 px-5 pb-2">
             {titulares.map((t) => {
               if (editingId === t.id) {
                 return (
-                  <div key={t.id} className="space-y-3 px-5 py-4">
+                  <div
+                    key={t.id}
+                    className="space-y-3 rounded-xl border p-3.5"
+                    style={{
+                      background: `linear-gradient(135deg, ${editColor}26 0%, var(--card) 62%)`,
+                      borderColor: `${editColor}55`,
+                    }}
+                  >
                     <Input
                       autoFocus
                       value={editName}
@@ -223,31 +230,37 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
                 );
               }
 
+              const isActive = t.id === active.id;
               return (
                 <div
                   key={t.id}
-                  className="flex items-center gap-3.5 px-5 py-3.5 transition-colors"
+                  className="flex items-center gap-2 rounded-xl border p-2 pl-3.5 transition-all"
+                  style={{
+                    background: `linear-gradient(135deg, ${t.color}${isActive ? "33" : "1f"} 0%, var(--card) ${isActive ? "60%" : "65%"})`,
+                    borderColor: `${t.color}${isActive ? "66" : "40"}`,
+                  }}
                 >
                   <button
                     type="button"
                     onClick={() => switchTo(t.id)}
                     disabled={isPending}
-                    className="flex flex-1 items-center gap-3.5 text-left disabled:opacity-60"
+                    className="flex flex-1 items-center gap-2 text-left disabled:opacity-60"
                   >
-                    <span
-                      className="h-3.5 w-3.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: t.color }}
-                    />
-                    <span className="flex-1 text-[15px] font-medium text-foreground">
+                    <span className="flex-1 truncate text-[15px] font-semibold text-foreground">
                       {t.name}
                     </span>
-                    {t.id === active.id && <Check className="h-4 w-4 text-primary" />}
+                    {isActive && (
+                      <Check
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: t.color }}
+                      />
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={() => startEdit(t)}
                     aria-label={`Editar ${t.name}`}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground active:bg-muted/60"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground active:scale-95"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -256,7 +269,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
             })}
 
             {adding ? (
-              <div className="flex items-center gap-2 px-5 py-3.5">
+              <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-2 pl-2">
                 <Input
                   autoFocus
                   value={newName}
@@ -269,6 +282,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
                   }}
                   placeholder="Nombre del titular"
                   maxLength={40}
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0"
                 />
                 <Button
                   type="button"
@@ -283,11 +297,9 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
               <button
                 type="button"
                 onClick={() => { setAdding(true); cancelEdit(); }}
-                className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left text-primary transition-colors active:bg-muted/60"
+                className="flex w-full items-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3.5 py-3 text-left text-primary transition-all hover:border-primary/60 hover:bg-primary/10 active:scale-[0.99]"
               >
-                <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-                  <Plus className="h-4 w-4" />
-                </span>
+                <Plus className="h-4 w-4 flex-shrink-0" />
                 <span className="flex-1 text-[15px] font-semibold">Nuevo titular</span>
               </button>
             )}
