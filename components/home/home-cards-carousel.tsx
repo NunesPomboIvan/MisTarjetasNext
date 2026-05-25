@@ -83,7 +83,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
   if (items.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Carrusel */}
       <div
         ref={scrollRef}
@@ -125,7 +125,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
       {/* Dots — toda la zona es arrastrable */}
       {multi && (
         <div
-          className="flex cursor-grab items-center justify-center gap-1.5 py-2 active:cursor-grabbing"
+          className="flex cursor-grab items-center justify-center gap-1.5 py-1 active:cursor-grabbing"
           style={{ touchAction: "none" }}
           onPointerDown={onDotsPointerDown}
           onPointerMove={onDotsPointerMove}

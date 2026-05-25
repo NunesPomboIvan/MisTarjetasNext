@@ -117,7 +117,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Header personalizado */}
       <header className="flex min-w-0 items-center justify-between gap-3">
         <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
@@ -176,7 +176,7 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy */}
           <section
-            className="rounded-[20px] border border-white/[0.10] bg-card/85 p-5 backdrop-blur-xl"
+            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-3 backdrop-blur-xl"
             style={{
               backdropFilter: "blur(24px) saturate(180%)",
               WebkitBackdropFilter: "blur(24px) saturate(180%)",
@@ -213,7 +213,7 @@ export default async function DashboardPage() {
                 Próximos Eventos
               </h2>
               <div
-                className="rounded-[20px] border border-white/[0.08] bg-card/85 p-5 backdrop-blur-xl"
+                className="rounded-[20px] border border-white/[0.08] bg-card/85 px-5 py-4 backdrop-blur-xl"
                 style={{
                   backdropFilter: "blur(24px) saturate(180%)",
                   WebkitBackdropFilter: "blur(24px) saturate(180%)",

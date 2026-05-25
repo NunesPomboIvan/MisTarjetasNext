@@ -23,10 +23,15 @@ export function BottomNav() {
           <Link
             href="/expenses/new"
             aria-label="Nuevo consumo"
-            className="tap-target absolute left-1/2 top-0 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-[30%] items-center justify-center rounded-[18px] text-white gradient-primary transition-transform active:scale-95"
+            className="tap-target absolute left-1/2 top-0 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-[30%] items-center justify-center rounded-[18px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
+              background:
+                "linear-gradient(135deg, rgba(129,140,248,0.55) 0%, rgba(129,140,248,0.22) 100%)",
+              border: "1px solid rgba(129,140,248,0.55)",
               boxShadow:
-                "0 10px 22px -4px rgba(99,102,241,0.6), 0 0 0 1px rgba(255,255,255,0.08) inset, 0 1px 0 rgba(255,255,255,0.25) inset",
+                "0 0 22px -2px rgba(129,140,248,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
+              backdropFilter: "blur(20px) saturate(160%)",
+              WebkitBackdropFilter: "blur(20px) saturate(160%)",
             }}
           >
             <Plus className="h-6 w-6" strokeWidth={2.6} />
