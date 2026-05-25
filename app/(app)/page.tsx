@@ -178,7 +178,7 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy */}
           <section
-            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-3 backdrop-blur-xl"
+            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-4 backdrop-blur-xl"
             style={{
               backdropFilter: "blur(24px) saturate(180%)",
               WebkitBackdropFilter: "blur(24px) saturate(180%)",

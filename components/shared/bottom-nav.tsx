@@ -23,7 +23,7 @@ export function BottomNav() {
           <Link
             href="/expenses/new"
             aria-label="Nuevo consumo"
-            className="tap-target absolute left-1/2 top-0 z-20 flex h-[74px] w-[74px] -translate-x-1/2 -translate-y-[34%] items-center justify-center rounded-[20px] text-white backdrop-blur-xl transition-transform active:scale-95"
+            className="tap-target absolute left-1/2 top-0 z-20 flex h-[70px] w-[70px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[19px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
               background:
                 "linear-gradient(135deg, rgba(129,140,248,0.55) 0%, rgba(129,140,248,0.22) 100%)",
