@@ -23,7 +23,7 @@ export function BottomNav() {
           <Link
             href="/expenses/new"
             aria-label="Nuevo consumo"
-            className="tap-target absolute left-1/2 top-0 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-[30%] items-center justify-center rounded-[18px] text-white backdrop-blur-xl transition-transform active:scale-95"
+            className="tap-target absolute left-1/2 top-0 z-20 flex h-[74px] w-[74px] -translate-x-1/2 -translate-y-[34%] items-center justify-center rounded-[20px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
               background:
                 "linear-gradient(135deg, rgba(129,140,248,0.55) 0%, rgba(129,140,248,0.22) 100%)",
@@ -39,7 +39,7 @@ export function BottomNav() {
 
           {/* Barra flotante glass con halo violeta exterior */}
           <div
-            className="relative rounded-[24px] border border-white/[0.08] bg-card/85 px-2 py-2 backdrop-blur-xl"
+            className="relative rounded-[24px] border border-white/[0.08] bg-card/85 px-2 py-1.5 backdrop-blur-xl"
             style={{
               backdropFilter: "blur(24px) saturate(180%)",
               WebkitBackdropFilter: "blur(24px) saturate(180%)",
@@ -99,11 +99,11 @@ function NavLink({
     >
       <div
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
+          "flex h-8 w-8 items-center justify-center rounded-xl transition-colors",
           isActive ? "bg-primary/15" : "bg-transparent"
         )}
       >
-        <Icon className="h-[20px] w-[20px]" strokeWidth={isActive ? 2.4 : 1.8} />
+        <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.4 : 1.8} />
       </div>
       <span
         className={cn(

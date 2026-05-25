@@ -10,6 +10,7 @@ import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
+import { ScrollLock } from "@/components/shared/scroll-lock";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -118,6 +119,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-3">
+      <ScrollLock />
       {/* Header personalizado */}
       <header className="flex min-w-0 items-center justify-between gap-3">
         <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
