@@ -708,7 +708,7 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="flex flex-wrap gap-2">
         {ordered.map((cat) => {
           const isSelected = value === cat.id;
           return (
@@ -717,37 +717,37 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
               type="button"
               onClick={() => onChange(isSelected ? null : cat.id)}
               className={cn(
-                "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-2 py-3 text-center transition-all",
+                "group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-all active:scale-[0.97]",
                 isSelected
-                  ? "shadow-sm"
-                  : "border-border hover:border-primary/40 hover:bg-card/80"
+                  ? "border-transparent text-white shadow-md"
+                  : "border-white/[0.08] bg-card/70 text-foreground/85 hover:border-primary/40 hover:text-foreground"
               )}
               style={
                 isSelected
                   ? {
-                      borderColor: cat.color_text,
-                      borderWidth: "1.5px",
-                      backgroundColor: cat.color_bg + "55",
+                      background: `linear-gradient(135deg, ${cat.color_text} 0%, ${cat.color_text}cc 100%)`,
+                      boxShadow: `0 6px 18px -6px ${cat.color_text}80`,
                     }
-                  : undefined
+                  : {
+                      backdropFilter: "blur(10px) saturate(140%)",
+                      WebkitBackdropFilter: "blur(10px) saturate(140%)",
+                    }
               }
+              title={cat.name}
             >
               <span
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-xl"
-                style={{ backgroundColor: cat.color_bg }}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full text-base leading-none transition-transform",
+                  isSelected ? "scale-105" : ""
+                )}
+                style={{
+                  backgroundColor: isSelected ? "rgba(255,255,255,0.18)" : cat.color_bg,
+                }}
+                aria-hidden
               >
                 {cat.emoji}
               </span>
-              <span
-                className={cn(
-                  "line-clamp-2 w-full break-words text-[11.5px] font-semibold leading-tight",
-                  !isSelected && "text-foreground"
-                )}
-                style={isSelected ? { color: cat.color_text } : undefined}
-                title={cat.name}
-              >
-                {cat.name}
-              </span>
+              <span className="whitespace-nowrap">{cat.name}</span>
             </button>
           );
         })}
@@ -755,10 +755,10 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
         <button
           type="button"
           onClick={() => setNewOpen(true)}
-          className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-primary/40 bg-card/50 px-2 py-3 text-center text-primary transition-colors hover:border-primary hover:bg-primary/5"
+          className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-primary/40 bg-primary/[0.04] px-3 py-1.5 text-[13px] font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/10 active:scale-[0.97]"
         >
-          <Plus className="h-5 w-5" />
-          <span className="text-[11.5px] font-medium">Nueva</span>
+          <Plus className="h-3.5 w-3.5" />
+          <span>Nueva</span>
         </button>
       </div>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Banknote, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -11,7 +12,8 @@ import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { ScrollLock } from "@/components/shared/scroll-lock";
-import type { Card, Expense, Category } from "@/lib/supabase/database.types";
+import { parseLocalDate } from "@/lib/periods/calculate";
+import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
 
@@ -24,7 +26,7 @@ function greeting(hour: number): string {
 
 function greetingEmoji(hour: number): string {
   if (hour < 6) return "🌙";
-  if (hour < 13) return "🌅";
+  if (hour < 13) return "🌞";
   if (hour < 20) return "☀️";
   return "🌙";
 }
@@ -42,13 +44,24 @@ export default async function DashboardPage() {
     .order("created_at");
   if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
-  const [cardsResult, expensesResult] = await Promise.all([
+  let loansQuery = supabase
+    .from("loans")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false);
+  if (activeTitularId) loansQuery = loansQuery.eq("titular_id", activeTitularId);
+
+  const [cardsResult, expensesResult, loansResult, installmentsResult] = await Promise.all([
     cardsQuery,
     supabase.from("expenses").select("*, category:categories(*)").eq("user_id", user!.id).order("expense_date", { ascending: false }),
+    loansQuery,
+    supabase.from("loan_installments").select("*").eq("user_id", user!.id).eq("paid", false).order("due_date"),
   ]);
 
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
+  const loans = (loansResult.data ?? []) as Loan[];
+  const pendingInstallments = (installmentsResult.data ?? []) as LoanInstallment[];
 
   // Para "Próximos pagos" y "Próximo a pagar": usamos getNextDuePeriod
   // (el período cuyo vencimiento no pasó aún).
@@ -99,17 +112,21 @@ export default async function DashboardPage() {
       total,
     }));
 
-  // Cierre de tarjetas: tarjetas CON consumos en su período actual, ordenadas
-  // por proximidad de cierre.
-  const closingSoon = cardSummaries
-    .filter((c) => c.currentTotal > 0)
-    .map(({ card, currentPeriod }) => ({
-      id: card.id,
-      accent: card.color,
-      primary: card.bank || card.name,
-      suffix: card.last_four,
-      days: differenceInCalendarDays(currentPeriod.end, todayStart),
-    }))
+  // Préstamos bancarios: próxima cuota pendiente por préstamo, ordenadas
+  // por proximidad de vencimiento.
+  const loansUpcoming = loans
+    .map((loan) => {
+      const next = pendingInstallments.find((i) => i.loan_id === loan.id);
+      if (!next) return null;
+      return {
+        id: loan.id,
+        accent: loan.color,
+        primary: loan.bank || loan.description,
+        suffix: undefined as string | undefined,
+        days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => a.days - b.days);
 
   const hour = today.getHours();
@@ -155,14 +172,9 @@ export default async function DashboardPage() {
 
           {/* Mis tarjetas */}
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
-                Mis tarjetas
-              </h2>
-              <Link href="/cards" className="text-[13px] font-semibold text-primary">
-                Ver todas
-              </Link>
-            </div>
+            <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
+              Mis tarjetas
+            </h2>
 
             <HomeCardsCarousel
               items={[...cardSummaries]
@@ -178,22 +190,19 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy */}
           <section
-            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-4 backdrop-blur-xl"
+            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-[18px] backdrop-blur-xl"
             style={{
               backdropFilter: "blur(24px) saturate(180%)",
               WebkitBackdropFilter: "blur(24px) saturate(180%)",
               boxShadow:
-                "0 0 44px -4px rgba(129,140,248,0.38), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
+                "0 0 32px -6px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
             }}
           >
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Saldo a pagar
-                </p>
                 <Money
                   amount={saldoTotal}
-                  className="mt-1 block font-display text-[20px] font-bold leading-none text-foreground"
+                  className="block font-display text-[20px] font-bold leading-none text-foreground"
                 />
               </div>
 
@@ -208,47 +217,65 @@ export default async function DashboardPage() {
             </div>
           </section>
 
-          {/* Próximas fechas: Vencimiento de Tarjetas + Cierre de tarjetas */}
-          {(upcoming.length > 0 || closingSoon.length > 0) && (
-            <section className="space-y-3">
-              <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
-                Próximos Eventos
-              </h2>
-              <div
-                className="rounded-[20px] border border-white/[0.08] bg-card/85 px-5 py-4 backdrop-blur-xl"
-                style={{
-                  backdropFilter: "blur(24px) saturate(180%)",
-                  WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                  boxShadow:
-                    "0 0 32px -6px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
-                }}
-              >
+          {/* Próximos Vencimientos: Tarjeta de crédito + Préstamos bancarios */}
+          <section className="space-y-3">
+            <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
+              Próximos Vencimientos
+            </h2>
+            <div
+              className="rounded-[20px] border border-white/[0.08] bg-card/85 px-5 py-4 backdrop-blur-xl"
+              style={{
+                backdropFilter: "blur(24px) saturate(180%)",
+                WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                boxShadow:
+                  "0 0 28px -6px rgba(129,140,248,0.20), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+              }}
+            >
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}
-                  label="Vencimientos de tarjetas"
+                  label="Tarjeta de crédito"
                   href="/pagos"
                   icon="calendar"
                   ariaLabel="Ver próximos pagos de todas las tarjetas"
                 />
               )}
 
-              {upcoming.length > 0 && closingSoon.length > 0 && (
-                <div className="my-4 h-px bg-border" />
-              )}
+              {upcoming.length > 0 && <div className="my-4 h-px bg-border" />}
 
-              {closingSoon.length > 0 && (
+              {loansUpcoming.length > 0 ? (
                 <CardsBillboard
-                  items={closingSoon}
-                  label="Cierre de Tarjetas"
-                  href="/cierres"
-                  icon="calendar-clock"
-                  ariaLabel="Ver próximos cierres de todas las tarjetas"
+                  items={loansUpcoming}
+                  label="Préstamos bancarios"
+                  href="/prestamos"
+                  icon="banknote"
+                  ariaLabel="Ver próximas cuotas de préstamos bancarios"
                 />
+              ) : (
+                <Link
+                  href="/prestamos"
+                  className="group flex w-full items-center gap-3 text-left transition-colors"
+                  aria-label="Gestionar préstamos bancarios"
+                >
+                  <div
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                    style={{ background: "#6366f120", color: "#6366f1" }}
+                  >
+                    <Banknote className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Préstamos bancarios
+                    </p>
+                    <p className="text-[11.5px] font-medium leading-tight text-muted-foreground">
+                      Gestioná tus préstamos desde acá
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+                </Link>
               )}
-              </div>
-            </section>
-          )}
+            </div>
+          </section>
 
         </>
       )}

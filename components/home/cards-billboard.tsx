@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Calendar, CalendarClock } from "lucide-react";
+import { ChevronRight, Calendar, CalendarClock, Banknote } from "lucide-react";
 
 const ICONS = {
   calendar: Calendar,
   "calendar-clock": CalendarClock,
+  banknote: Banknote,
 } as const;
 
 export type BillboardIcon = keyof typeof ICONS;

@@ -208,6 +208,99 @@ export interface Database {
           }
         ];
       };
+      loans: {
+        Row: {
+          id: string;
+          user_id: string;
+          titular_id: string | null;
+          description: string;
+          bank: string | null;
+          color: string;
+          total_amount: number;
+          installment_amount: number;
+          issue_date: string; // YYYY-MM-DD
+          currency: Currency;
+          archived: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          titular_id?: string | null;
+          description: string;
+          bank?: string | null;
+          color?: string;
+          total_amount: number;
+          installment_amount: number;
+          issue_date: string;
+          currency?: Currency;
+          archived?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          titular_id?: string | null;
+          description?: string;
+          bank?: string | null;
+          color?: string;
+          total_amount?: number;
+          installment_amount?: number;
+          issue_date?: string;
+          currency?: Currency;
+          archived?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      loan_installments: {
+        Row: {
+          id: string;
+          loan_id: string;
+          user_id: string;
+          installment_number: number;
+          amount: number;
+          due_date: string; // YYYY-MM-DD
+          paid: boolean;
+          paid_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          loan_id: string;
+          user_id: string;
+          installment_number: number;
+          amount: number;
+          due_date: string;
+          paid?: boolean;
+          paid_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          loan_id?: string;
+          user_id?: string;
+          installment_number?: number;
+          amount?: number;
+          due_date?: string;
+          paid?: boolean;
+          paid_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loan_installments_loan_id_fkey";
+            columns: ["loan_id"];
+            isOneToOne: false;
+            referencedRelation: "loans";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       budgets: {
         Row: {
           id: string;
@@ -274,6 +367,16 @@ export type ExpenseUpdate = TablesUpdate<"expenses">;
 export type Budget = Tables<"budgets">;
 export type BudgetInsert = TablesInsert<"budgets">;
 export type BudgetUpdate = TablesUpdate<"budgets">;
+
+export type Loan = Tables<"loans">;
+export type LoanInsert = TablesInsert<"loans">;
+export type LoanUpdate = TablesUpdate<"loans">;
+
+export type LoanInstallment = Tables<"loan_installments">;
+export type LoanInstallmentInsert = TablesInsert<"loan_installments">;
+export type LoanInstallmentUpdate = TablesUpdate<"loan_installments">;
+
+export type LoanWithInstallments = Loan & { installments: LoanInstallment[] };
 
 export type ExpenseWithCategory = Expense & { category: Category | null };
 export type ExpenseWithCard = Expense & { card: Card };

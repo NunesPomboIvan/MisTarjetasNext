@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { href: "/",         label: "Resumen",  icon: Home,            match: (p: string) => p === "/" || p.startsWith("/cierres") },
   { href: "/cards",    label: "Tarjetas", icon: CreditCard,      match: (p: string) => p.startsWith("/cards") },
   { href: "/expenses", label: "Consumos", icon: PieChart,        match: (p: string) => p.startsWith("/expenses") },
-  { href: "/more",     label: "Más",      icon: MoreHorizontal,  match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") },
+  { href: "/more",     label: "Más",      icon: MoreHorizontal,  match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/prestamos") },
 ] as const;
 
 export function BottomNav() {
@@ -23,18 +23,18 @@ export function BottomNav() {
           <Link
             href="/expenses/new"
             aria-label="Nuevo consumo"
-            className="tap-target absolute left-1/2 top-0 z-20 flex h-[70px] w-[70px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[19px] text-white backdrop-blur-xl transition-transform active:scale-95"
+            className="tap-target absolute left-1/2 top-0 z-20 flex h-[60px] w-[60px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[16px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
               background:
-                "linear-gradient(135deg, rgba(129,140,248,0.55) 0%, rgba(129,140,248,0.22) 100%)",
-              border: "1px solid rgba(129,140,248,0.55)",
+                "linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(99,102,241,0.22) 100%)",
+              border: "1px solid rgba(99,102,241,0.55)",
               boxShadow:
-                "0 0 22px -2px rgba(129,140,248,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
+                "0 0 20px -2px rgba(99,102,241,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
               backdropFilter: "blur(20px) saturate(160%)",
               WebkitBackdropFilter: "blur(20px) saturate(160%)",
             }}
           >
-            <Plus className="h-6 w-6" strokeWidth={2.6} />
+            <Plus className="h-5 w-5" strokeWidth={2.6} />
           </Link>
 
           {/* Barra flotante glass con halo violeta exterior */}

@@ -64,14 +64,25 @@ export default async function PagosPage() {
         />
       ) : (
         <>
-          {/* Total a pagar */}
-          <section className="rounded-[20px] gradient-card p-5 text-white shadow-brand">
-            <p className="text-[12px] font-medium opacity-80">Total a pagar</p>
+          {/* Total a pagar — estilo glass violeta como el avatar titular */}
+          <section
+            className="rounded-[20px] p-5 text-white backdrop-blur-xl"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(99,102,241,0.22) 100%)",
+              border: "1px solid rgba(99,102,241,0.55)",
+              boxShadow:
+                "0 0 20px -2px rgba(99,102,241,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
+              backdropFilter: "blur(20px) saturate(160%)",
+              WebkitBackdropFilter: "blur(20px) saturate(160%)",
+            }}
+          >
+            <p className="text-[12px] font-medium opacity-85">Total a pagar</p>
             <Money
               amount={totalPagos}
               className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight"
             />
-            <p className="mt-1.5 text-[12px] opacity-80">
+            <p className="mt-1.5 text-[12px] opacity-85">
               {upcoming.length} tarjeta{upcoming.length === 1 ? "" : "s"} con vencimiento
             </p>
           </section>
@@ -84,7 +95,13 @@ export default async function PagosPage() {
                 <Link
                   key={card.id}
                   href={`/cards/${card.id}`}
-                  className="block rounded-[18px] border border-border bg-card p-4 transition-all active:scale-[0.985]"
+                  className="block rounded-[20px] border border-white/[0.08] bg-card/85 p-4 backdrop-blur-xl transition-all active:scale-[0.985]"
+                  style={{
+                    backdropFilter: "blur(24px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                    boxShadow:
+                      "0 0 28px -8px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <div

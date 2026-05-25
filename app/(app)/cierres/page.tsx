@@ -74,7 +74,13 @@ export default async function CierresPage() {
               <Link
                 key={card.id}
                 href={`/cards/${card.id}`}
-                className="block rounded-[18px] border border-border bg-card p-4 transition-all active:scale-[0.985]"
+                className="block rounded-[20px] border border-white/[0.08] bg-card/85 p-4 backdrop-blur-xl transition-all active:scale-[0.985]"
+                style={{
+                  backdropFilter: "blur(24px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                  boxShadow:
+                    "0 0 28px -8px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -89,9 +95,7 @@ export default async function CierresPage() {
                       {card.bank || card.name}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      Cierra {capitalize(formatDate(period.end, "EEEE d 'de' MMM"))}
-                      {" · "}
-                      vence {formatDate(period.due, "d 'de' MMM")}
+                      {capitalize(formatDate(period.end, "EEEE d 'de' MMM"))}
                     </p>
                     <Money
                       amount={total}
