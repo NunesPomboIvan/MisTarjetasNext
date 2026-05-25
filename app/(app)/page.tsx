@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -22,10 +21,17 @@ function greeting(hour: number): string {
   return "Buenas noches";
 }
 
+function greetingEmoji(hour: number): string {
+  if (hour < 6) return "🌙";
+  if (hour < 13) return "🌅";
+  if (hour < 20) return "☀️";
+  return "🌙";
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { titulares, activeId: activeTitularId } = await resolveTitulares();
+  const { titulares, activeId: activeTitularId, active: activeTitular } = await resolveTitulares();
 
   let cardsQuery = supabase
     .from("cards")
@@ -114,19 +120,21 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       {/* Header personalizado */}
       <header className="flex min-w-0 items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Image
-            src="/app-icon.png"
-            alt="Mis Tarjetas"
-            width={44}
-            height={44}
-            className="h-11 w-11 shrink-0 rounded-[12px]"
-            priority
-          />
-          <h1 className="min-w-0 truncate font-display text-[26px] font-bold tracking-tight text-foreground">
-            {greeting(hour)}
-          </h1>
-        </div>
+        <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
+          {greeting(hour)}
+          {activeTitular ? (
+            <>
+              ,{" "}
+              <span className="font-bold text-foreground">{activeTitular.name}</span>
+            </>
+          ) : null}
+          <span
+            className="ml-1.5 inline-block"
+            style={greetingEmoji(hour) === "🌙" ? { transform: "scaleX(-1)" } : undefined}
+          >
+            {greetingEmoji(hour)}
+          </span>
+        </h1>
         {titulares.length > 0 && (
           <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
         )}
@@ -142,30 +150,6 @@ export default async function DashboardPage() {
       ) : (
         <>
           <DueTodayAlert todayKey={todayKey} cards={dueToday} />
-
-          {/* Card resumen: saldo + fecha de hoy */}
-          <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
-            <div className="flex w-full items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Saldo a pagar
-                </p>
-                <Money
-                  amount={saldoTotal}
-                  className="mt-1 block font-display text-[20px] font-bold leading-none text-foreground"
-                />
-              </div>
-
-              <div className="flex-shrink-0 text-right">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  {weekdayLabel}
-                </p>
-                <p className="mt-1 text-[17px] font-bold leading-none tabular-nums text-foreground">
-                  {dayMonthLabel}
-                </p>
-              </div>
-            </div>
-          </section>
 
           {/* Mis tarjetas */}
           <section className="space-y-3">
@@ -190,13 +174,53 @@ export default async function DashboardPage() {
             />
           </section>
 
+          {/* Card resumen: saldo + fecha de hoy */}
+          <section
+            className="rounded-[20px] border border-white/[0.10] bg-card/85 p-5 backdrop-blur-xl"
+            style={{
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              boxShadow:
+                "0 0 44px -4px rgba(129,140,248,0.38), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
+            <div className="flex w-full items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Saldo a pagar
+                </p>
+                <Money
+                  amount={saldoTotal}
+                  className="mt-1 block font-display text-[20px] font-bold leading-none text-foreground"
+                />
+              </div>
+
+              <div className="flex-shrink-0 text-right">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {weekdayLabel}
+                </p>
+                <p className="mt-1 text-[17px] font-bold leading-none tabular-nums text-foreground">
+                  {dayMonthLabel}
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* Próximas fechas: Vencimiento de Tarjetas + Cierre de tarjetas */}
           {(upcoming.length > 0 || closingSoon.length > 0) && (
             <section className="space-y-3">
               <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
-                Datos Adicionales
+                Próximos Eventos
               </h2>
-              <div className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+              <div
+                className="rounded-[20px] border border-white/[0.08] bg-card/85 p-5 backdrop-blur-xl"
+                style={{
+                  backdropFilter: "blur(24px) saturate(180%)",
+                  WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                  boxShadow:
+                    "0 0 32px -6px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
+              >
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}

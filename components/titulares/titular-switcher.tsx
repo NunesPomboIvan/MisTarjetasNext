@@ -36,6 +36,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
   const [open, setOpen] = React.useState(false);
   const [adding, setAdding] = React.useState(false);
   const [newName, setNewName] = React.useState("");
+  const [newColor, setNewColor] = React.useState(COLORS[0]);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editName, setEditName] = React.useState("");
   const [editColor, setEditColor] = React.useState(COLORS[0]);
@@ -61,12 +62,13 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
     const name = newName.trim();
     if (!name) return;
     startTransition(async () => {
-      const result = await createTitular(name);
+      const result = await createTitular(name, newColor);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
       setNewName("");
+      setNewColor(COLORS[0]);
       setAdding(false);
       setOpen(false);
       router.refresh();
@@ -117,14 +119,17 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center rounded-lg border px-3.5 py-2 text-sm font-semibold text-foreground shadow-sm transition-all hover:shadow-md active:scale-95"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white backdrop-blur-xl transition-all hover:shadow-md active:scale-95"
         style={{
-          background: `linear-gradient(135deg, ${active.color}1f 0%, var(--card) 75%)`,
-          borderColor: `${active.color}40`,
+          background: `linear-gradient(135deg, ${active.color}55 0%, ${active.color}22 100%)`,
+          border: `1px solid ${active.color}55`,
+          boxShadow: `0 0 20px -2px ${active.color}66, inset 0 1px 0 rgba(255,255,255,0.10)`,
+          backdropFilter: "blur(20px) saturate(160%)",
+          WebkitBackdropFilter: "blur(20px) saturate(160%)",
         }}
-        aria-label="Cambiar de titular"
+        aria-label={`Cambiar de titular (actual: ${active.name})`}
       >
-        <span className="max-w-[140px] truncate">{active.name}</span>
+        {active.name.charAt(0).toUpperCase()}
       </button>
 
       <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) cancelEdit(); }}>
@@ -268,7 +273,13 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
             })}
 
             {adding ? (
-              <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-2 pl-2">
+              <div
+                className="space-y-3 rounded-xl border p-3.5"
+                style={{
+                  background: `linear-gradient(135deg, ${newColor}26 0%, var(--card) 62%)`,
+                  borderColor: `${newColor}55`,
+                }}
+              >
                 <Input
                   autoFocus
                   value={newName}
@@ -281,16 +292,40 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
                   }}
                   placeholder="Nombre del titular"
                   maxLength={40}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0"
                 />
-                <Button
-                  type="button"
-                  onClick={handleCreate}
-                  disabled={isPending || !newName.trim()}
-                  className="gradient-primary shadow-brand shrink-0 text-white"
-                >
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Agregar"}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewColor(c)}
+                      className={cn(
+                        "h-7 w-7 rounded-full border-2 transition-transform",
+                        newColor === c ? "scale-110 border-foreground" : "border-transparent"
+                      )}
+                      style={{ backgroundColor: c }}
+                      aria-label={`Color ${c}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={isPending || !newName.trim()}
+                    className="gradient-primary shadow-brand flex-1 text-white"
+                  >
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Agregar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setAdding(false); setNewName(""); setNewColor(COLORS[0]); }}
+                    disabled={isPending}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               <button
