@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { PWARegister } from "@/components/shared/pwa-register";
+import { SplashScreen } from "@/components/shared/splash-screen";
 import "./globals.css";
 
 const inter = Inter({
@@ -54,6 +55,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <SplashScreen />
           <Toaster richColors position="top-center" />
           <PWARegister />
         </ThemeProvider>
