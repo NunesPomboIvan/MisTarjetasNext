@@ -12,6 +12,7 @@ import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { ScrollLock } from "@/components/shared/scroll-lock";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -153,27 +154,29 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-3">
       <ScrollLock />
-      {/* Header personalizado */}
-      <header className="flex min-w-0 items-center justify-between gap-3">
-        <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
-          {greeting(hour)}
-          {activeTitular ? (
-            <>
-              ,{" "}
-              <span className="font-bold text-foreground">{activeTitular.name}</span>
-            </>
-          ) : null}
-          <span
-            className="ml-1.5 inline-block"
-            style={greetingEmoji(hour) === "🌙" ? { transform: "scaleX(-1)" } : undefined}
-          >
-            {greetingEmoji(hour)}
-          </span>
-        </h1>
-        {titulares.length > 0 && (
-          <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
-        )}
-      </header>
+      {/* Header personalizado (sticky) */}
+      <StickyPageHeader>
+        <header className="flex min-w-0 items-center justify-between gap-3">
+          <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
+            {greeting(hour)}
+            {activeTitular ? (
+              <>
+                ,{" "}
+                <span className="font-bold text-foreground">{activeTitular.name}</span>
+              </>
+            ) : null}
+            <span
+              className="ml-1.5 inline-block"
+              style={greetingEmoji(hour) === "🌙" ? { transform: "scaleX(-1)" } : undefined}
+            >
+              {greetingEmoji(hour)}
+            </span>
+          </h1>
+          {titulares.length > 0 && (
+            <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
+          )}
+        </header>
+      </StickyPageHeader>
 
       {cards.length === 0 ? (
         <EmptyState

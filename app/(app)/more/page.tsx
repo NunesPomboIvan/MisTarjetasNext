@@ -14,15 +14,18 @@ import {
   LocalUserEmail,
   LocalUserInitial,
 } from "@/components/shared/local-user";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 
 export const metadata = { title: "Cuenta" };
 
 export default function MorePage() {
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-        Cuenta
-      </h1>
+      <StickyPageHeader>
+        <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+          Cuenta
+        </h1>
+      </StickyPageHeader>
 
       {/* Perfil */}
       <section className="flex items-center gap-3 rounded-[18px] border border-border bg-card p-4">

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoanSummaryCard } from "@/components/loans/loan-summary-card";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Préstamos" };
@@ -50,18 +51,20 @@ export default async function LoansPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-          Préstamos
-        </h1>
-        <Link
-          href="/prestamos/new"
-          className="btn-glass-primary inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo
-        </Link>
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+            Préstamos
+          </h1>
+          <Link
+            href="/prestamos/new"
+            className="btn-glass-primary inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo
+          </Link>
+        </div>
+      </StickyPageHeader>
 
       {items.length === 0 ? (
         <EmptyState
