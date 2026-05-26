@@ -3,7 +3,7 @@ import { Archive, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoanCard } from "@/components/loans/loan-card";
+import { LoanSummaryCard } from "@/components/loans/loan-summary-card";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Préstamos" };
@@ -35,23 +35,13 @@ export default async function LoansPage() {
   const items = allLoans.map((loan) => {
     const own = allInstallments.filter((i) => i.loan_id === loan.id);
     const paid = own.filter((i) => i.paid);
-    const pendingList = own
-      .filter((i) => !i.paid)
-      .sort((a, b) => a.due_date.localeCompare(b.due_date));
-    const pending = pendingList.reduce((s, i) => s + Number(i.amount), 0);
-    const nextPending = pendingList[0];
+    const pending = own.filter((i) => !i.paid);
     return {
       loan,
-      pending,
+      pendingAmount: pending.reduce((s, i) => s + Number(i.amount), 0),
+      paidAmount: paid.reduce((s, i) => s + Number(i.amount), 0),
       paidCount: paid.length,
       totalCount: own.length,
-      next: nextPending
-        ? {
-            number: nextPending.installment_number,
-            amount: Number(nextPending.amount),
-            due_date: nextPending.due_date,
-          }
-        : null,
     };
   });
 
@@ -106,45 +96,34 @@ export default async function LoansPage() {
 
 interface LoanItem {
   loan: Loan;
-  pending: number;
+  pendingAmount: number;
+  paidAmount: number;
   paidCount: number;
   totalCount: number;
-  next: {
-    number: number;
-    amount: number;
-    due_date: string;
-  } | null;
 }
 
 function StackedLoans({ items }: { items: LoanItem[] }) {
   return (
-    <div className="flex flex-col">
-      {items.map((it, i) => {
-        const isLast = i === items.length - 1;
-        return (
-          <div key={it.loan.id}>
-            <Link
-              href={`/prestamos/${it.loan.id}`}
-              className="block transition-transform duration-150 active:scale-[0.985]"
-            >
-              <LoanCard
-                bank={it.loan.bank}
-                description={it.loan.description}
-                color={it.loan.color}
-                pending={it.pending}
-                paidCount={it.paidCount}
-                totalCount={it.totalCount}
-                next={it.next}
-              />
-            </Link>
-            {!isLast && (
-              <div className="flex justify-center py-2.5">
-                <div className="h-px w-12 rounded-full bg-border/50" />
-              </div>
-            )}
-          </div>
-        );
-      })}
+    <div className="space-y-3">
+      {items.map((it) => (
+        <Link
+          key={it.loan.id}
+          href={`/prestamos/${it.loan.id}`}
+          className="block transition-transform duration-150 active:scale-[0.99]"
+        >
+          <LoanSummaryCard
+            bank={it.loan.bank}
+            description={it.loan.description}
+            color={it.loan.color}
+            issueDate={it.loan.issue_date}
+            pending={it.pendingAmount}
+            paid={it.paidAmount}
+            total={Number(it.loan.total_amount)}
+            paidCount={it.paidCount}
+            totalCount={it.totalCount}
+          />
+        </Link>
+      ))}
     </div>
   );
 }
