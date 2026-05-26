@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { Banknote } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { BackButton } from "@/components/shared/back-button";
@@ -64,26 +63,16 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
           background: `linear-gradient(135deg, ${accent}18 0%, transparent 60%), var(--card)`,
         }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-            style={{ background: `${accent}28`, color: accent }}
-          >
-            <Banknote className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-[17px] font-bold leading-tight text-foreground">
-              {loan.bank || loan.description}
+        <div className="min-w-0">
+          <p className="truncate font-display text-[17px] font-bold leading-tight text-foreground">
+            {loan.bank || loan.description}
+          </p>
+          {loan.bank && (
+            <p className="mt-1 truncate text-[12px] text-muted-foreground">
+              <span className="font-semibold text-foreground/70">Descripción:</span>{" "}
+              {loan.description}
             </p>
-            {loan.bank && (
-              <p className="truncate text-[12px] text-muted-foreground">
-                {loan.description}
-              </p>
-            )}
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Emitido el {capitalize(formatDate(parseLocalDate(loan.issue_date), "d 'de' MMM yyyy"))}
-            </p>
-          </div>
+          )}
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
@@ -128,6 +117,11 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
             />
           </div>
         </div>
+
+        {/* Fecha de emisión */}
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Emitido el {capitalize(formatDate(parseLocalDate(loan.issue_date), "d 'de' MMM yyyy"))}
+        </p>
       </section>
 
       {/* Cuotas */}
