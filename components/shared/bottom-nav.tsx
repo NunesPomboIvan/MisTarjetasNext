@@ -16,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname() ?? "/";
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-2 z-50 pb-safe">
       <div className="pointer-events-auto mx-auto w-full max-w-lg px-3 pb-0 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}

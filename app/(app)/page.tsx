@@ -188,7 +188,7 @@ export default async function DashboardPage() {
 
           {/* Mis tarjetas */}
           <section className="space-y-3">
-            <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Mis tarjetas
             </h2>
 
@@ -226,9 +226,9 @@ export default async function DashboardPage() {
           </section>
 
           {/* Próximos Vencimientos: Tarjeta de crédito + Préstamos bancarios */}
-          <section className="space-y-3">
-            <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
-              Próximos Vencimientos
+          <section className="mt-12 space-y-3">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Próximos vencimientos
             </h2>
             <div className="glass-card rounded-[20px] px-5 py-4">
               {upcoming.length > 0 && (
