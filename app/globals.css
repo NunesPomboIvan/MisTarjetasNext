@@ -170,17 +170,30 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /*
+   * Pin html al viewport y dejamos que body sea el contenedor scrolleable.
+   * Es la única forma confiable de matar el rubber-band bounce en iOS
+   * Safari (el `overscroll-behavior` por sí solo no alcanza en mobile).
+   * El body conserva el padding del safe-area.
+   */
+  html {
+    @apply font-sans;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior-y: none;
-  }
-
-  html {
-    @apply font-sans;
+    -webkit-overflow-scrolling: touch;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
-    overscroll-behavior-y: none;
   }
 }
 
