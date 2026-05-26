@@ -80,7 +80,7 @@ export function WalletCard({
   const shadowHex = shade(base, 0.1);
   const { r, g, b } = hexToRgb(shadowHex);
 
-  const cardH = compact ? 180 : 204;
+  const cardH = compact ? 168 : 188;
 
   return (
     <div
@@ -172,16 +172,16 @@ export function WalletCard({
               <>
                 {bank && (
                   <div
-                    className="mb-0.5 text-[12px] font-bold uppercase"
-                    style={{ color: fgMuted, letterSpacing: "0.15em" }}
+                    className="mb-0.5 text-[13.5px] font-bold uppercase"
+                    style={{ color: fg, letterSpacing: "0.14em" }}
                   >
                     {bank}
                   </div>
                 )}
                 {(!bank || !sameAsBank) && name && (
                   <div
-                    className="text-[12px] font-bold uppercase"
-                    style={{ color: fgMuted, letterSpacing: "0.15em" }}
+                    className="text-[13.5px] font-bold uppercase"
+                    style={{ color: fg, letterSpacing: "0.14em" }}
                   >
                     {name}
                   </div>
@@ -215,7 +215,7 @@ export function WalletCard({
           )}
         </div>
 
-        <CardLogo type={card.type} size={compact ? "sm" : "md"} fgColor={fg} />
+        <CardLogo type={card.type} size={compact ? "md" : "lg"} fgColor={fg} />
       </div>
 
       {/* BOTTOM: fechas + período + número */}

@@ -59,43 +59,27 @@ export function CardList({ cards }: CardListProps) {
   );
 }
 
-/**
- * Apila las tarjetas tipo wallet — cada card excepto la primera se solapa
- * sobre la anterior con un margen negativo, ocultando su zona del saldo y
- * dejando visible sólo el banco + cierre/vence. La última card siempre
- * queda entera (es la que tiene mayor z-index por orden DOM).
- *
- * `OVERLAP_PX` = cuánto se mete cada card sobre la anterior. Si subís este
- * número se ve menos de cada card (sólo banco). Si lo bajás se ve más.
- */
-const OVERLAP_PX = 78;
-
 function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
   return (
-    <div className="relative">
-      {cards.map((card, i) => {
+    <div className="space-y-3">
+      {cards.map((card) => {
         const period = getCurrentPeriod(card);
         const total = getCardTotal(card);
         return (
-          <div
+          <CardPressWrapper
             key={card.id}
-            className="relative"
-            style={{ marginTop: i === 0 ? 0 : -OVERLAP_PX }}
+            href={`/cards/${card.id}`}
+            cardId={card.id}
+            cardName={card.bank || card.name}
+            className="block transition-transform duration-150 active:scale-[0.985]"
           >
-            <CardPressWrapper
-              href={`/cards/${card.id}`}
-              cardId={card.id}
-              cardName={card.bank || card.name}
-              className="block transition-transform duration-150 active:scale-[0.985]"
-            >
-              <WalletCard
-                card={card}
-                total={total}
-                closeLabel={formatDate(period.end, "d MMM")}
-                dueLabel={formatDate(period.due, "d MMM")}
-              />
-            </CardPressWrapper>
-          </div>
+            <WalletCard
+              card={card}
+              total={total}
+              closeLabel={formatDate(period.end, "d MMM")}
+              dueLabel={formatDate(period.due, "d MMM")}
+            />
+          </CardPressWrapper>
         );
       })}
     </div>

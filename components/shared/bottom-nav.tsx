@@ -16,7 +16,7 @@ export function BottomNav() {
   const pathname = usePathname() ?? "/";
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-2 z-50 pb-safe">
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
       <div className="pointer-events-auto mx-auto w-full max-w-lg px-3 pb-0 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}
@@ -37,12 +37,10 @@ export function BottomNav() {
             <Plus className="h-5 w-5" strokeWidth={2.6} />
           </Link>
 
-          {/* Barra flotante glass con halo violeta exterior */}
+          {/* Barra flotante (opaca) con halo violeta exterior */}
           <div
-            className="relative rounded-[24px] border border-white/[0.08] bg-card/85 px-2 py-1.5 backdrop-blur-xl"
+            className="relative rounded-[24px] border border-white/[0.08] bg-card px-2 py-1.5"
             style={{
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
               boxShadow:
                 "0 0 36px -4px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
             }}
