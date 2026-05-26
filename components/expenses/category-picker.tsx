@@ -98,12 +98,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
             : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
         )}
       >
-        <span
-          className="flex h-6 w-6 items-center justify-center rounded-lg text-base"
-          style={{ backgroundColor: cat.color_bg }}
-        >
-          {cat.emoji}
-        </span>
+        <span className="text-base leading-none">{cat.emoji}</span>
         <span>{cat.name}</span>
         {isSelected && <Check className="ml-auto h-3.5 w-3.5" />}
       </button>
@@ -193,12 +188,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
 
             {/* Preview */}
             <div className="flex items-center gap-2">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-lg"
-                style={{ backgroundColor: newColors.bg }}
-              >
-                {newEmoji}
-              </span>
+              <span className="text-lg leading-none">{newEmoji}</span>
               <span
                 className="rounded-full px-2 py-0.5 text-sm font-medium"
                 style={{ backgroundColor: newColors.bg, color: newColors.text }}
@@ -210,7 +200,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
             <div className="flex gap-2">
               <Button
                 type="button"
-                className="gradient-primary shadow-brand flex-1"
+                className="btn-glass-primary flex-1"
                 onClick={handleCreate}
                 disabled={isPending}
               >

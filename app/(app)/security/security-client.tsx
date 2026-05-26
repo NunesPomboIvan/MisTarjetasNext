@@ -305,7 +305,7 @@ function PinDialog({
             </Button>
             <Button
               type="submit"
-              className="gradient-primary shadow-brand flex-1"
+              className="btn-glass-primary flex-1"
               disabled={busy}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}

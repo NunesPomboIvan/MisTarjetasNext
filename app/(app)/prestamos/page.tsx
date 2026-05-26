@@ -1,16 +1,12 @@
 import Link from "next/link";
-import { Banknote, Plus } from "lucide-react";
+import { Archive, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
-import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { BackButton } from "@/components/shared/back-button";
-import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
-import { differenceInCalendarDays, startOfDay } from "date-fns";
-import { parseLocalDate } from "@/lib/periods/calculate";
+import { LoanCard } from "@/components/loans/loan-card";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Préstamos bancarios" };
+export const metadata = { title: "Préstamos" };
 
 export default async function LoansPage() {
   const supabase = await createClient();
@@ -21,8 +17,8 @@ export default async function LoansPage() {
     .from("loans")
     .select("*")
     .eq("user_id", user!.id)
-    .eq("archived", false)
-    .order("created_at");
+    .order("archived", { ascending: true })
+    .order("created_at", { ascending: true });
   if (activeTitularId) loansQuery = loansQuery.eq("titular_id", activeTitularId);
 
   const [{ data: loans }, { data: installments }] = await Promise.all([
@@ -30,116 +26,128 @@ export default async function LoansPage() {
     supabase
       .from("loan_installments")
       .select("*")
-      .eq("user_id", user!.id)
-      .order("due_date"),
+      .eq("user_id", user!.id),
   ]);
 
   const allLoans = (loans ?? []) as Loan[];
   const allInstallments = (installments ?? []) as LoanInstallment[];
 
-  const todayStart = startOfDay(nowInArgentina());
+  const items = allLoans.map((loan) => {
+    const own = allInstallments.filter((i) => i.loan_id === loan.id);
+    const paid = own.filter((i) => i.paid);
+    const pendingList = own
+      .filter((i) => !i.paid)
+      .sort((a, b) => a.due_date.localeCompare(b.due_date));
+    const pending = pendingList.reduce((s, i) => s + Number(i.amount), 0);
+    const nextPending = pendingList[0];
+    return {
+      loan,
+      pending,
+      total: Number(loan.total_amount),
+      paidCount: paid.length,
+      totalCount: own.length,
+      next: nextPending
+        ? {
+            number: nextPending.installment_number,
+            amount: Number(nextPending.amount),
+            due_date: nextPending.due_date,
+          }
+        : null,
+    };
+  });
 
-  const items = allLoans
-    .map((loan) => {
-      const own = allInstallments.filter((i) => i.loan_id === loan.id);
-      const pending = own.filter((i) => !i.paid);
-      const next = pending[0] ?? null;
-      const totalRemaining = pending.reduce((s, i) => s + Number(i.amount), 0);
-      const totalPaid = own
-        .filter((i) => i.paid)
-        .reduce((s, i) => s + Number(i.amount), 0);
-      return { loan, next, totalRemaining, totalPaid, totalInstallments: own.length };
-    })
-    .sort((a, b) => {
-      if (!a.next) return 1;
-      if (!b.next) return -1;
-      return a.next.due_date.localeCompare(b.next.due_date);
-    });
+  const active = items.filter((i) => !i.loan.archived);
+  const archived = items.filter((i) => i.loan.archived);
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="font-display text-[20px] font-semibold text-foreground">
-          Préstamos bancarios
+        <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+          Préstamos
         </h1>
         <Link
           href="/prestamos/new"
-          aria-label="Nuevo préstamo"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
+          className="btn-glass-primary inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
+          Nuevo
         </Link>
       </div>
 
       {items.length === 0 ? (
         <EmptyState
           icon={<span>🏦</span>}
-          title="Sin préstamos"
-          description="Cargá tu primer préstamo para ver las cuotas próximas"
+          title="Todavía no tenés préstamos"
+          description="Cargá tu primer préstamo bancario para empezar a hacer seguimiento"
           action={{ label: "Nuevo préstamo", href: "/prestamos/new" }}
         />
       ) : (
-        <section className="space-y-2.5">
-          {items.map(({ loan, next, totalRemaining }) => {
-            const accent = loan.color || "#6366f1";
-            const daysUntil = next
-              ? differenceInCalendarDays(parseLocalDate(next.due_date), todayStart)
-              : null;
-            return (
-              <div
-                key={loan.id}
-                className="block rounded-[18px] border border-border bg-card p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-                    style={{ background: `${accent}20`, color: accent }}
-                  >
-                    <Banknote className="h-5 w-5" />
-                  </div>
+        <div className="space-y-5">
+          {active.length > 0 && <StackedLoans items={active} />}
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-foreground">
-                      {loan.bank || loan.description}
-                    </p>
-                    {loan.bank && (
-                      <p className="truncate text-[11px] text-muted-foreground">
-                        {loan.description}
-                      </p>
-                    )}
-                    {next && (
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Próxima cuota:{" "}
-                        {capitalize(formatDate(parseLocalDate(next.due_date), "d 'de' MMM"))}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex-shrink-0 text-right">
-                    <Money
-                      amount={totalRemaining}
-                      className="block text-[15px] font-semibold tabular-nums text-foreground"
-                    />
-                    {daysUntil != null && (
-                      <p
-                        className={
-                          "mt-0.5 text-[11px] font-semibold " +
-                          (daysUntil <= 3 ? "text-destructive" : "text-muted-foreground")
-                        }
-                      >
-                        {daysUntil <= 0
-                          ? "Vence hoy"
-                          : `En ${daysUntil} día${daysUntil === 1 ? "" : "s"}`}
-                      </p>
-                    )}
-                  </div>
-                </div>
+          {archived.length > 0 && (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm text-muted-foreground">
+                <Archive className="h-4 w-4" />
+                <span>
+                  {archived.length} préstamo{archived.length !== 1 ? "s" : ""} archivado
+                  {archived.length !== 1 ? "s" : ""}
+                </span>
+              </summary>
+              <div className="mt-2 opacity-60">
+                <StackedLoans items={archived} />
               </div>
-            );
-          })}
-        </section>
+            </details>
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+interface LoanItem {
+  loan: Loan;
+  pending: number;
+  total: number;
+  paidCount: number;
+  totalCount: number;
+  next: {
+    number: number;
+    amount: number;
+    due_date: string;
+  } | null;
+}
+
+function StackedLoans({ items }: { items: LoanItem[] }) {
+  return (
+    <div className="flex flex-col">
+      {items.map((it, i) => {
+        const isLast = i === items.length - 1;
+        return (
+          <div key={it.loan.id}>
+            <Link
+              href={`/prestamos/${it.loan.id}`}
+              className="block transition-transform duration-150 active:scale-[0.985]"
+            >
+              <LoanCard
+                bank={it.loan.bank}
+                description={it.loan.description}
+                color={it.loan.color}
+                pending={it.pending}
+                total={it.total}
+                paidCount={it.paidCount}
+                totalCount={it.totalCount}
+                next={it.next}
+              />
+            </Link>
+            {!isLast && (
+              <div className="flex justify-center py-2.5">
+                <div className="h-px w-12 rounded-full bg-border/50" />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

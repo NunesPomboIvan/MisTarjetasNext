@@ -205,7 +205,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
                           type="button"
                           onClick={() => handleSaveEdit(t.id)}
                           disabled={isPending || !editName.trim()}
-                          className="gradient-primary shadow-brand flex-1 text-white"
+                          className="btn-glass-primary flex-1"
                         >
                           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
                         </Button>
@@ -313,7 +313,7 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
                     type="button"
                     onClick={handleCreate}
                     disabled={isPending || !newName.trim()}
-                    className="gradient-primary shadow-brand flex-1 text-white"
+                    className="btn-glass-primary flex-1"
                   >
                     {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Agregar"}
                   </Button>

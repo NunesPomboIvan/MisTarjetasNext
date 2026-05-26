@@ -286,7 +286,7 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="gradient-primary shadow-brand" onClick={saveCategory} disabled={isPending}>
+              <Button size="sm" className="btn-glass-primary" onClick={saveCategory} disabled={isPending}>
                 <Check className="mr-1 h-4 w-4" /> Guardar
               </Button>
               <Button size="sm" variant="ghost" onClick={cancelEdit}>

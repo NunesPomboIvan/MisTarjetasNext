@@ -191,7 +191,7 @@ export function NewExpenseHero({
           <Button
             type="submit"
             disabled={isPending}
-            className="gradient-primary shadow-brand h-9 justify-self-end rounded-full px-5 text-sm font-semibold"
+            className="btn-glass-primary h-9 justify-self-end rounded-full px-5 text-sm font-semibold"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -737,12 +737,9 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
             >
               <span
                 className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full text-base leading-none transition-transform",
+                  "text-base leading-none transition-transform",
                   isSelected ? "scale-105" : ""
                 )}
-                style={{
-                  backgroundColor: isSelected ? "rgba(255,255,255,0.18)" : cat.color_bg,
-                }}
                 aria-hidden
               >
                 {cat.emoji}
@@ -833,7 +830,7 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
             <div className="flex gap-2">
               <Button
                 size="sm"
-                className="gradient-primary shadow-brand"
+                className="btn-glass-primary"
                 onClick={handleCreate}
                 disabled={isPending}
               >

@@ -360,7 +360,7 @@ export function LoanForm() {
       <Button
         type="button"
         onClick={submit}
-        className="gradient-primary shadow-brand w-full font-semibold"
+        className="btn-glass-primary w-full font-semibold"
         disabled={isPending}
       >
         {isPending ? (

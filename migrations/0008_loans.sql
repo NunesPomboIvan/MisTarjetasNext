@@ -72,5 +72,9 @@ create or replace trigger loan_installments_updated_at
   for each row execute function update_updated_at();
 
 -- NOTA sobre RLS: igual que titulares — la app es mono-usuario con anon
--- key y user_id fijo, sin sesión real. No habilitamos RLS para mantener
+-- key y user_id fijo, sin sesión real. Deshabilitamos RLS para mantener
 -- coherencia con el resto del schema en esta instancia.
+-- Supabase activa RLS por default en tablas nuevas → hay que apagarla
+-- explícitamente o todo INSERT/SELECT con anon key falla.
+alter table loans              disable row level security;
+alter table loan_installments  disable row level security;

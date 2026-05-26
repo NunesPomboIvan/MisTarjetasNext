@@ -196,7 +196,7 @@ export function QuickExpenseSheet({
           </SheetHeader>
           <div className="p-4">
             <Button
-              className="gradient-primary shadow-brand w-full"
+              className="btn-glass-primary w-full"
               onClick={() => {
                 onOpenChange(false);
                 router.push("/cards/new");
@@ -493,7 +493,7 @@ export function QuickExpenseSheet({
             <div className="sticky bottom-0 -mx-4 border-t border-border bg-popover/95 p-4 pb-0 backdrop-blur supports-backdrop-filter:bg-popover/70">
               <Button
                 type="submit"
-                className="gradient-primary shadow-brand w-full font-semibold"
+                className="btn-glass-primary w-full font-semibold"
                 disabled={isPending}
               >
                 {isPending ? (

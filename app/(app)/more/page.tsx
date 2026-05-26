@@ -6,7 +6,7 @@ import {
   Shield,
   ChevronRight,
   CalendarClock,
-  Banknote,
+  PieChart,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 import {
@@ -44,7 +44,7 @@ export default function MorePage() {
 
       {/* Lista de opciones */}
       <nav className="overflow-hidden rounded-[18px] border border-border bg-card">
-        <MoreRow href="/prestamos" icon={<Banknote className="h-5 w-5" />} label="Préstamos bancarios" />
+        <MoreRow href="/expenses" icon={<PieChart className="h-5 w-5" />} label="Consumos" />
         <MoreRow href="/cierres" icon={<CalendarClock className="h-5 w-5" />} label="Cierre de tarjetas" />
         <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" />
         <MoreRow href="/settings" icon={<Settings className="h-5 w-5" />} label="Ajustes generales" />

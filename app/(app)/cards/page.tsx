@@ -31,7 +31,7 @@ export default async function CardsPage() {
 
         <Link
           href="/cards/new"
-          className="inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-white gradient-primary shadow-brand"
+          className="btn-glass-primary inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold"
         >
           <Plus className="h-4 w-4" />
           Nueva

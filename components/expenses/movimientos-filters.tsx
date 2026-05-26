@@ -218,7 +218,7 @@ export function MovimientosFilters({
                 Limpiar
               </Button>
               <Button
-                className="gradient-primary shadow-brand flex-1"
+                className="btn-glass-primary flex-1"
                 onClick={apply}
               >
                 Aplicar

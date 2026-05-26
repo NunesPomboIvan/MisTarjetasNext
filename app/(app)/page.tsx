@@ -55,13 +55,18 @@ export default async function DashboardPage() {
     cardsQuery,
     supabase.from("expenses").select("*, category:categories(*)").eq("user_id", user!.id).order("expense_date", { ascending: false }),
     loansQuery,
-    supabase.from("loan_installments").select("*").eq("user_id", user!.id).eq("paid", false).order("due_date"),
+    supabase.from("loan_installments").select("*").eq("user_id", user!.id).order("due_date"),
   ]);
 
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
   const loans = (loansResult.data ?? []) as Loan[];
-  const pendingInstallments = (installmentsResult.data ?? []) as LoanInstallment[];
+  const allInstallments = (installmentsResult.data ?? []) as LoanInstallment[];
+  const pendingInstallments = allInstallments.filter((i) => !i.paid);
+  const totalInstallmentsByLoan = new Map<string, number>();
+  for (const i of allInstallments) {
+    totalInstallmentsByLoan.set(i.loan_id, (totalInstallmentsByLoan.get(i.loan_id) ?? 0) + 1);
+  }
 
   // Para "Próximos pagos" y "Próximo a pagar": usamos getNextDuePeriod
   // (el período cuyo vencimiento no pasó aún).
@@ -113,15 +118,26 @@ export default async function DashboardPage() {
     }));
 
   // Préstamos bancarios: próxima cuota pendiente por préstamo, ordenadas
-  // por proximidad de vencimiento.
+  // por proximidad de vencimiento. Para saber el total de cuotas del préstamo
+  // necesitamos contar TODAS las cuotas (pagadas + no pagadas), por eso traemos
+  // un conteo aparte abajo.
+  const installmentsByLoan = new Map<string, LoanInstallment[]>();
+  for (const i of pendingInstallments) {
+    const arr = installmentsByLoan.get(i.loan_id) ?? [];
+    arr.push(i);
+    installmentsByLoan.set(i.loan_id, arr);
+  }
   const loansUpcoming = loans
     .map((loan) => {
-      const next = pendingInstallments.find((i) => i.loan_id === loan.id);
+      const pending = installmentsByLoan.get(loan.id) ?? [];
+      const next = pending[0];
       if (!next) return null;
+      const totalForLoan = totalInstallmentsByLoan.get(loan.id) ?? next.installment_number;
+      const primary = loan.bank || loan.description;
       return {
         id: loan.id,
         accent: loan.color,
-        primary: loan.bank || loan.description,
+        primary: `${primary} · Cuota ${next.installment_number}/${totalForLoan}`,
         suffix: undefined as string | undefined,
         days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
       };
@@ -189,15 +205,7 @@ export default async function DashboardPage() {
           </section>
 
           {/* Card resumen: saldo + fecha de hoy */}
-          <section
-            className="rounded-[20px] border border-white/[0.10] bg-card/85 px-5 py-[18px] backdrop-blur-xl"
-            style={{
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
-              boxShadow:
-                "0 0 32px -6px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
-            }}
-          >
+          <section className="glass-card rounded-[20px] px-5 py-[18px]">
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <Money
@@ -222,15 +230,7 @@ export default async function DashboardPage() {
             <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-foreground">
               Próximos Vencimientos
             </h2>
-            <div
-              className="rounded-[20px] border border-white/[0.08] bg-card/85 px-5 py-4 backdrop-blur-xl"
-              style={{
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                boxShadow:
-                  "0 0 28px -6px rgba(129,140,248,0.20), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
-              }}
-            >
+            <div className="glass-card rounded-[20px] px-5 py-4">
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}

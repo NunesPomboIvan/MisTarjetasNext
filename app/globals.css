@@ -206,6 +206,53 @@
     box-shadow: 0 8px 22px rgba(99, 102, 241, 0.35);
   }
 
+  /* Superficie glass oscura con halo violeta — usada en cards como el
+     "Saldo total" del home. Background oscuro (bg-card) + glow exterior. */
+  .glass-card {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: color-mix(in srgb, var(--card) 85%, transparent);
+    box-shadow:
+      0 0 32px -6px rgba(129, 140, 248, 0.28),
+      0 14px 40px -12px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  /* Superficie glass primaria — mismo lenguaje visual que el FAB del home.
+     Sirve para cards/sections que quieren el look violeta translúcido. */
+  .glass-primary {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.55) 0%, rgba(99, 102, 241, 0.22) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.55);
+    box-shadow:
+      0 0 20px -2px rgba(99, 102, 241, 0.66),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+
+  /* Versión botón: agrega feedback de hover/press */
+  .btn-glass-primary {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.55) 0%, rgba(99, 102, 241, 0.22) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.55);
+    box-shadow:
+      0 0 20px -2px rgba(99, 102, 241, 0.66),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .btn-glass-primary:hover {
+    box-shadow:
+      0 0 26px -2px rgba(99, 102, 241, 0.80),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+  .btn-glass-primary:active {
+    transform: scale(0.97);
+  }
+
   .shadow-brand-glow {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.25) inset,
