@@ -43,7 +43,6 @@ export default async function LoansPage() {
     return {
       loan,
       pending,
-      total: Number(loan.total_amount),
       paidCount: paid.length,
       totalCount: own.length,
       next: nextPending
@@ -108,7 +107,6 @@ export default async function LoansPage() {
 interface LoanItem {
   loan: Loan;
   pending: number;
-  total: number;
   paidCount: number;
   totalCount: number;
   next: {
@@ -134,7 +132,6 @@ function StackedLoans({ items }: { items: LoanItem[] }) {
                 description={it.loan.description}
                 color={it.loan.color}
                 pending={it.pending}
-                total={it.total}
                 paidCount={it.paidCount}
                 totalCount={it.totalCount}
                 next={it.next}
