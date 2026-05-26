@@ -247,7 +247,7 @@ export default async function DashboardPage() {
                 <CardsBillboard
                   items={loansUpcoming}
                   label="Préstamos bancarios"
-                  href="/prestamos"
+                  href="/prestamos/pagos"
                   icon="banknote"
                   ariaLabel="Ver próximas cuotas de préstamos bancarios"
                 />
