@@ -59,15 +59,29 @@ export function CardList({ cards }: CardListProps) {
   );
 }
 
+/**
+ * Apila las tarjetas tipo wallet — cada card excepto la primera se solapa
+ * sobre la anterior con un margen negativo, ocultando su zona del saldo y
+ * dejando visible sólo el banco + cierre/vence. La última card siempre
+ * queda entera (es la que tiene mayor z-index por orden DOM).
+ *
+ * `OVERLAP_PX` = cuánto se mete cada card sobre la anterior. Si subís este
+ * número se ve menos de cada card (sólo banco). Si lo bajás se ve más.
+ */
+const OVERLAP_PX = 78;
+
 function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
   return (
-    <div className="flex flex-col">
+    <div className="relative">
       {cards.map((card, i) => {
         const period = getCurrentPeriod(card);
         const total = getCardTotal(card);
-        const isLast = i === cards.length - 1;
         return (
-          <div key={card.id}>
+          <div
+            key={card.id}
+            className="relative"
+            style={{ marginTop: i === 0 ? 0 : -OVERLAP_PX }}
+          >
             <CardPressWrapper
               href={`/cards/${card.id}`}
               cardId={card.id}
@@ -81,11 +95,6 @@ function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
                 dueLabel={formatDate(period.due, "d MMM")}
               />
             </CardPressWrapper>
-            {!isLast && (
-              <div className="flex justify-center py-2.5">
-                <div className="h-px w-12 rounded-full bg-border/50" />
-              </div>
-            )}
           </div>
         );
       })}
