@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") },
   { href: "/cards",     label: "Tarjetas",  icon: CreditCard,     match: (p: string) => p.startsWith("/cards") },
   { href: "/prestamos", label: "Préstamos", icon: Banknote,       match: (p: string) => p.startsWith("/prestamos") },
-  { href: "/more",      label: "Más",       icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/expenses") },
+  { href: "/more",      label: "Cuenta",    icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/expenses") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
 ] as const;
 
 export function BottomNav() {

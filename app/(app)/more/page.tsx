@@ -15,13 +15,13 @@ import {
   LocalUserInitial,
 } from "@/components/shared/local-user";
 
-export const metadata = { title: "Más" };
+export const metadata = { title: "Cuenta" };
 
 export default function MorePage() {
   return (
     <div className="space-y-5">
       <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-        Más
+        Cuenta
       </h1>
 
       {/* Perfil */}
@@ -42,18 +42,41 @@ export default function MorePage() {
         </div>
       </section>
 
-      {/* Lista de opciones */}
-      <nav className="overflow-hidden rounded-[18px] border border-border bg-card">
+      {/* Herramientas: cosas de los datos / finanzas */}
+      <MoreSection title="Herramientas">
         <MoreRow href="/expenses" icon={<PieChart className="h-5 w-5" />} label="Consumos" />
         <MoreRow href="/cierres" icon={<CalendarClock className="h-5 w-5" />} label="Cierre de tarjetas" />
-        <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" />
+        <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" last />
+      </MoreSection>
+
+      {/* Cuenta: ajustes y ayuda */}
+      <MoreSection title="General">
         <MoreRow href="/settings" icon={<Settings className="h-5 w-5" />} label="Ajustes generales" />
         <MoreRow href="/security" icon={<Shield className="h-5 w-5" />} label="Privacidad y seguridad" />
         <MoreRow href="/help" icon={<HelpCircle className="h-5 w-5" />} label="Ayuda" last />
-      </nav>
+      </MoreSection>
 
       <SignOutButton />
     </div>
+  );
+}
+
+function MoreSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+        {title}
+      </h2>
+      <nav className="overflow-hidden rounded-[18px] border border-border bg-card">
+        {children}
+      </nav>
+    </section>
   );
 }
 
