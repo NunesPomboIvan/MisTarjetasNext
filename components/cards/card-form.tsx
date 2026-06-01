@@ -403,7 +403,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
             value={closeDate ?? ""}
             onChange={(v) => setValue("close_date", v, { shouldDirty: true, shouldValidate: true })}
             disabled={isExtension}
-            placeholder="Día de cierre"
+            placeholder="Elegí día"
             className={cn(errors.close_date && "border-destructive")}
           />
           {errors.close_date && (
@@ -416,7 +416,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
             value={dueDate ?? ""}
             onChange={(v) => setValue("due_date", v, { shouldDirty: true, shouldValidate: true })}
             disabled={isExtension}
-            placeholder="Día de vencimiento"
+            placeholder="Elegí día"
             className={cn(errors.due_date && "border-destructive")}
           />
           {errors.due_date && (

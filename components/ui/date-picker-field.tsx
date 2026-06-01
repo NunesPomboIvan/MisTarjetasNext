@@ -52,12 +52,12 @@ export function DatePickerField({
           className
         )}
       >
-        <span>
+        <span className="min-w-0 flex-1 truncate text-left">
           {selected
             ? format(selected, "d 'de' MMM yyyy", { locale: es })
             : placeholder}
         </span>
-        <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
