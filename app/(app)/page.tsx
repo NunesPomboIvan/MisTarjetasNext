@@ -152,7 +152,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       <ScrollLock />
       {/* Header personalizado (sticky) */}
       <StickyPageHeader>
@@ -208,12 +208,15 @@ export default async function DashboardPage() {
           </section>
 
           {/* Card resumen: saldo + fecha de hoy */}
-          <section className="glass-card rounded-[20px] px-5 py-[18px]">
-            <div className="flex w-full items-center justify-between gap-3">
+          <section className="glass-card rounded-[20px] px-5 py-5">
+            <div className="flex w-full items-end justify-between gap-3">
               <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Total a pagar
+                </p>
                 <Money
                   amount={saldoTotal}
-                  className="block font-display text-[20px] font-bold leading-none text-foreground"
+                  className="mt-1.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
                 />
               </div>
 
@@ -233,7 +236,7 @@ export default async function DashboardPage() {
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Próximos vencimientos
             </h2>
-            <div className="glass-card rounded-[20px] px-5 py-4">
+            <div className="glass-card rounded-[20px] px-5 py-5">
               {upcoming.length > 0 && (
                 <CardsBillboard
                   items={upcoming}
@@ -244,7 +247,7 @@ export default async function DashboardPage() {
                 />
               )}
 
-              {upcoming.length > 0 && <div className="my-4 h-px bg-border" />}
+              {upcoming.length > 0 && <div className="my-5 h-px bg-border" />}
 
               {loansUpcoming.length > 0 ? (
                 <CardsBillboard

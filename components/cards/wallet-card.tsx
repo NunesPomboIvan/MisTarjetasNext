@@ -80,7 +80,7 @@ export function WalletCard({
   const shadowHex = shade(base, 0.1);
   const { r, g, b } = hexToRgb(shadowHex);
 
-  const cardH = compact ? 168 : 188;
+  const cardH = compact ? 186 : 188;
 
   return (
     <div
