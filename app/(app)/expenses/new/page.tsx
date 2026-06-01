@@ -34,7 +34,7 @@ export default async function NewExpensePage({
       .order("name"),
   ]);
 
-  const backHref = card_id ? `/cards/${card_id}` : "/expenses";
+  const backHref = card_id ? `/cards/${card_id}` : "/";
 
   return (
     <NewExpenseHero

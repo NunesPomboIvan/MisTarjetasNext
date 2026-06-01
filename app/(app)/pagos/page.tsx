@@ -9,7 +9,7 @@ import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Próximos pagos" };
+export const metadata = { title: "Próximos vencimientos" };
 
 export default async function PagosPage() {
   const supabase = await createClient();
@@ -52,7 +52,7 @@ export default async function PagosPage() {
       {/* Header */}
       <div className="flex items-center justify-center">
         <h1 className="font-display text-[20px] font-semibold text-foreground">
-          Próximos pagos
+          Próximos vencimientos
         </h1>
       </div>
 
@@ -79,7 +79,9 @@ export default async function PagosPage() {
           {/* Lista de pagos */}
           <section className="space-y-2.5">
             {upcoming.map(({ card, period, total, daysUntil }) => {
-              const isUrgent = daysUntil <= 3;
+              const isToday = daysUntil <= 0;
+              const isUrgent = daysUntil <= 1;
+              const accent = card.color || "#6366f1";
               return (
                 <Link
                   key={card.id}
@@ -95,7 +97,7 @@ export default async function PagosPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-                      style={{ background: `${card.color}20`, color: card.color }}
+                      style={{ background: `${accent}20`, color: accent }}
                     >
                       <Calendar className="h-5 w-5" />
                     </div>
@@ -107,22 +109,39 @@ export default async function PagosPage() {
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {capitalize(formatDate(period.due, "EEEE d 'de' MMM"))}
                       </p>
+                      <Money
+                        amount={total}
+                        className="mt-1 block text-[13px] font-semibold tabular-nums text-foreground"
+                      />
                     </div>
 
                     <div className="flex-shrink-0 text-right">
-                      <Money
-                        amount={total}
-                        className="block text-[15px] font-semibold tabular-nums text-foreground"
-                      />
-                      <p
-                        className={
-                          "mt-0.5 text-[11px] font-semibold " +
-                          (isUrgent ? "text-destructive" : "text-muted-foreground")
-                        }
-                      >
-                        {daysUntil <= 0
-                          ? "Vence hoy"
-                          : `Vence en ${daysUntil} día${daysUntil === 1 ? "" : "s"}`}
+                      {isToday ? (
+                        <p
+                          className={
+                            "font-display text-[15px] font-bold leading-none " +
+                            (isUrgent ? "text-destructive" : "text-foreground")
+                          }
+                        >
+                          Hoy
+                        </p>
+                      ) : (
+                        <div className="flex items-baseline justify-end gap-1">
+                          <p
+                            className={
+                              "font-display text-[18px] font-bold leading-none tabular-nums " +
+                              (isUrgent ? "text-destructive" : "text-foreground")
+                            }
+                          >
+                            {daysUntil}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {daysUntil === 1 ? "día" : "días"}
+                          </p>
+                        </div>
+                      )}
+                      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        para vencer
                       </p>
                     </div>
                   </div>
