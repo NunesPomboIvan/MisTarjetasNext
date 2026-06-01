@@ -11,7 +11,7 @@ import { parseLocalDate } from "@/lib/periods/calculate";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Próximas cuotas" };
+export const metadata = { title: "Préstamos a vencer" };
 
 export default async function PrestamosPagosPage() {
   const supabase = await createClient();
@@ -52,6 +52,10 @@ export default async function PrestamosPagosPage() {
 
   const todayStart = startOfDay(nowInArgentina());
 
+  // Solo la PRÓXIMA cuota a vencer de cada préstamo. Como `pending` viene
+  // ordenado por due_date asc, la primera que aparece de cada préstamo es la
+  // más próxima; descartamos las siguientes del mismo préstamo.
+  const seenLoans = new Set<string>();
   const upcoming = pending
     .map((inst) => {
       const loan = loanById.get(inst.loan_id);
@@ -65,7 +69,12 @@ export default async function PrestamosPagosPage() {
         totalForLoan: totalByLoan.get(inst.loan_id) ?? inst.installment_number,
       };
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .filter((x) => {
+      if (seenLoans.has(x.loan.id)) return false;
+      seenLoans.add(x.loan.id);
+      return true;
+    });
 
   const totalAPagar = upcoming.reduce((s, u) => s + Number(u.inst.amount), 0);
 
@@ -76,7 +85,7 @@ export default async function PrestamosPagosPage() {
         <div className="flex items-center justify-between">
           <BackButton />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
-            Próximas cuotas
+            Préstamos a vencer
           </h1>
           <div className="h-10 w-10" aria-hidden />
         </div>
@@ -98,8 +107,7 @@ export default async function PrestamosPagosPage() {
               className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
             />
             <p className="mt-1.5 text-[12px] text-muted-foreground">
-              {upcoming.length} cuota{upcoming.length === 1 ? "" : "s"} pendiente
-              {upcoming.length === 1 ? "" : "s"}
+              {upcoming.length} préstamo{upcoming.length === 1 ? "" : "s"} con cuota a vencer
             </p>
           </section>
 
