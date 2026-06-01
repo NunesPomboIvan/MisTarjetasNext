@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, Copy } from "lucide-react";
+import { Trash2, Pencil, Copy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -39,6 +39,12 @@ interface ExpenseItemProps {
   cardId?: string;
   /** Nombre de la tarjeta, para mostrar en listas globales */
   cardName?: string;
+  /** Modo selección múltiple: el tap selecciona en vez de abrir el detalle */
+  selectionMode?: boolean;
+  /** Si está seleccionado (en modo selección) */
+  selected?: boolean;
+  /** Callback al togglear la selección de este item */
+  onSelectToggle?: (id: string) => void;
 }
 
 const LONG_PRESS_MS = 450;
@@ -51,6 +57,9 @@ export function ExpenseItem({
   installmentIndex,
   cardId,
   cardName,
+  selectionMode = false,
+  selected = false,
+  onSelectToggle,
 }: ExpenseItemProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -84,6 +93,8 @@ export function ExpenseItem({
     startRef.current = { x: e.clientX, y: e.clientY };
     longPressedRef.current = false;
     movedRef.current = false;
+    // En modo selección no hay long-press: el tap selecciona.
+    if (selectionMode) return;
     clearTimer();
     timerRef.current = setTimeout(() => {
       longPressedRef.current = true;
@@ -103,6 +114,11 @@ export function ExpenseItem({
 
   function onPointerUp() {
     clearTimer();
+    if (selectionMode) {
+      if (!movedRef.current) onSelectToggle?.(expense.id);
+      startRef.current = null;
+      return;
+    }
     if (!longPressedRef.current && !movedRef.current) {
       router.push(detailHref);
     }
@@ -166,7 +182,10 @@ export function ExpenseItem({
           }
         }}
         className={cn(
-          "group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all active:scale-[0.99]",
+          "group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all active:scale-[0.99]",
+          selectionMode && selected
+            ? "border-primary ring-1 ring-primary/40"
+            : "border-border",
           isPending && "opacity-40"
         )}
         style={{
@@ -176,6 +195,21 @@ export function ExpenseItem({
           cursor: "pointer",
         }}
       >
+        {/* Checkbox de selección múltiple */}
+        {selectionMode && (
+          <div
+            aria-hidden
+            className={cn(
+              "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+              selected
+                ? "border-primary bg-primary text-white"
+                : "border-muted-foreground/40"
+            )}
+          >
+            {selected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+          </div>
+        )}
+
         {/* Category emoji */}
         {cat ? (
           <div

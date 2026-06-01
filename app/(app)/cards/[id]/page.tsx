@@ -8,7 +8,7 @@ import { UtilizationDonut } from "@/components/shared/utilization-donut";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
-import { ExpenseItem } from "@/components/expenses/expense-item";
+import { SelectableExpenseList } from "@/components/expenses/selectable-expense-list";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -235,22 +235,19 @@ export default async function CardDetailPage({
             }}
           />
         ) : (
-          <div className="space-y-2">
-            {periodExpenses.map((expense) => {
+          <SelectableExpenseList
+            cardId={id}
+            items={periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);
               const p = new URLSearchParams({ card_id: id });
               if (instIdx >= 0) p.set("installment", String(instIdx));
-              return (
-                <ExpenseItem
-                  key={expense.id}
-                  expense={expense}
-                  installmentIndex={instIdx}
-                  cardId={id}
-                  editHref={`/expenses/${expense.id}/edit?${p}`}
-                />
-              );
+              return {
+                expense,
+                installmentIndex: instIdx,
+                editHref: `/expenses/${expense.id}/edit?${p}`,
+              };
             })}
-          </div>
+          />
         )}
       </section>
     </div>

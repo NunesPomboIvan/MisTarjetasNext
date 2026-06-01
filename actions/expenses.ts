@@ -291,3 +291,27 @@ export async function deleteExpense(id: string, cardId: string): Promise<ActionR
   revalidatePath("/", "layout");
   return { success: true };
 }
+
+/** Elimina varios consumos a la vez */
+export async function deleteExpenses(ids: string[], cardId?: string): Promise<ActionResult> {
+  if (!ids || ids.length === 0) {
+    return { success: false, error: "No hay consumos seleccionados" };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .in("id", ids)
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  if (cardId) revalidatePath(`/cards/${cardId}`);
+  revalidatePath("/expenses");
+  revalidatePath("/", "layout");
+  return { success: true };
+}
