@@ -51,7 +51,14 @@ export function LoanSummaryCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-display text-[17px] font-bold leading-tight text-foreground">
+          <p
+            className="truncate font-display text-[17px] font-bold leading-tight"
+            style={{
+              color: accent,
+              textShadow:
+                "0 1px 2px rgba(0,0,0,0.55), 0 0 1px rgba(0,0,0,0.65)",
+            }}
+          >
             {bank || description}
           </p>
           {showDescription && (
