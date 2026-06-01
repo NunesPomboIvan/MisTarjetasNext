@@ -212,7 +212,7 @@ export default async function DashboardPage() {
             <div className="flex w-full items-end justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-muted-foreground">
-                  Total a pagar
+                  Vencimientos próximos
                 </p>
                 <Money
                   amount={saldoTotal}
