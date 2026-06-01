@@ -209,10 +209,10 @@ export default async function DashboardPage() {
 
           {/* Card resumen: saldo + fecha de hoy */}
           <section className="glass-card rounded-[20px] px-5 py-5">
-            <div className="flex w-full items-end justify-between gap-3">
+            <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-muted-foreground">
-                  Vencimientos próximos
+                  Próximo a vencer
                 </p>
                 <Money
                   amount={saldoTotal}
