@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { ExpenseItem } from "@/components/expenses/expense-item";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -150,12 +149,16 @@ export default async function ExpensesPage({
                     className="text-[13px] font-semibold tabular-nums text-foreground"
                   />
                 </div>
-                <div className="overflow-hidden rounded-[18px] border border-border bg-card">
-                  {items.map((exp, i) => (
-                    <ExpenseRow
+                <div className="space-y-2">
+                  {items.map((exp) => (
+                    <ExpenseItem
                       key={exp.id}
                       expense={exp}
-                      isLast={i === items.length - 1}
+                      cardId={exp.card_id ?? undefined}
+                      cardName={exp.card?.name}
+                      editHref={`/expenses/${exp.id}/edit${
+                        exp.card_id ? `?card_id=${exp.card_id}` : ""
+                      }`}
                     />
                   ))}
                 </div>
@@ -168,54 +171,3 @@ export default async function ExpensesPage({
   );
 }
 
-function ExpenseRow({
-  expense,
-  isLast,
-}: {
-  expense: ExpenseWithAll;
-  isLast: boolean;
-}) {
-  const cat = expense.category;
-  return (
-    <Link
-      href={`/expenses/${expense.id}${
-        expense.card_id ? `?card_id=${expense.card_id}` : ""
-      }`}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
-      style={{ borderBottom: isLast ? "none" : "1px solid var(--border)" }}
-    >
-      <div
-        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[10px] text-base"
-        style={{
-          backgroundColor: cat?.color_bg ?? "var(--muted)",
-          color: cat?.color_text ?? "var(--muted-foreground)",
-        }}
-      >
-        {cat?.emoji ?? "•"}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-semibold text-foreground">
-          {expense.description}
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {cat?.name ?? "Sin categoría"}
-          {expense.card ? ` · ${expense.card.name}` : ""}
-        </p>
-      </div>
-
-      <div className="flex-shrink-0 text-right">
-        <Money
-          amount={expense.installment_amount}
-          currency={expense.currency}
-          className="block text-[14px] font-semibold tabular-nums text-foreground"
-        />
-        <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
-          {formatDate(expense.expense_date + "T00:00:00", "d MMM")}
-        </p>
-      </div>
-
-      <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
-    </Link>
-  );
-}

@@ -141,7 +141,10 @@ export function ExpenseItem({
     startTransition(async () => {
       const result = await cloneExpense(expense.id);
       if (!result.success) toast.error(result.error);
-      else toast.success("Consumo duplicado para hoy");
+      else {
+        toast.success("Consumo duplicado para hoy");
+        router.refresh();
+      }
     });
   }
 
@@ -149,7 +152,10 @@ export function ExpenseItem({
     startTransition(async () => {
       const result = await deleteExpense(expense.id, expense.card_id);
       if (!result.success) toast.error(result.error);
-      else toast.success("Consumo eliminado");
+      else {
+        toast.success("Consumo eliminado");
+        router.refresh();
+      }
       setDeleteOpen(false);
       setMenuOpen(false);
     });
