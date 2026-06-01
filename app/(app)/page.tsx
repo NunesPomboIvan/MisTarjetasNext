@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       id: card.id,
       accent: card.color,
       primary: card.bank || card.name,
-      suffix: card.last_four,
+      suffix: `•••• ${card.last_four}`,
       days: differenceInCalendarDays(currentPeriod.due, todayStart),
     }));
 
@@ -138,8 +138,8 @@ export default async function DashboardPage() {
       return {
         id: loan.id,
         accent: loan.color,
-        primary: `${primary} · Cuota ${next.installment_number}/${totalForLoan}`,
-        suffix: undefined as string | undefined,
+        primary,
+        suffix: `· Cuota ${next.installment_number}/${totalForLoan}`,
         days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
       };
     })
@@ -229,7 +229,7 @@ export default async function DashboardPage() {
           </section>
 
           {/* Próximos Vencimientos: Tarjeta de crédito + Préstamos bancarios */}
-          <section className="mt-12 space-y-3">
+          <section className="mt-6 space-y-3">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Próximos vencimientos
             </h2>

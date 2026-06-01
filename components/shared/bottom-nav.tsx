@@ -17,7 +17,7 @@ export function BottomNav() {
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
-      <div className="pointer-events-auto mx-auto w-full max-w-lg px-3 pb-0 pt-3">
+      <div className="pointer-events-auto mx-auto w-full max-w-lg px-3 pb-3 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}
           <Link

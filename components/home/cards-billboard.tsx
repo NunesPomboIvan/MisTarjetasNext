@@ -19,7 +19,8 @@ export interface BillboardItem {
   accent: string;
   /** Texto principal (ej: nombre del banco) */
   primary: string;
-  /** Sufijo opcional (ej: últimos 4 dígitos) para distinguir tarjetas */
+  /** Texto secundario opcional, render con peso normal y color muted
+   *  (ej: "•••• 6426" o "· Cuota 1/5"). El llamador formatea el separador. */
   suffix?: string;
   /** Días restantes (para cerrar o vencer). <=0 = "Hoy" */
   days: number;
@@ -115,7 +116,7 @@ export function CardsBillboard({
                     {it.primary}
                     {it.suffix && (
                       <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">
-                        •••• {it.suffix}
+                        {it.suffix}
                       </span>
                     )}
                   </p>

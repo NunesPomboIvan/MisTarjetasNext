@@ -643,7 +643,7 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
         onChange={handleChange}
         aria-invalid={invalid}
         className={cn(
-          "w-full bg-transparent text-center font-bold tracking-tight tabular-nums outline-none placeholder:text-foreground/25",
+          "w-full bg-transparent text-center font-bold leading-tight tracking-tight tabular-nums outline-none placeholder:text-foreground/25",
           invalid ? "text-destructive" : "text-foreground"
         )}
         style={{ fontSize } as React.CSSProperties}
