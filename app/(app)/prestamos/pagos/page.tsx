@@ -5,6 +5,7 @@ import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
@@ -71,13 +72,15 @@ export default async function PrestamosPagosPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="font-display text-[20px] font-semibold text-foreground">
-          Próximas cuotas
-        </h1>
-        <div className="h-10 w-10" aria-hidden />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="font-display text-[20px] font-semibold text-foreground">
+            Próximas cuotas
+          </h1>
+          <div className="h-10 w-10" aria-hidden />
+        </div>
+      </StickyPageHeader>
 
       {upcoming.length === 0 ? (
         <EmptyState

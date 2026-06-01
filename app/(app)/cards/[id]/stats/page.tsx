@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CardStatsClient } from "./client";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import type { Expense, Category } from "@/lib/supabase/database.types";
 
 interface PageProps {
@@ -31,11 +32,13 @@ export default async function CardStatsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
-        <div className="w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
+          <div className="w-10" />
+        </div>
+      </StickyPageHeader>
 
       <CardStatsClient
         expenses={(expenses ?? []) as Array<Expense & { category: Category | null }>}

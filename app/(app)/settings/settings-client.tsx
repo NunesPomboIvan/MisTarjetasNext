@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -193,12 +194,14 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <BackButton />
-        <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
-          Ajustes
-        </h1>
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
+            Ajustes
+          </h1>
+        </div>
+      </StickyPageHeader>
 
       {/* Tema */}
       <section className="rounded-2xl border border-border bg-card p-4 space-y-3">

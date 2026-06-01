@@ -4,6 +4,7 @@ import { ChevronRight, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { CardSettingsToggles } from "./toggles";
 
 interface PageProps {
@@ -26,11 +27,13 @@ export default async function CardSettingsPage({ params }: PageProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Ajustes de tarjeta</h1>
-        <div className="w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Ajustes de tarjeta</h1>
+          <div className="w-10" />
+        </div>
+      </StickyPageHeader>
 
       {/* Card visual */}
       <WalletCard card={card} />

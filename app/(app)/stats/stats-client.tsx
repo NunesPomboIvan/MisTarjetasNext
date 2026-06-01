@@ -9,6 +9,7 @@ import { SpendBars } from "@/components/stats/spend-bars";
 import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import type { Expense, Category, Card } from "@/lib/supabase/database.types";
 
 type ExpenseWithCat = Expense & { category: Category | null };
@@ -92,11 +93,13 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
   if (expenses.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <BackButton />
-          <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
-          <div className="w-10" />
-        </div>
+        <StickyPageHeader>
+          <div className="flex items-center justify-between">
+            <BackButton />
+            <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
+            <div className="w-10" />
+          </div>
+        </StickyPageHeader>
         <EmptyState
           icon={<span>📊</span>}
           title="Sin datos suficientes"
@@ -108,11 +111,13 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
-        <div className="w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
+          <div className="w-10" />
+        </div>
+      </StickyPageHeader>
 
       {/* Filtros */}
       <div className="grid grid-cols-2 gap-2.5">

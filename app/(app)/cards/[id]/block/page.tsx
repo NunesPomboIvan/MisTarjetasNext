@@ -3,6 +3,7 @@ import { Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { BlockCardActions } from "./actions";
 
 interface PageProps {
@@ -25,11 +26,13 @@ export default async function BlockCardPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Bloquear tarjeta</h1>
-        <div className="w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Bloquear tarjeta</h1>
+          <div className="w-10" />
+        </div>
+      </StickyPageHeader>
 
       <div className="flex flex-col items-center px-4 pt-4 text-center">
         <div

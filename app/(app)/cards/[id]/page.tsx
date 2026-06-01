@@ -6,6 +6,7 @@ import { WalletCard } from "@/components/cards/wallet-card";
 import { Money } from "@/components/shared/money";
 import { UtilizationDonut } from "@/components/shared/utilization-donut";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { ExpenseItem } from "@/components/expenses/expense-item";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
@@ -114,11 +115,13 @@ export default async function CardDetailPage({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
-        <CardActionsMenu cardId={id} cardName={card.bank || card.name} />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
+          <CardActionsMenu cardId={id} cardName={card.bank || card.name} />
+        </div>
+      </StickyPageHeader>
 
       {/* Wallet card */}
       <WalletCard

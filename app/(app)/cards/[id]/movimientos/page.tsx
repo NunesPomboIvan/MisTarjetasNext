@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
 import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
@@ -84,17 +85,19 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
-        <MovimientosFilters
-          basePath={`/cards/${id}/movimientos`}
-          categories={filterCategories.map((c) => ({
-            id: c.id,
-            label: `${c.emoji ?? ""} ${c.name}`.trim(),
-          }))}
-        />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
+          <MovimientosFilters
+            basePath={`/cards/${id}/movimientos`}
+            categories={filterCategories.map((c) => ({
+              id: c.id,
+              label: `${c.emoji ?? ""} ${c.name}`.trim(),
+            }))}
+          />
+        </div>
+      </StickyPageHeader>
 
       <LiveSearch basePath={`/cards/${id}/movimientos`} placeholder="Buscar consumo" />
 

@@ -5,6 +5,7 @@ import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
 import { LiveSearch } from "@/components/expenses/live-search";
 import { formatDate, capitalize } from "@/lib/utils";
@@ -104,21 +105,23 @@ export default async function ExpensesPage({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
-        <MovimientosFilters
-          basePath="/expenses"
-          cards={filterCards.map((c) => ({
-            id: c.id,
-            label: `${c.name} ····${c.last_four}`,
-          }))}
-          categories={filterCategories.map((c) => ({
-            id: c.id,
-            label: `${c.emoji ?? ""} ${c.name}`.trim(),
-          }))}
-        />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
+          <MovimientosFilters
+            basePath="/expenses"
+            cards={filterCards.map((c) => ({
+              id: c.id,
+              label: `${c.name} ····${c.last_four}`,
+            }))}
+            categories={filterCategories.map((c) => ({
+              id: c.id,
+              label: `${c.emoji ?? ""} ${c.name}`.trim(),
+            }))}
+          />
+        </div>
+      </StickyPageHeader>
 
       <LiveSearch basePath="/expenses" placeholder="Buscar consumo" />
 

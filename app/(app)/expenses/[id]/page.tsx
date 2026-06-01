@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { Money } from "@/components/shared/money";
 import { ExpenseDetailActions } from "@/components/expenses/expense-detail-actions";
 import { formatDate, capitalize, formatCurrency } from "@/lib/utils";
@@ -51,13 +52,15 @@ export default async function ExpenseDetailPage({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">
-          Detalle del consumo
-        </h1>
-        <span className="h-10 w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">
+            Detalle del consumo
+          </h1>
+          <span className="h-10 w-10" />
+        </div>
+      </StickyPageHeader>
 
       {/* Resumen */}
       <section className="rounded-[20px] border border-border bg-card p-5 text-center shadow-sm">

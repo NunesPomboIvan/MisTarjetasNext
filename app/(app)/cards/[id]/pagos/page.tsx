@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { BackButton } from "@/components/shared/back-button";
+import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import {
   getCurrentPeriod,
   expenseFallsInPeriod,
@@ -55,11 +56,13 @@ export default async function CardPagosPage({ params }: PageProps) {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <BackButton />
-        <h1 className="text-[15px] font-semibold text-foreground">Próximo pago</h1>
-        <div className="w-10" />
-      </div>
+      <StickyPageHeader>
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-[15px] font-semibold text-foreground">Próximo pago</h1>
+          <div className="w-10" />
+        </div>
+      </StickyPageHeader>
 
       {/* Próximo vencimiento card */}
       <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
