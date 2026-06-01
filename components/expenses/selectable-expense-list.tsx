@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, ListChecks } from "lucide-react";
@@ -14,29 +14,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Money } from "@/components/shared/money";
 import { ExpenseItem } from "./expense-item";
 import { deleteExpenses } from "@/actions/expenses";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
 export interface SelectableExpenseItem {
   expense: ExpenseWithCategory;
   installmentIndex?: number;
   editHref?: string;
+  /** Tarjeta de este consumo (para Movimientos global, donde hay varias) */
+  cardId?: string;
+  /** Nombre de la tarjeta a mostrar en la fila (Movimientos global) */
+  cardName?: string;
 }
 
 interface SelectableExpenseListProps {
   items: SelectableExpenseItem[];
-  cardId: string;
+  /** Tarjeta de contexto (detalle de tarjeta). Opcional en Movimientos global. */
+  cardId?: string;
+  /** Agrupa los consumos por mes con su subtotal (Movimientos global). */
+  groupByMonth?: boolean;
 }
 
 /**
  * Lista de consumos con modo "selección múltiple": un toggle activa los
  * checkboxes en cada fila para elegir varios y eliminarlos de una sola vez.
  * Fuera del modo selección, cada fila conserva su comportamiento normal
- * (tap → detalle, mantener apretado → menú).
+ * (tap → detalle, mantener apretado → menú). Opcionalmente agrupa por mes.
  */
-export function SelectableExpenseList({ items, cardId }: SelectableExpenseListProps) {
+export function SelectableExpenseList({
+  items,
+  cardId,
+  groupByMonth = false,
+}: SelectableExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState(false);
@@ -45,6 +57,24 @@ export function SelectableExpenseList({ items, cardId }: SelectableExpenseListPr
 
   const allIds = items.map((i) => i.expense.id);
   const allSelected = selected.size === items.length && items.length > 0;
+
+  // Agrupado por mes (preserva el orden de llegada de los items).
+  const groups = useMemo(() => {
+    if (!groupByMonth) return null;
+    const map = new Map<string, SelectableExpenseItem[]>();
+    for (const it of items) {
+      const key = it.expense.expense_date.slice(0, 7); // YYYY-MM
+      const arr = map.get(key) ?? [];
+      arr.push(it);
+      map.set(key, arr);
+    }
+    return [...map.entries()].map(([month, list]) => ({
+      month,
+      label: capitalize(formatDate(month + "-01T00:00:00", "MMMM yyyy")),
+      total: list.reduce((s, x) => s + x.expense.installment_amount, 0),
+      items: list,
+    }));
+  }, [items, groupByMonth]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -77,8 +107,24 @@ export function SelectableExpenseList({ items, cardId }: SelectableExpenseListPr
     });
   }
 
+  function renderRow(it: SelectableExpenseItem) {
+    return (
+      <ExpenseItem
+        key={it.expense.id}
+        expense={it.expense}
+        installmentIndex={it.installmentIndex}
+        cardId={it.cardId ?? cardId}
+        cardName={it.cardName}
+        editHref={it.editHref}
+        selectionMode={mode}
+        selected={selected.has(it.expense.id)}
+        onSelectToggle={toggle}
+      />
+    );
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Toolbar de selección */}
       <div className="flex min-h-[28px] items-center justify-between px-0.5">
         {mode ? (
@@ -124,19 +170,27 @@ export function SelectableExpenseList({ items, cardId }: SelectableExpenseListPr
       </div>
 
       {/* Lista */}
-      <div className={cn("space-y-2", isPending && "pointer-events-none opacity-50")}>
-        {items.map(({ expense, installmentIndex, editHref }) => (
-          <ExpenseItem
-            key={expense.id}
-            expense={expense}
-            installmentIndex={installmentIndex}
-            cardId={cardId}
-            editHref={editHref}
-            selectionMode={mode}
-            selected={selected.has(expense.id)}
-            onSelectToggle={toggle}
-          />
-        ))}
+      <div className={cn(isPending && "pointer-events-none opacity-50")}>
+        {groups ? (
+          <div className="space-y-5">
+            {groups.map((g) => (
+              <section key={g.month}>
+                <div className="mb-2 flex items-baseline justify-between px-1">
+                  <h2 className="text-[13px] font-semibold text-foreground">
+                    {g.label}
+                  </h2>
+                  <Money
+                    amount={g.total}
+                    className="text-[13px] font-semibold tabular-nums text-foreground"
+                  />
+                </div>
+                <div className="space-y-2">{g.items.map(renderRow)}</div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">{items.map(renderRow)}</div>
+        )}
       </div>
 
       {/* Confirmación de borrado en lote */}

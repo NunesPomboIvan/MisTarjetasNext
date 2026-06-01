@@ -1,18 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { ExpenseItem } from "@/components/expenses/expense-item";
+import { SelectableExpenseList } from "@/components/expenses/selectable-expense-list";
 import { getActiveTitularId } from "@/lib/titulares/server";
-import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
 import { LiveSearch } from "@/components/expenses/live-search";
-import { formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithAll, Card, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Movimientos" };
-
-const MONTH_KEY = (iso: string) => iso.slice(0, 7); // YYYY-MM
 
 export default async function ExpensesPage({
   searchParams,
@@ -93,14 +89,6 @@ export default async function ExpensesPage({
     "id" | "name" | "emoji"
   >[];
 
-  // Agrupar por mes
-  const grouped = expenses.reduce<Record<string, ExpenseWithAll[]>>((acc, e) => {
-    const key = MONTH_KEY(e.expense_date);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(e);
-    return acc;
-  }, {});
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -132,40 +120,17 @@ export default async function ExpensesPage({
           action={{ label: "Agregar consumo", href: "/expenses/new" }}
         />
       ) : (
-        <div className="space-y-5">
-          {Object.entries(grouped).map(([month, items]) => {
-            const total = items.reduce((s, e) => s + e.installment_amount, 0);
-            const monthLabel = capitalize(
-              formatDate(month + "-01T00:00:00", "MMMM yyyy")
-            );
-            return (
-              <section key={month}>
-                <div className="mb-2 flex items-baseline justify-between px-1">
-                  <h2 className="text-[13px] font-semibold text-foreground">
-                    {monthLabel}
-                  </h2>
-                  <Money
-                    amount={total}
-                    className="text-[13px] font-semibold tabular-nums text-foreground"
-                  />
-                </div>
-                <div className="space-y-2">
-                  {items.map((exp) => (
-                    <ExpenseItem
-                      key={exp.id}
-                      expense={exp}
-                      cardId={exp.card_id ?? undefined}
-                      cardName={exp.card?.name}
-                      editHref={`/expenses/${exp.id}/edit${
-                        exp.card_id ? `?card_id=${exp.card_id}` : ""
-                      }`}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+        <SelectableExpenseList
+          groupByMonth
+          items={expenses.map((exp) => ({
+            expense: exp,
+            cardId: exp.card_id ?? undefined,
+            cardName: exp.card?.name,
+            editHref: `/expenses/${exp.id}/edit${
+              exp.card_id ? `?card_id=${exp.card_id}` : ""
+            }`,
+          }))}
+        />
       )}
     </div>
   );
