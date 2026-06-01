@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
@@ -48,7 +50,16 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
             </h1>
             <p className="truncate text-[11px] text-muted-foreground">Cuotas</p>
           </div>
-          <DeleteLoanButton loanId={loan.id} loanName={loan.bank || loan.description} />
+          <div className="flex flex-shrink-0 items-center gap-1.5">
+            <Link
+              href={`/prestamos/${loan.id}/edit`}
+              aria-label="Editar préstamo"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            >
+              <Pencil className="h-[18px] w-[18px]" />
+            </Link>
+            <DeleteLoanButton loanId={loan.id} loanName={loan.bank || loan.description} />
+          </div>
         </div>
       </StickyPageHeader>
 

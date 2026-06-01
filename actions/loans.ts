@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
@@ -64,6 +65,47 @@ export async function createLoan(formData: LoanFormData): Promise<ActionResult> 
 
   revalidatePath("/", "layout");
   return { success: true, id: loanRow.id };
+}
+
+const loanUpdateSchema = z.object({
+  description: z.string().min(1, "La descripción es requerida").max(80, "Máximo 80 caracteres"),
+  bank: z.string().max(40).nullable().optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido"),
+  issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de emisión inválida"),
+});
+
+export type LoanUpdateData = z.infer<typeof loanUpdateSchema>;
+
+/** Actualiza los datos de un préstamo (sin tocar sus cuotas) */
+export async function updateLoan(id: string, formData: LoanUpdateData): Promise<ActionResult> {
+  const parsed = loanUpdateSchema.safeParse(formData);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Datos inválidos",
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase
+    .from("loans")
+    .update({
+      description: parsed.data.description,
+      bank: parsed.data.bank ?? null,
+      color: parsed.data.color,
+      issue_date: parsed.data.issue_date,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/", "layout");
+  return { success: true, id };
 }
 
 /** Marca una cuota como pagada o no pagada */
