@@ -30,49 +30,39 @@ export function CardLogo({ type, className, size = "md", fgColor }: CardLogoProp
   }
 
   if (type === "mastercard") {
-    const r = s.circles;
-    const overlap = r * 0.42;
-    const totalW = r * 2 - overlap;
+    const d = s.circles; // diámetro de cada círculo
+    const rad = d / 2;
+    const overlap = d * 0.42;
+    const totalW = d * 2 - overlap;
+    const leftCx = rad;
+    const rightCx = totalW - rad;
+    const cy = rad;
+    // Id estable por tamaño: todos los logos del mismo tamaño comparten la misma
+    // geometría de recorte, así que reutilizar el id es seguro (sin hooks → server-safe).
+    const clipId = `mc-clip-${d}`;
     return (
-      <div
-        className={cn("relative flex-shrink-0 select-none", className)}
-        style={{ width: totalW, height: r }}
+      <svg
+        width={totalW}
+        height={d}
+        viewBox={`0 0 ${totalW} ${d}`}
+        className={cn("flex-shrink-0 select-none", className)}
+        role="img"
         aria-label="Mastercard"
       >
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={leftCx} cy={cy} r={rad} />
+          </clipPath>
+        </defs>
         {/* Círculo izquierdo — rojo */}
-        <div
-          className="absolute left-0 top-0 rounded-full"
-          style={{
-            width: r,
-            height: r,
-            background: "#EB001B",
-            opacity: 0.92,
-          }}
-        />
+        <circle cx={leftCx} cy={cy} r={rad} fill="#EB001B" />
         {/* Círculo derecho — amarillo */}
-        <div
-          className="absolute top-0 rounded-full"
-          style={{
-            width: r,
-            height: r,
-            right: 0,
-            background: "#F79E1B",
-            opacity: 0.92,
-          }}
-        />
-        {/* Zona de superposición — mezcla naranja */}
-        <div
-          className="absolute top-0"
-          style={{
-            left: r - overlap,
-            width: overlap,
-            height: r,
-            background: "linear-gradient(to right, #EB001B, #FF5F00, #F79E1B)",
-            opacity: 0.92,
-            mixBlendMode: "multiply",
-          }}
-        />
-      </div>
+        <circle cx={rightCx} cy={cy} r={rad} fill="#F79E1B" />
+        {/* Intersección (lente) — naranja, recortada al círculo izquierdo */}
+        <g clipPath={`url(#${clipId})`}>
+          <circle cx={rightCx} cy={cy} r={rad} fill="#FF5F00" />
+        </g>
+      </svg>
     );
   }
 
