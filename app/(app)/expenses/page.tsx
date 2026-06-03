@@ -43,6 +43,7 @@ export default async function ExpensesPage({
     .select("*, category:categories(*), card:cards(*)")
     .eq("user_id", user!.id)
     .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(200);
 
   if (titularCardIds) query = query.in("card_id", titularCardIds);

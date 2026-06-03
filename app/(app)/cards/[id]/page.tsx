@@ -75,7 +75,8 @@ export default async function CardDetailPage({
     .select("*, category:categories(*)")
     .eq("card_id", id)
     .eq("user_id", user!.id)
-    .order("expense_date", { ascending: false });
+    .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   const allExpenses = (expenses ?? []) as ExpenseWithCategory[];
 

@@ -43,7 +43,8 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
     .select("*, category:categories(*)")
     .eq("card_id", id)
     .eq("user_id", user!.id)
-    .order("expense_date", { ascending: false });
+    .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (q) query = query.ilike("description", `%${q}%`);
   if (category_id) query = query.eq("category_id", category_id);
