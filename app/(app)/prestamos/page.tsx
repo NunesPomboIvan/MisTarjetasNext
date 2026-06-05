@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Archive, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoanSummaryCard } from "@/components/loans/loan-summary-card";
+import { LoanList } from "@/components/loans/loan-list";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -74,59 +74,8 @@ export default async function LoansPage() {
           action={{ label: "Nuevo préstamo", href: "/prestamos/new" }}
         />
       ) : (
-        <div className="space-y-5">
-          {active.length > 0 && <StackedLoans items={active} />}
-
-          {archived.length > 0 && (
-            <details className="group">
-              <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm text-muted-foreground">
-                <Archive className="h-4 w-4" />
-                <span>
-                  {archived.length} préstamo{archived.length !== 1 ? "s" : ""} archivado
-                  {archived.length !== 1 ? "s" : ""}
-                </span>
-              </summary>
-              <div className="mt-2 opacity-60">
-                <StackedLoans items={archived} />
-              </div>
-            </details>
-          )}
-        </div>
+        <LoanList active={active} archived={archived} />
       )}
-    </div>
-  );
-}
-
-interface LoanItem {
-  loan: Loan;
-  pendingAmount: number;
-  paidAmount: number;
-  paidCount: number;
-  totalCount: number;
-}
-
-function StackedLoans({ items }: { items: LoanItem[] }) {
-  return (
-    <div className="space-y-3">
-      {items.map((it) => (
-        <Link
-          key={it.loan.id}
-          href={`/prestamos/${it.loan.id}`}
-          className="block transition-transform duration-150 active:scale-[0.99]"
-        >
-          <LoanSummaryCard
-            bank={it.loan.bank}
-            description={it.loan.description}
-            color={it.loan.color}
-            issueDate={it.loan.issue_date}
-            pending={it.pendingAmount}
-            paid={it.paidAmount}
-            total={Number(it.loan.total_amount)}
-            paidCount={it.paidCount}
-            totalCount={it.totalCount}
-          />
-        </Link>
-      ))}
     </div>
   );
 }

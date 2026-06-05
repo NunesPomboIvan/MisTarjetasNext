@@ -54,7 +54,7 @@ export function InstallmentsList({ installments, accent }: InstallmentsListProps
           <Money
             amount={stats.paidAmount}
             className="mt-0.5 block text-[11.5px] font-semibold tabular-nums"
-            style={{ color: "#10b981" }}
+            style={{ color: accent }}
           />
         </div>
         <div className="rounded-[14px] border border-border bg-card px-3 py-2.5">
