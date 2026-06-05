@@ -84,26 +84,34 @@ export function WalletCard({
 
   return (
     <div
-      className={cn(
-        "relative flex flex-col justify-between overflow-hidden rounded-[24px]",
-        compact ? "p-5" : "p-[22px]",
-        className
-      )}
+      className={cn("relative rounded-[24px]", className)}
       style={{
         width: "100%",
         height: cardH,
-        backgroundColor: g1,
-        background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
-        color: fg,
-        // Sombra única, suave y radial — sin contornos rectos que dibujen
-        // un rectángulo alrededor de las esquinas redondeadas.
+        // Sombra coloreada en la capa externa — no se recorta con el contenido.
         boxShadow: `0 18px 40px -16px rgba(${r},${g},${b},0.45)`,
-        // Forzar capa propia: evita que las esquinas rectas asomen cuando un
-        // ancestro con transform (active:scale del carrusel) recorta mal el radius.
+        // Capa propia: aísla la card del transform del ancestro (active:scale
+        // del carrusel) para que el radius no se recorte mal.
         transform: "translateZ(0)",
         WebkitBackfaceVisibility: "hidden",
       }}
     >
+      <div
+        className={cn(
+          "relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[24px]",
+          compact ? "p-5" : "p-[22px]"
+        )}
+        style={{
+          backgroundColor: g1,
+          background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
+          color: fg,
+          // clip-path recorta también las capas compuestas (los glows con
+          // filter: blur), que overflow-hidden por sí solo deja escapar y
+          // dibujan una esquina cuadrada sobre el borde redondeado.
+          clipPath: "inset(0 round 24px)",
+          WebkitClipPath: "inset(0 round 24px)",
+        }}
+      >
       {/* Shine diagonal */}
       <div
         aria-hidden
@@ -309,6 +317,7 @@ export function WalletCard({
             •••• {card.last_four}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

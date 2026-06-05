@@ -122,33 +122,60 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
         })}
       </div>
 
-      {/* Dots — toda la zona es arrastrable */}
-      {multi && (
-        <div
-          className="flex cursor-grab items-center justify-center gap-1.5 py-1 active:cursor-grabbing"
-          style={{ touchAction: "none" }}
-          onPointerDown={onDotsPointerDown}
-          onPointerMove={onDotsPointerMove}
-          onPointerUp={onDotsPointerUp}
-          onPointerCancel={onDotsPointerUp}
-        >
-          {items.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollTo(i)}
-              aria-label={`Tarjeta ${i + 1}`}
-              className="transition-all duration-200"
-              style={{
-                width: i === activeIndex ? 18 : 6,
-                height: 6,
-                borderRadius: 3,
-                background: i === activeIndex ? "var(--primary)" : "var(--border)",
-                opacity: i === activeIndex ? 1 : 0.6,
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Dots — toda la zona es arrastrable. Con muchas tarjetas se muestra una
+          ventana deslizante de puntos (estilo Instagram): los del borde se achican
+          para indicar que hay más fuera de la vista, sin saturar la barra. */}
+      {multi && (() => {
+        const MAX_DOTS = 7;
+        const windowed = items.length > MAX_DOTS;
+        const start = windowed
+          ? Math.min(
+              Math.max(0, activeIndex - Math.floor(MAX_DOTS / 2)),
+              items.length - MAX_DOTS
+            )
+          : 0;
+        const end = windowed ? start + MAX_DOTS : items.length;
+        const hasMoreLeft = start > 0;
+        const hasMoreRight = end < items.length;
+
+        return (
+          <div
+            className="flex cursor-grab items-center justify-center gap-1.5 py-1 active:cursor-grabbing"
+            style={{ touchAction: "none" }}
+            onPointerDown={onDotsPointerDown}
+            onPointerMove={onDotsPointerMove}
+            onPointerUp={onDotsPointerUp}
+            onPointerCancel={onDotsPointerUp}
+          >
+            {Array.from({ length: end - start }, (_, k) => {
+              const i = start + k;
+              const isActive = i === activeIndex;
+              let size = 6;
+              if (!isActive) {
+                if (hasMoreLeft && i === start) size = 3;
+                else if (hasMoreLeft && i === start + 1) size = 4.5;
+                else if (hasMoreRight && i === end - 1) size = 3;
+                else if (hasMoreRight && i === end - 2) size = 4.5;
+              }
+              return (
+                <button
+                  key={i}
+                  onClick={() => scrollTo(i)}
+                  aria-label={`Tarjeta ${i + 1}`}
+                  className="shrink-0 transition-all duration-200"
+                  style={{
+                    width: isActive ? 18 : size,
+                    height: isActive ? 6 : size,
+                    borderRadius: 3,
+                    background: isActive ? "var(--primary)" : "var(--border)",
+                    opacity: isActive ? 1 : 0.6,
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }
