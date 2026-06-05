@@ -62,8 +62,8 @@ export function LoanSummaryCard({
   const status = isComplete
     ? {
         label: "Cancelado",
-        pill: "border-[#34C759]/40 bg-[#34C759]/15 text-[#34C759]",
-        dot: "bg-[#34C759]",
+        pill: "border-[#30D158]/40 bg-[#30D158]/15 text-[#30D158]",
+        dot: "bg-[#30D158]",
       }
     : hasOverdue
       ? {
@@ -148,7 +148,7 @@ export function LoanSummaryCard({
             currency={currency}
             className={cn(
               "mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums",
-              hasPaid ? "text-[#34C759]" : "text-foreground"
+              hasPaid ? "text-[#30D158]" : "text-foreground"
             )}
           />
         </div>
@@ -171,7 +171,7 @@ export function LoanSummaryCard({
             className={cn(
               "flex h-6 flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold tabular-nums",
               hasProgress
-                ? "bg-[#34C759]/15 text-[#34C759]"
+                ? "bg-[#30D158]/15 text-[#30D158]"
                 : "bg-white/10 text-muted-foreground"
             )}
             style={{ minWidth: 40 }}
@@ -185,7 +185,7 @@ export function LoanSummaryCard({
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
           {hasProgress && (
             <div
-              className="h-full rounded-full bg-[#34C759] transition-all"
+              className="h-full rounded-full bg-[#30D158] transition-all"
               style={{ width: `${progressPct}%` }}
             />
           )}
