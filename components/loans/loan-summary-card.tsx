@@ -62,8 +62,8 @@ export function LoanSummaryCard({
   const status = isComplete
     ? {
         label: "Cancelado",
-        pill: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-        dot: "bg-emerald-400",
+        pill: "border-[#34C759]/40 bg-[#34C759]/15 text-[#34C759]",
+        dot: "bg-[#34C759]",
       }
     : hasOverdue
       ? {
@@ -80,7 +80,7 @@ export function LoanSummaryCard({
   return (
     <article
       className={cn(
-        "relative overflow-hidden border border-border bg-card py-5 pl-6 pr-5 shadow-sm",
+        "relative overflow-hidden border border-border bg-card py-5 pl-5 pr-4 shadow-sm",
         className
       )}
       style={{ borderRadius: CARD_RADIUS }}
@@ -125,41 +125,41 @@ export function LoanSummaryCard({
       </div>
 
       {/* MIDDLE: Pendiente / Pagado / Total */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-5 grid grid-cols-3 gap-2">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Pendiente
           </p>
           <Money
             amount={pending}
             currency={currency}
             className={cn(
-              "mt-1 block text-[15px] font-bold leading-tight tabular-nums",
+              "mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums",
               hasOverdue ? "text-amber-300" : "text-foreground"
             )}
           />
         </div>
         <div className="min-w-0">
-          <p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Pagado
           </p>
           <Money
             amount={paid}
             currency={currency}
             className={cn(
-              "mt-1 block text-[15px] font-bold leading-tight tabular-nums",
-              hasPaid ? "text-emerald-400" : "text-foreground"
+              "mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums",
+              hasPaid ? "text-[#34C759]" : "text-foreground"
             )}
           />
         </div>
         <div className="min-w-0">
-          <p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Total
           </p>
           <Money
             amount={total}
             currency={currency}
-            className="mt-1 block text-[15px] font-bold leading-tight tabular-nums text-foreground"
+            className="mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums text-foreground"
           />
         </div>
       </div>
@@ -171,7 +171,7 @@ export function LoanSummaryCard({
             className={cn(
               "flex h-6 flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold tabular-nums",
               hasProgress
-                ? "bg-emerald-500/15 text-emerald-300"
+                ? "bg-[#34C759]/15 text-[#34C759]"
                 : "bg-white/10 text-muted-foreground"
             )}
             style={{ minWidth: 40 }}
@@ -185,7 +185,7 @@ export function LoanSummaryCard({
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
           {hasProgress && (
             <div
-              className="h-full rounded-full bg-emerald-400 transition-all"
+              className="h-full rounded-full bg-[#34C759] transition-all"
               style={{ width: `${progressPct}%` }}
             />
           )}
