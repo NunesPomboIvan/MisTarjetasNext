@@ -1,4 +1,4 @@
-import { Banknote, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Money } from "@/components/shared/money";
 import { capitalize, cn, formatDate } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
@@ -7,6 +7,7 @@ import type { Currency } from "@/lib/supabase/database.types";
 interface LoanSummaryCardProps {
   bank: string | null;
   description: string;
+  /** Color de identidad del préstamo (hex). Se usa SOLO en la franja izquierda. */
   color: string;
   currency?: Currency;
   pending: number;
@@ -14,30 +15,24 @@ interface LoanSummaryCardProps {
   total: number;
   paidCount: number;
   totalCount: number;
+  /** Cuotas no pagadas con vencimiento ya pasado. Activa estado "Vencido". */
+  overdueCount?: number;
   /** Fecha de emisión del préstamo (YYYY-MM-DD) */
   issueDate: string;
   className?: string;
 }
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const h = hex.replace("#", "");
-  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  return {
-    r: parseInt(v.slice(0, 2), 16),
-    g: parseInt(v.slice(2, 4), 16),
-    b: parseInt(v.slice(4, 6), 16),
-  };
-}
-
-function rgba(hex: string, alpha: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+const ACCENT_FALLBACK = "#6366f1";
+const CARD_RADIUS = 20;
+const STRIP_WIDTH = 5;
 
 /**
- * Resumen rico de un préstamo. Usado tanto en el listado /prestamos como
- * en el header del detalle /prestamos/[id], para mantener un único objeto
- * visual del préstamo en toda la app.
+ * Resumen de un préstamo para el listado /prestamos.
+ *
+ * Sistema de color: el color de identidad del préstamo vive en un único
+ * elemento — la franja vertical izquierda. El resto de la card usa colores
+ * semánticos (verde de éxito, ámbar/rojo de alerta) o neutros, de forma que
+ * las cards sean comparables de un vistazo y el color comunique estado real.
  */
 export function LoanSummaryCard({
   bank,
@@ -49,76 +44,88 @@ export function LoanSummaryCard({
   total,
   paidCount,
   totalCount,
+  overdueCount = 0,
   issueDate,
   className,
 }: LoanSummaryCardProps) {
-  const accent = color || "#6366f1";
-  const progressPct = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+  const accent = color || ACCENT_FALLBACK;
+  const progressPct =
+    totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
   const isComplete = paidCount === totalCount && totalCount > 0;
+  const hasOverdue = !isComplete && overdueCount > 0;
+  const hasProgress = progressPct > 0;
+  const hasPaid = paid > 0;
   const showDescription =
     !!bank && bank.trim().toLowerCase() !== description.trim().toLowerCase();
+
+  // Estado semántico — no usa el color del préstamo
+  const status = isComplete
+    ? {
+        label: "Cancelado",
+        pill: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+        dot: "bg-emerald-400",
+      }
+    : hasOverdue
+      ? {
+          label: "Vencido",
+          pill: "border-red-500/35 bg-red-500/12 text-red-300",
+          dot: "bg-red-400",
+        }
+      : {
+          label: "Activo",
+          pill: "border-white/12 bg-white/5 text-foreground/75",
+          dot: "bg-foreground/55",
+        };
 
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-[20px] border border-border bg-card p-5 shadow-sm",
+        "relative overflow-hidden border border-border bg-card py-5 pl-6 pr-5 shadow-sm",
         className
       )}
+      style={{ borderRadius: CARD_RADIUS }}
     >
-      {/* Halo sutil del color de acento, arriba a la derecha */}
-      <div
+      {/* Franja de identidad — único lugar de la card con el color del préstamo */}
+      <span
         aria-hidden
-        className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full opacity-60"
+        className="absolute inset-y-0 left-0"
         style={{
-          background: `radial-gradient(circle, ${rgba(accent, 0.18)} 0%, transparent 65%)`,
-          filter: "blur(8px)",
+          width: STRIP_WIDTH,
+          background: accent,
+          borderTopLeftRadius: CARD_RADIUS,
+          borderBottomLeftRadius: CARD_RADIUS,
         }}
       />
 
-      {/* TOP: avatar + nombre/descripción + pill estado */}
-      <div className="relative flex items-start gap-3">
-        <div
-          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
-          style={{
-            background: `linear-gradient(135deg, ${rgba(accent, 0.95)} 0%, ${rgba(accent, 0.75)} 100%)`,
-            boxShadow: `0 6px 14px -6px ${rgba(accent, 0.55)}`,
-          }}
-        >
-          <Banknote className="h-6 w-6 text-white" strokeWidth={2.25} />
-        </div>
-
+      {/* TOP: nombre/descripción + pill de estado */}
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p
-            className="truncate font-display text-[17px] font-bold leading-tight text-foreground"
-          >
+          <p className="truncate font-display text-[17px] font-bold leading-tight text-foreground">
             {bank || description}
           </p>
           {showDescription && (
             <p className="mt-1 truncate text-[12px] text-muted-foreground">
-              <span className="font-semibold text-foreground/70">Descripción:</span>{" "}
+              <span className="font-semibold text-foreground/70">
+                Descripción:
+              </span>{" "}
               {description}
             </p>
           )}
         </div>
 
         <span
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold"
-          style={{
-            background: rgba(accent, 0.1),
-            borderColor: rgba(accent, 0.3),
-            color: accent,
-          }}
+          className={cn(
+            "flex flex-shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+            status.pill
+          )}
         >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ background: accent }}
-          />
-          {isComplete ? "Cancelado" : "Activo"}
+          <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
+          {status.label}
         </span>
       </div>
 
-      {/* MIDDLE: 3 columnas Pendiente / Pagado / Total */}
-      <div className="relative mt-5 grid grid-cols-3 gap-3">
+      {/* MIDDLE: Pendiente / Pagado / Total */}
+      <div className="mt-5 grid grid-cols-3 gap-3">
         <div className="min-w-0">
           <p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
             Pendiente
@@ -126,7 +133,10 @@ export function LoanSummaryCard({
           <Money
             amount={pending}
             currency={currency}
-            className="mt-1 block text-[15px] font-bold leading-tight tabular-nums text-foreground"
+            className={cn(
+              "mt-1 block text-[15px] font-bold leading-tight tabular-nums",
+              hasOverdue ? "text-amber-300" : "text-foreground"
+            )}
           />
         </div>
         <div className="min-w-0">
@@ -136,8 +146,10 @@ export function LoanSummaryCard({
           <Money
             amount={paid}
             currency={currency}
-            className="mt-1 block text-[15px] font-bold leading-tight tabular-nums"
-            style={{ color: accent }}
+            className={cn(
+              "mt-1 block text-[15px] font-bold leading-tight tabular-nums",
+              hasPaid ? "text-emerald-400" : "text-foreground"
+            )}
           />
         </div>
         <div className="min-w-0">
@@ -152,16 +164,17 @@ export function LoanSummaryCard({
         </div>
       </div>
 
-      {/* PROGRESS: pill % + cuotas + barra */}
-      <div className="relative mt-5">
+      {/* PROGRESO: chip % + cuotas + barra */}
+      <div className="mt-5">
         <div className="flex items-center gap-2.5">
           <span
-            className="flex h-6 flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold tabular-nums"
-            style={{
-              background: rgba(accent, 0.14),
-              color: accent,
-              minWidth: 40,
-            }}
+            className={cn(
+              "flex h-6 flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold tabular-nums",
+              hasProgress
+                ? "bg-emerald-500/15 text-emerald-300"
+                : "bg-white/10 text-muted-foreground"
+            )}
+            style={{ minWidth: 40 }}
           >
             {progressPct}%
           </span>
@@ -169,25 +182,24 @@ export function LoanSummaryCard({
             {paidCount} de {totalCount} cuotas pagadas
           </span>
         </div>
-        <div
-          className="mt-2 h-1.5 overflow-hidden rounded-full"
-          style={{ background: rgba(accent, 0.12) }}
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${progressPct}%`,
-              background: `linear-gradient(90deg, ${accent} 0%, ${rgba(accent, 0.85)} 100%)`,
-            }}
-          />
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+          {hasProgress && (
+            <div
+              className="h-full rounded-full bg-emerald-400 transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
+          )}
         </div>
       </div>
 
       {/* BOTTOM: fecha de emisión */}
-      <div className="relative mt-4 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+      <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
         <Calendar className="h-3.5 w-3.5" />
         <span>
-          Emitido el {capitalize(formatDate(parseLocalDate(issueDate), "d 'de' MMM yyyy"))}
+          Emitido el{" "}
+          {capitalize(
+            formatDate(parseLocalDate(issueDate), "d 'de' MMM yyyy")
+          )}
         </span>
       </div>
     </article>

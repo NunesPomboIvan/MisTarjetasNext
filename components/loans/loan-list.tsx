@@ -19,6 +19,7 @@ export interface LoanItem {
   paidAmount: number;
   paidCount: number;
   totalCount: number;
+  overdueCount: number;
 }
 
 type SortKey = "name" | "debt-desc" | "debt-asc";
@@ -168,6 +169,7 @@ function StackedLoans({ items }: { items: LoanItem[] }) {
             total={Number(it.loan.total_amount)}
             paidCount={it.paidCount}
             totalCount={it.totalCount}
+            overdueCount={it.overdueCount}
           />
         </Link>
       ))}

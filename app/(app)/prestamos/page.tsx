@@ -5,6 +5,9 @@ import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoanList } from "@/components/loans/loan-list";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { nowInArgentina } from "@/lib/utils";
+import { parseLocalDate } from "@/lib/periods/calculate";
+import { startOfDay } from "date-fns";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Préstamos" };
@@ -33,16 +36,21 @@ export default async function LoansPage() {
   const allLoans = (loans ?? []) as Loan[];
   const allInstallments = (installments ?? []) as LoanInstallment[];
 
+  const today = startOfDay(nowInArgentina());
   const items = allLoans.map((loan) => {
     const own = allInstallments.filter((i) => i.loan_id === loan.id);
     const paid = own.filter((i) => i.paid);
     const pending = own.filter((i) => !i.paid);
+    const overdueCount = pending.filter(
+      (i) => parseLocalDate(i.due_date) < today
+    ).length;
     return {
       loan,
       pendingAmount: pending.reduce((s, i) => s + Number(i.amount), 0),
       paidAmount: paid.reduce((s, i) => s + Number(i.amount), 0),
       paidCount: paid.length,
       totalCount: own.length,
+      overdueCount,
     };
   });
 
