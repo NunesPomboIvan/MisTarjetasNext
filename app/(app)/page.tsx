@@ -89,7 +89,7 @@ export default async function DashboardPage() {
     return { card, period, total, currentPeriod, currentTotal };
   });
 
-  const saldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
+  const cardsSaldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
 
   // Pagos próximos: tarjetas con saldo, ordenadas por fecha de vencimiento.
   // `today` se calcula en zona horaria de Argentina para que el SSR no
@@ -140,11 +140,16 @@ export default async function DashboardPage() {
         accent: loan.color,
         primary,
         suffix: `· Cuota ${next.installment_number}/${totalForLoan}`,
+        amount: Number(next.amount),
         days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => a.days - b.days);
+
+  // "Próximo a vencer" = saldo de tarjetas + próxima cuota de cada préstamo.
+  const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
+  const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
   const hour = today.getHours();
   const weekdayLabel = capitalize(formatDate(today, "EEEE"));
@@ -207,12 +212,17 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Card resumen: saldo + fecha de hoy */}
-          <section className="glass-card rounded-[20px] px-5 py-5">
+          {/* Card resumen: saldo + fecha de hoy → detalle de vencimientos */}
+          <Link
+            href="/vencimientos"
+            aria-label="Ver detalle de próximos vencimientos"
+            className="glass-card block rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
+          >
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium text-muted-foreground">
+                <p className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                   Próximo a vencer
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </p>
                 <Money
                   amount={saldoTotal}
@@ -229,7 +239,7 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-          </section>
+          </Link>
 
           {/* Próximos Vencimientos: Tarjeta de crédito + Préstamos bancarios */}
           <section className="mt-6 space-y-3">
