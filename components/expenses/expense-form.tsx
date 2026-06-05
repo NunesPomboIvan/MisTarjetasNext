@@ -76,6 +76,21 @@ export function ExpenseForm({
 
   const today = format(new Date(), "yyyy-MM-dd");
 
+  // ¿Estamos editando el importe de UNA cuota puntual? (vino con contexto de
+  // cuota y el consumo tiene más de una cuota). En ese caso el form se enfoca
+  // en el importe de esa cuota, no en el total del consumo.
+  const installmentsCount = expense?.installments ?? 1;
+  const editingSingleInstallment =
+    installmentIndex !== undefined && installmentsCount > 1;
+  // Monto actual de la cuota que se está editando: override puntual si existe,
+  // si no, el monto base por cuota.
+  const currentCuotaAmount =
+    expense && installmentIndex !== undefined && expense.installment_amounts
+      ? ((expense.installment_amounts as Record<string, number>)[
+          String(installmentIndex)
+        ] ?? expense.installment_amount)
+      : expense?.installment_amount ?? 0;
+
   // En modo creación, sugerir la última tarjeta usada si no hay defaultCardId
   const initialCard =
     defaultCardId ??
@@ -98,7 +113,9 @@ export function ExpenseForm({
           description: expense.description,
           total_amount: expense.total_amount,
           installments: expense.installments,
-          installment_amount: expense.installment_amount,
+          installment_amount: editingSingleInstallment
+            ? currentCuotaAmount
+            : expense.installment_amount,
           discount_percentage: expense.discount_percentage ?? undefined,
           discount_cap: expense.discount_cap ?? undefined,
           expense_date: expense.expense_date,
@@ -134,7 +151,7 @@ export function ExpenseForm({
   // una cuota específica. Si estamos editando una cuota individual, el valor
   // que escribe el usuario es ese (no se hace la operación matemática).
   useEffect(() => {
-    if (installmentIndex !== undefined) return;
+    if (editingSingleInstallment) return;
     const base = discountActive ? precioFinal : totalAmount;
     if (base && installments && installments >= 1) {
       const cuota = parseFloat((base / installments).toFixed(2));
@@ -158,12 +175,14 @@ export function ExpenseForm({
       discount_cap: discountActive ? data.discount_cap : null,
     };
 
-    const amountChanged =
-      expense && payload.installment_amount !== expense.installment_amount;
-    const isMultiInstallment = expense && expense.installments > 1;
-    const hasInstallmentContext = installmentIndex !== undefined;
+    // Al editar una cuota puntual, comparamos contra el importe actual de ESA
+    // cuota (override si lo hay); si no, contra el monto base por cuota.
+    const baseline = editingSingleInstallment
+      ? currentCuotaAmount
+      : expense?.installment_amount;
+    const amountChanged = expense && payload.installment_amount !== baseline;
 
-    if (isMultiInstallment && amountChanged && hasInstallmentContext) {
+    if (editingSingleInstallment && amountChanged) {
       setInstallmentChoiceData(payload);
       return;
     }
@@ -319,7 +338,34 @@ export function ExpenseForm({
           )}
         </div>
 
-        {/* Monto + Cuotas */}
+        {/* Editar el importe de UNA cuota puntual */}
+        {editingSingleInstallment && (
+          <div className="space-y-1.5">
+            <Label htmlFor="installment_amount">
+              Importe de la cuota {installmentIndex! + 1}/{installmentsCount}
+            </Label>
+            <Controller
+              control={control}
+              name="installment_amount"
+              render={({ field }) => (
+                <AmountInput
+                  id="installment_amount"
+                  value={field.value}
+                  onChange={(v) => field.onChange(v ?? 0)}
+                  invalid={!!errors.installment_amount}
+                  size="lg"
+                />
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Al guardar vas a poder elegir si el nuevo importe aplica solo a esta
+              cuota o a todas.
+            </p>
+          </div>
+        )}
+
+        {/* Monto + Cuotas (consumo completo) */}
+        {!editingSingleInstallment && (
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="total_amount">Monto total</Label>
@@ -442,6 +488,7 @@ export function ExpenseForm({
             </div>
           )}
         </div>
+        )}
 
         {/* Sección avanzada (collapsable) */}
         <button
@@ -473,29 +520,33 @@ export function ExpenseForm({
               )}
             </div>
 
-            <Separator />
+            {!editingSingleInstallment && (
+              <>
+                <Separator />
 
-            {/* Cuota calculada (manual override) */}
-            <div className="space-y-1.5">
-              <Label htmlFor="installment_amount">Monto por cuota</Label>
-              <Controller
-                control={control}
-                name="installment_amount"
-                render={({ field }) => (
-                  <AmountInput
-                    id="installment_amount"
-                    value={field.value}
-                    onChange={(v) => field.onChange(v ?? 0)}
-                    invalid={!!errors.installment_amount}
+                {/* Cuota calculada (manual override) */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="installment_amount">Monto por cuota</Label>
+                  <Controller
+                    control={control}
+                    name="installment_amount"
+                    render={({ field }) => (
+                      <AmountInput
+                        id="installment_amount"
+                        value={field.value}
+                        onChange={(v) => field.onChange(v ?? 0)}
+                        invalid={!!errors.installment_amount}
+                      />
+                    )}
                   />
-                )}
-              />
-              <p className="text-xs text-muted-foreground">
-                Se calcula automáticamente
-                {discountActive ? " sobre el precio con descuento" : ""}. Podés ajustarlo
-                manualmente.
-              </p>
-            </div>
+                  <p className="text-xs text-muted-foreground">
+                    Se calcula automáticamente
+                    {discountActive ? " sobre el precio con descuento" : ""}. Podés
+                    ajustarlo manualmente.
+                  </p>
+                </div>
+              </>
+            )}
 
             <Separator />
 
@@ -594,7 +645,7 @@ export function ExpenseForm({
                   <p className="font-semibold text-foreground text-base">
                     {formatCurrency(installmentChoiceData?.installment_amount ?? 0)}
                     <span className="ml-2 text-xs font-normal text-muted-foreground line-through">
-                      {formatCurrency(expense?.installment_amount ?? 0)}
+                      {formatCurrency(currentCuotaAmount)}
                     </span>
                   </p>
                 </div>

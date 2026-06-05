@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
-import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod } from "@/lib/periods/calculate";
+import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod, getInstallmentAmountForIndex } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithCategory, Category } from "@/lib/supabase/database.types";
 
@@ -194,10 +194,15 @@ function CardExpenseRow({
   pendingBadge?: boolean;
 }) {
   const cat = expense.category;
-  const installmentSuffix =
-    showInstallment && expense.installments > 1 && installmentIndex != null && installmentIndex >= 0
-      ? ` · Cuota ${installmentIndex + 1}/${expense.installments}`
-      : "";
+  const hasInstallmentContext =
+    showInstallment && expense.installments > 1 && installmentIndex != null && installmentIndex >= 0;
+  const installmentSuffix = hasInstallmentContext
+    ? ` · Cuota ${installmentIndex! + 1}/${expense.installments}`
+    : "";
+  // Importe a mostrar: si conocemos la cuota del período, respetar su override
+  const rowAmount = hasInstallmentContext
+    ? getInstallmentAmountForIndex(expense, installmentIndex!)
+    : expense.installment_amount;
 
   const params = new URLSearchParams({ card_id: cardId });
   if (installmentIndex != null && installmentIndex >= 0) {
@@ -231,7 +236,7 @@ function CardExpenseRow({
 
       <div className="flex-shrink-0 text-right">
         <Money
-          amount={expense.installment_amount}
+          amount={rowAmount}
           currency={expense.currency}
           className="block text-[14px] font-semibold tabular-nums text-foreground"
         />

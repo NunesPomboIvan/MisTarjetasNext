@@ -149,7 +149,9 @@ export async function updateExpense(
 
 /**
  * Actualiza el monto de una cuota específica (índice 0-based).
- * No toca installment_amount ni el resto del gasto.
+ * Mantiene installment_amount (monto base) intacto, pero recalcula total_amount
+ * como la suma de todas las cuotas (overrides + base) para que el total del
+ * consumo siga reflejando la realidad de las cuotas.
  */
 export async function updateInstallmentAmount(
   id: string,
@@ -163,10 +165,10 @@ export async function updateInstallmentAmount(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  // Obtener el estado actual de installment_amounts
+  // Obtener el estado actual: overrides + monto base + cantidad de cuotas
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
-    .select("installment_amounts")
+    .select("installment_amounts, installment_amount, installments")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -177,9 +179,18 @@ export async function updateInstallmentAmount(
     (expense.installment_amounts as Record<string, number>) ?? {};
   const updated = { ...current, [String(installmentIndex)]: amount };
 
+  // Recalcular el total = suma de cada cuota (override si existe, si no la base)
+  const base = Number(expense.installment_amount);
+  const count = Number(expense.installments);
+  let total = 0;
+  for (let i = 0; i < count; i++) {
+    total += updated[String(i)] ?? base;
+  }
+  total = +total.toFixed(2);
+
   const { error } = await supabase
     .from("expenses")
-    .update({ installment_amounts: updated })
+    .update({ installment_amounts: updated, total_amount: total })
     .eq("id", id)
     .eq("user_id", user.id);
 
@@ -194,6 +205,7 @@ export async function updateInstallmentAmount(
 /**
  * Actualiza todas las cuotas al mismo monto y limpia overrides individuales.
  * Se usa cuando el usuario elige "Modificar todas las cuotas".
+ * También sincroniza total_amount = monto x cantidad de cuotas.
  */
 export async function updateAllInstallmentAmounts(
   id: string,
@@ -206,9 +218,25 @@ export async function updateAllInstallmentAmounts(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // Necesitamos la cantidad de cuotas para recalcular el total
+  const { data: expense, error: fetchError } = await supabase
+    .from("expenses")
+    .select("installments")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !expense) return { success: false, error: "Gasto no encontrado" };
+
+  const total = +(installmentAmount * Number(expense.installments)).toFixed(2);
+
   const { error } = await supabase
     .from("expenses")
-    .update({ installment_amount: installmentAmount, installment_amounts: null })
+    .update({
+      installment_amount: installmentAmount,
+      installment_amounts: null,
+      total_amount: total,
+    })
     .eq("id", id)
     .eq("user_id", user.id);
 
