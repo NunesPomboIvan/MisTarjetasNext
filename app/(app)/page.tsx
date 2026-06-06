@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, ChevronRight } from "lucide-react";
+import { Banknote, CalendarClock, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -7,6 +7,7 @@ import { CardsBillboard } from "@/components/home/cards-billboard";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
+import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
@@ -151,6 +152,17 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
+  // Total general de TODO lo pendiente (tarjetas + préstamos, mes a mes), para
+  // el acceso a la pantalla consolidada de Próximos vencimientos.
+  const { grandTotal: upcomingGrandTotal } = computeUpcomingByMonth({
+    cards,
+    expenses: allExpenses,
+    loans,
+    pendingInstallments,
+    totalByLoan: totalInstallmentsByLoan,
+    now: today,
+  });
+
   const hour = today.getHours();
   const weekdayLabel = capitalize(formatDate(today, "EEEE"));
   const dayMonthLabel = formatDate(today, "dd/MM/yyyy");
@@ -212,17 +224,12 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Card resumen: saldo + fecha de hoy → detalle de vencimientos */}
-          <Link
-            href="/vencimientos"
-            aria-label="Ver detalle de próximos vencimientos"
-            className="glass-card block rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
-          >
+          {/* Card resumen: saldo a pagar del mes + fecha de hoy */}
+          <section className="glass-card rounded-[20px] px-5 py-5">
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                <p className="text-[11px] font-medium text-muted-foreground">
                   Próximo a vencer
-                  <ChevronRight className="h-3.5 w-3.5" />
                 </p>
                 <Money
                   amount={saldoTotal}
@@ -239,12 +246,39 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
+          </section>
+
+          {/* Acceso a la pantalla consolidada de Próximos vencimientos */}
+          <Link
+            href="/vencimientos"
+            aria-label="Ver próximos vencimientos mes a mes"
+            className="flex items-center gap-3 rounded-[20px] border border-border bg-card px-4 py-3.5 transition-transform active:scale-[0.99]"
+          >
+            <div
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+              style={{ background: "#6366f120", color: "#6366f1" }}
+            >
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-foreground">
+                Próximos vencimientos
+              </p>
+              <p className="text-[11.5px] text-muted-foreground">
+                Mes a mes · tarjetas y préstamos
+              </p>
+            </div>
+            <Money
+              amount={upcomingGrandTotal}
+              className="flex-shrink-0 text-[15px] font-bold tabular-nums text-foreground"
+            />
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           </Link>
 
-          {/* Próximos Vencimientos: Tarjeta de crédito + Préstamos bancarios */}
+          {/* Próximos pagos: accesos directos a Tarjetas y Préstamos */}
           <section className="mt-6 space-y-3">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Próximos vencimientos
+              Próximos pagos
             </h2>
             <div className="glass-card rounded-[20px] px-5 py-5">
               {upcoming.length > 0 && (

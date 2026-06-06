@@ -1,32 +1,17 @@
 import Link from "next/link";
-import { Calendar, Banknote } from "lucide-react";
+import { Calendar, Banknote, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
-import { getNextPayment, parseLocalDate } from "@/lib/periods/calculate";
-import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
-import { differenceInCalendarDays, startOfDay } from "date-fns";
+import { computeUpcomingByMonth } from "@/lib/vencimientos";
+import type { CardVencimiento, LoanVencimiento, MonthGroup } from "@/lib/vencimientos";
+import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Próximos vencimientos" };
-
-const ROW_STYLE = {
-  backdropFilter: "blur(24px) saturate(180%)",
-  WebkitBackdropFilter: "blur(24px) saturate(180%)",
-  boxShadow:
-    "0 0 28px -8px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
-} as const;
-
-function daysLabel(daysUntil: number): { text: string; urgent: boolean } {
-  if (daysUntil <= 0) return { text: "Vence hoy", urgent: true };
-  return {
-    text: `Vence en ${daysUntil} día${daysUntil === 1 ? "" : "s"}`,
-    urgent: daysUntil <= 3,
-  };
-}
 
 export default async function VencimientosPage() {
   const supabase = await createClient();
@@ -57,61 +42,23 @@ export default async function VencimientosPage() {
         .from("loan_installments")
         .select("*")
         .eq("user_id", user!.id)
-        .eq("paid", false)
-        .order("due_date"),
+        .eq("paid", false),
       supabase.from("loan_installments").select("loan_id").eq("user_id", user!.id),
     ]);
 
-  const allCards = (cards ?? []) as Card[];
-  const allExpenses = (expenses ?? []) as Expense[];
-  const allLoans = (loans ?? []) as Loan[];
-  const pending = (pendingInst ?? []) as LoanInstallment[];
-
-  const todayStart = startOfDay(nowInArgentina());
-
-  // ── Tarjetas: próximo pago de cada tarjeta con saldo ──────────────
-  const cardsUpcoming = allCards
-    .map((card) => {
-      const cardExpenses = allExpenses.filter((e) => e.card_id === card.id);
-      const payment = getNextPayment(card, cardExpenses);
-      if (!payment) return null;
-      const daysUntil = differenceInCalendarDays(payment.period.due, todayStart);
-      return { card, period: payment.period, total: payment.total, daysUntil };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
-    .sort((a, b) => a.period.due.getTime() - b.period.due.getTime());
-
-  // ── Préstamos: próxima cuota pendiente de cada préstamo ───────────
-  const loanById = new Map(allLoans.map((l) => [l.id, l]));
   const totalByLoan = new Map<string, number>();
   for (const i of allInst ?? []) {
     totalByLoan.set(i.loan_id, (totalByLoan.get(i.loan_id) ?? 0) + 1);
   }
-  const seenLoans = new Set<string>();
-  const loansUpcoming = pending
-    .map((inst) => {
-      const loan = loanById.get(inst.loan_id);
-      if (!loan) return null;
-      const dueDate = parseLocalDate(inst.due_date);
-      return {
-        inst,
-        loan,
-        dueDate,
-        daysUntil: differenceInCalendarDays(dueDate, todayStart),
-        totalForLoan: totalByLoan.get(inst.loan_id) ?? inst.installment_number,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
-    .filter((x) => {
-      if (seenLoans.has(x.loan.id)) return false;
-      seenLoans.add(x.loan.id);
-      return true;
-    });
 
-  const cardsTotal = cardsUpcoming.reduce((s, u) => s + u.total, 0);
-  const loansTotal = loansUpcoming.reduce((s, u) => s + Number(u.inst.amount), 0);
-  const grandTotal = cardsTotal + loansTotal;
-  const isEmpty = cardsUpcoming.length === 0 && loansUpcoming.length === 0;
+  const { months, grandTotal, cardsGrandTotal, loansGrandTotal } = computeUpcomingByMonth({
+    cards: (cards ?? []) as Card[],
+    expenses: (expenses ?? []) as Expense[],
+    loans: (loans ?? []) as Loan[],
+    pendingInstallments: (pendingInst ?? []) as LoanInstallment[],
+    totalByLoan,
+    now: nowInArgentina(),
+  });
 
   return (
     <div className="space-y-5">
@@ -125,7 +72,7 @@ export default async function VencimientosPage() {
         </div>
       </StickyPageHeader>
 
-      {isEmpty ? (
+      {months.length === 0 ? (
         <EmptyState
           icon={<span>📅</span>}
           title="Sin vencimientos próximos"
@@ -133,140 +80,185 @@ export default async function VencimientosPage() {
         />
       ) : (
         <>
-          {/* Total general */}
+          {/* Total general del rango mostrado */}
           <section className="glass-card rounded-[20px] px-5 py-[18px]">
-            <p className="text-[12px] font-medium text-muted-foreground">Próximo a vencer</p>
+            <p className="text-[12px] font-medium text-muted-foreground">Total a pagar</p>
             <Money
               amount={grandTotal}
               className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
             />
-            <p className="mt-1.5 text-[12px] text-muted-foreground">
-              {cardsUpcoming.length} tarjeta{cardsUpcoming.length === 1 ? "" : "s"}
-              {" · "}
-              {loansUpcoming.length} préstamo{loansUpcoming.length === 1 ? "" : "s"}
-            </p>
+            <div className="mt-2 flex items-center gap-4 text-[11.5px] text-muted-foreground">
+              <span>
+                Tarjetas{" "}
+                <Money
+                  amount={cardsGrandTotal}
+                  className="font-semibold tabular-nums text-foreground"
+                />
+              </span>
+              <span>
+                Préstamos{" "}
+                <Money
+                  amount={loansGrandTotal}
+                  className="font-semibold tabular-nums text-foreground"
+                />
+              </span>
+            </div>
           </section>
 
-          {/* Tarjetas */}
-          {cardsUpcoming.length > 0 && (
-            <section className="space-y-2.5">
-              <div className="flex items-baseline justify-between px-1">
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Tarjetas
-                </h2>
-                <Money
-                  amount={cardsTotal}
-                  className="text-[13px] font-semibold tabular-nums text-foreground"
-                />
-              </div>
-
-              {cardsUpcoming.map(({ card, period, total, daysUntil }) => {
-                const accent = card.color || "#6366f1";
-                const { text, urgent } = daysLabel(daysUntil);
-                return (
-                  <Link
-                    key={card.id}
-                    href={`/cards/${card.id}`}
-                    className="block rounded-[20px] border border-white/[0.08] bg-card/85 p-4 transition-all active:scale-[0.985]"
-                    style={ROW_STYLE}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-                        style={{ background: `${accent}20`, color: accent }}
-                      >
-                        <Calendar className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold text-foreground">
-                          {card.bank || card.name}
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          {capitalize(formatDate(period.due, "EEEE d 'de' MMM"))}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <Money
-                          amount={total}
-                          className="block text-[15px] font-semibold tabular-nums text-foreground"
-                        />
-                        <p
-                          className={
-                            "mt-0.5 text-[11px] font-semibold " +
-                            (urgent ? "text-destructive" : "text-muted-foreground")
-                          }
-                        >
-                          {text}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </section>
-          )}
-
-          {/* Préstamos */}
-          {loansUpcoming.length > 0 && (
-            <section className="space-y-2.5">
-              <div className="flex items-baseline justify-between px-1">
-                <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                  Préstamos
-                </h2>
-                <Money
-                  amount={loansTotal}
-                  className="text-[13px] font-semibold tabular-nums text-foreground"
-                />
-              </div>
-
-              {loansUpcoming.map(({ inst, loan, dueDate, daysUntil, totalForLoan }) => {
-                const accent = loan.color || "#6366f1";
-                const { text, urgent } = daysLabel(daysUntil);
-                return (
-                  <Link
-                    key={inst.id}
-                    href={`/prestamos/${loan.id}`}
-                    className="block rounded-[20px] border border-white/[0.08] bg-card/85 p-4 transition-all active:scale-[0.985]"
-                    style={ROW_STYLE}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-                        style={{ background: `${accent}20`, color: accent }}
-                      >
-                        <Banknote className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-semibold text-foreground">
-                          {loan.bank || loan.description}
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          Cuota {inst.installment_number}/{totalForLoan} ·{" "}
-                          {capitalize(formatDate(dueDate, "EEEE d 'de' MMM"))}
-                        </p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <Money
-                          amount={Number(inst.amount)}
-                          className="block text-[15px] font-semibold tabular-nums text-foreground"
-                        />
-                        <p
-                          className={
-                            "mt-0.5 text-[11px] font-semibold " +
-                            (urgent ? "text-destructive" : "text-muted-foreground")
-                          }
-                        >
-                          {text}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </section>
-          )}
+          {/* Meses */}
+          <div className="space-y-3">
+            {months.map((m) => (
+              <MonthSection key={m.key} month={m} />
+            ))}
+          </div>
         </>
       )}
     </div>
+  );
+}
+
+function MonthSection({ month }: { month: MonthGroup }) {
+  const label = capitalize(formatDate(month.date, "MMMM yyyy"));
+  // Abrimos por defecto el mes actual y cualquier mes con algo vencido.
+  const defaultOpen = month.isCurrent || month.hasOverdue;
+
+  return (
+    <details
+      open={defaultOpen}
+      className={cn(
+        "group overflow-hidden rounded-[18px] border bg-card",
+        month.isCurrent ? "border-primary/40" : "border-border"
+      )}
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+          <span
+            className={cn(
+              "truncate text-[14px] font-bold",
+              month.isCurrent ? "text-primary" : "text-foreground"
+            )}
+          >
+            {label}
+          </span>
+          {month.isCurrent && (
+            <span className="flex-shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+              Este mes
+            </span>
+          )}
+        </div>
+        <Money
+          amount={month.total}
+          className="flex-shrink-0 text-[14px] font-bold tabular-nums text-foreground"
+        />
+      </summary>
+
+      <div className="space-y-4 border-t border-border px-4 py-4">
+        {month.cards.length > 0 && (
+          <Block
+            label="Tarjetas"
+            subtotal={month.cardsTotal}
+            items={month.cards.map((c) => (
+              <VencimientoRow key={c.cardId} item={c} />
+            ))}
+          />
+        )}
+        {month.loans.length > 0 && (
+          <Block
+            label="Préstamos"
+            subtotal={month.loansTotal}
+            items={month.loans.map((l) => (
+              <VencimientoRow key={l.installmentId} item={l} />
+            ))}
+          />
+        )}
+      </div>
+    </details>
+  );
+}
+
+function Block({
+  label,
+  subtotal,
+  items,
+}: {
+  label: string;
+  subtotal: number;
+  items: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between px-0.5">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </h3>
+        <Money
+          amount={subtotal}
+          className="text-[11.5px] font-semibold tabular-nums text-foreground"
+        />
+      </div>
+      <div className="space-y-2">{items}</div>
+    </div>
+  );
+}
+
+function dueText(item: CardVencimiento | LoanVencimiento): { text: string; tone: "muted" | "amber" | "red" } {
+  if (item.overdue) {
+    const d = Math.abs(item.daysUntil);
+    return { text: `Venció hace ${d} día${d === 1 ? "" : "s"}`, tone: "red" };
+  }
+  if (item.daysUntil === 0) return { text: "Vence hoy", tone: "amber" };
+  if (item.daysUntil <= 3) return { text: `Vence en ${item.daysUntil} días`, tone: "amber" };
+  return { text: `Vence el ${formatDate(item.due, "d 'de' MMM")}`, tone: "muted" };
+}
+
+function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
+  const accent = item.accent || "#6366f1";
+  const { text, tone } = dueText(item);
+  const toneClass =
+    tone === "red"
+      ? "text-destructive"
+      : tone === "amber"
+        ? "text-amber-500"
+        : "text-muted-foreground";
+
+  const href = item.kind === "card" ? `/cards/${item.cardId}` : `/prestamos/${item.loanId}`;
+  const sub =
+    item.kind === "loan"
+      ? `Cuota ${item.installmentNumber}/${item.totalInstallments}`
+      : capitalize(formatDate(item.due, "EEEE d"));
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-3 rounded-[14px] border bg-background/40 px-3 py-2.5 transition-all active:scale-[0.99]",
+        item.overdue ? "border-destructive/40" : "border-border"
+      )}
+    >
+      <div
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+        style={{ background: `${accent}20`, color: accent }}
+      >
+        {item.kind === "card" ? (
+          <Calendar className="h-4 w-4" />
+        ) : (
+          <Banknote className="h-4 w-4" />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-semibold text-foreground">{item.name}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
+      </div>
+
+      <div className="flex-shrink-0 text-right">
+        <Money
+          amount={item.amount}
+          className="block text-[14px] font-semibold tabular-nums text-foreground"
+        />
+        <p className={cn("mt-0.5 text-[10.5px] font-semibold", toneClass)}>{text}</p>
+      </div>
+    </Link>
   );
 }
