@@ -183,26 +183,30 @@ export default async function CardDetailPage({
 
         <div className="my-4 h-px bg-border" />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-3.5">
+          {/* Disponible en su propia fila: los montos grandes necesitan el ancho
+              completo para no pisarse con las fechas. */}
           <div className="min-w-0">
             <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
             <Money
               amount={disponible}
-              className="mt-1 block text-[14px] font-bold leading-tight tabular-nums"
+              className="mt-1 block text-[16px] font-bold leading-tight tabular-nums"
               style={{ color: "#10b981" }}
             />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
-            <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
-              {capitalize(formatDate(period.end, "d 'de' MMM"))}
-            </p>
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
-            <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
-              {capitalize(formatDate(period.due, "d 'de' MMM"))}
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
+              <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+                {capitalize(formatDate(period.end, "d 'de' MMM"))}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
+              <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+                {capitalize(formatDate(period.due, "d 'de' MMM"))}
+              </p>
+            </div>
           </div>
         </div>
       </section>
