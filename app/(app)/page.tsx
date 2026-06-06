@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { Banknote, CalendarClock, ChevronRight } from "lucide-react";
+import { Banknote, Calendar, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
-import { CardsBillboard } from "@/components/home/cards-billboard";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
-import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
@@ -97,18 +95,6 @@ export default async function DashboardPage() {
   // muestre la fecha del servidor (UTC en Vercel) cuando en Argentina aún es otro día.
   const today = nowInArgentina();
   const todayStart = startOfDay(today);
-  // Próximos pagos: tarjetas CON consumos en su período actual, según el
-  // vencimiento de ese período, ordenadas por proximidad de vencimiento.
-  const upcoming = cardSummaries
-    .filter((c) => c.currentTotal > 0)
-    .sort((a, b) => a.currentPeriod.due.getTime() - b.currentPeriod.due.getTime())
-    .map(({ card, currentPeriod }) => ({
-      id: card.id,
-      accent: card.color,
-      primary: card.bank || card.name,
-      suffix: `•••• ${card.last_four}`,
-      days: differenceInCalendarDays(currentPeriod.due, todayStart),
-    }));
 
   // Tarjetas que vencen hoy → para alerta pop-up
   const dueToday = cardSummaries
@@ -151,17 +137,6 @@ export default async function DashboardPage() {
   // "Próximo a vencer" = saldo de tarjetas + próxima cuota de cada préstamo.
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
-
-  // Total general de TODO lo pendiente (tarjetas + préstamos, mes a mes), para
-  // el acceso a la pantalla consolidada de Próximos vencimientos.
-  const { grandTotal: upcomingGrandTotal } = computeUpcomingByMonth({
-    cards,
-    expenses: allExpenses,
-    loans,
-    pendingInstallments,
-    totalByLoan: totalInstallmentsByLoan,
-    now: today,
-  });
 
   const hour = today.getHours();
   const weekdayLabel = capitalize(formatDate(today, "EEEE"));
@@ -224,12 +199,17 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Card resumen: saldo a pagar del mes + fecha de hoy */}
-          <section className="glass-card rounded-[20px] px-5 py-5">
+          {/* Próximo a vencer (mes en curso) → abre el detalle por mes */}
+          <Link
+            href="/vencimientos"
+            aria-label="Ver próximos vencimientos"
+            className="glass-card block rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
+          >
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium text-muted-foreground">
+                <p className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                   Próximo a vencer
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </p>
                 <Money
                   amount={saldoTotal}
@@ -246,84 +226,59 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-          </section>
-
-          {/* Acceso a la pantalla consolidada de Próximos vencimientos */}
-          <Link
-            href="/vencimientos"
-            aria-label="Ver próximos vencimientos mes a mes"
-            className="flex items-center gap-3 rounded-[20px] border border-border bg-card px-4 py-3.5 transition-transform active:scale-[0.99]"
-          >
-            <div
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
-              style={{ background: "#6366f120", color: "#6366f1" }}
-            >
-              <CalendarClock className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-foreground">
-                Próximos vencimientos
-              </p>
-              <p className="text-[11.5px] text-muted-foreground">
-                Mes a mes · tarjetas y préstamos
-              </p>
-            </div>
-            <Money
-              amount={upcomingGrandTotal}
-              className="flex-shrink-0 text-[15px] font-bold tabular-nums text-foreground"
-            />
-            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           </Link>
 
-          {/* Próximos pagos: accesos directos a Tarjetas y Préstamos */}
+          {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
           <section className="mt-6 space-y-3">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Próximos pagos
+              Próximos vencimientos
             </h2>
-            <div className="glass-card rounded-[20px] px-5 py-5">
-              {upcoming.length > 0 && (
-                <CardsBillboard
-                  items={upcoming}
-                  label="Tarjeta de crédito"
-                  href="/pagos"
-                  icon="calendar"
-                  ariaLabel="Ver próximos pagos de todas las tarjetas"
-                />
-              )}
-
-              {upcoming.length > 0 && <div className="my-5 h-px bg-border" />}
-
-              {loansUpcoming.length > 0 ? (
-                <CardsBillboard
-                  items={loansUpcoming}
-                  label="Préstamos bancarios"
-                  href="/prestamos/pagos"
-                  icon="banknote"
-                  ariaLabel="Ver próximas cuotas de préstamos bancarios"
-                />
-              ) : (
-                <Link
-                  href="/prestamos"
-                  className="group flex w-full items-center gap-3 text-left transition-colors"
-                  aria-label="Gestionar préstamos bancarios"
+            <div className="glass-card space-y-5 rounded-[20px] px-5 py-5">
+              <Link
+                href="/pagos"
+                className="group flex w-full items-center gap-3 text-left transition-colors"
+                aria-label="Ver vencimientos de tarjetas de crédito"
+              >
+                <div
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#6366f120", color: "#6366f1" }}
                 >
-                  <div
-                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                    style={{ background: "#6366f120", color: "#6366f1" }}
-                  >
-                    <Banknote className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Préstamos bancarios
-                    </p>
-                    <p className="text-[11.5px] font-medium leading-tight text-muted-foreground">
-                      Gestioná tus préstamos desde acá
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-                </Link>
-              )}
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold leading-tight text-foreground">
+                    Tarjeta de crédito
+                  </p>
+                  <p className="text-[11.5px] text-muted-foreground">
+                    Ver vencimientos de tus tarjetas
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </Link>
+
+              <div className="h-px bg-border" />
+
+              <Link
+                href={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
+                className="group flex w-full items-center gap-3 text-left transition-colors"
+                aria-label="Ver cuotas de préstamos bancarios"
+              >
+                <div
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#6366f120", color: "#6366f1" }}
+                >
+                  <Banknote className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold leading-tight text-foreground">
+                    Préstamos bancarios
+                  </p>
+                  <p className="text-[11.5px] text-muted-foreground">
+                    Ver cuotas de tus préstamos
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+              </Link>
             </div>
           </section>
 
