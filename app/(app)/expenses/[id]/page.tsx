@@ -66,10 +66,17 @@ export default async function ExpenseDetailPage({
       <section className="rounded-[20px] border border-border bg-card p-5 text-center shadow-sm">
         <div
           className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
-          style={{
-            backgroundColor: cat?.color_bg ?? "var(--muted)",
-            color: cat?.color_text ?? "var(--muted-foreground)",
-          }}
+          style={
+            cat
+              ? {
+                  background: `radial-gradient(120% 120% at 30% 20%, #ffffff 0%, ${cat.color_bg} 55%, ${cat.color_bg} 100%)`,
+                  boxShadow: `0 6px 16px -4px ${cat.color_text}66, inset 0 1px 1px rgba(255,255,255,0.9), inset 0 -2px 3px ${cat.color_text}33`,
+                }
+              : {
+                  backgroundColor: "var(--muted)",
+                  color: "var(--muted-foreground)",
+                }
+          }
         >
           {cat?.emoji ?? "•"}
         </div>
