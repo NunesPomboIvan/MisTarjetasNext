@@ -144,7 +144,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-3">
+    <div className="flex flex-1 flex-col space-y-2">
       <ScrollLock />
       {/* Header personalizado (sticky) */}
       <StickyPageHeader>
