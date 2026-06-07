@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, Calendar, ChevronRight } from "lucide-react";
+import { Banknote, Calendar, ChevronRight, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -281,6 +281,29 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </section>
+
+          {/* Consumos → lista de movimientos (push) */}
+          <Link
+            href="/expenses"
+            aria-label="Ver todos tus consumos"
+            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
+          >
+            <div
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+              style={{ background: "#6366f120", color: "#6366f1" }}
+            >
+              <Receipt className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold leading-tight text-foreground">
+                Consumos
+              </p>
+              <p className="text-[11.5px] text-muted-foreground">
+                Ver todos tus movimientos
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </Link>
 
         </>
       )}
