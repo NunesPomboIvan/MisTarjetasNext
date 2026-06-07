@@ -19,6 +19,7 @@ export interface CardVencimiento {
   kind: "card";
   cardId: string;
   name: string;
+  lastFour: string;
   accent: string;
   due: Date;
   amount: number;
@@ -135,6 +136,7 @@ export function computeUpcomingByMonth({
         kind: "card",
         cardId: card.id,
         name: card.bank || card.name,
+        lastFour: card.last_four,
         accent: card.color || "#6366f1",
         due,
         amount: total,

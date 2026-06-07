@@ -248,7 +248,14 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-semibold text-foreground">{item.name}</p>
+        <p className="truncate text-[13.5px] font-semibold text-foreground">
+          {item.name}
+          {item.kind === "card" && item.lastFour && (
+            <span className="ml-1.5 text-[11.5px] font-normal tabular-nums text-muted-foreground">
+              •••• {item.lastFour}
+            </span>
+          )}
+        </p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
       </div>
 
