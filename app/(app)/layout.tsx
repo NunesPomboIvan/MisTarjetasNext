@@ -16,7 +16,7 @@ export default function AppLayout({
   return (
     <AuthGate>
       <div className="flex min-h-screen flex-col bg-background">
-        <main className="flex-1 pb-24">
+        <main className="flex-1 pb-[calc(8rem+env(safe-area-inset-bottom))]">
           <div className="mx-auto max-w-lg px-4 pt-6 pb-2">{children}</div>
         </main>
 
