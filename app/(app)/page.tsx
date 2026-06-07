@@ -144,7 +144,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-5">
+    <div className="flex flex-1 flex-col space-y-3">
       <ScrollLock />
       {/* Header personalizado (sticky) */}
       <StickyPageHeader>
@@ -203,7 +203,7 @@ export default async function DashboardPage() {
           <Link
             href="/vencimientos"
             aria-label="Ver próximos vencimientos"
-            className="glass-card block rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
+            className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
           >
             <div className="flex w-full items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -229,11 +229,11 @@ export default async function DashboardPage() {
           </Link>
 
           {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
-          <section className="mt-6 space-y-3">
+          <section className="mt-2 space-y-2">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Próximos vencimientos
             </h2>
-            <div className="glass-card space-y-4 rounded-[20px] px-5 py-4">
+            <div className="glass-card space-y-3 rounded-[20px] px-5 py-3">
               <Link
                 href="/pagos"
                 className="group flex w-full items-center gap-3 text-left transition-colors"
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
           <Link
             href="/expenses"
             aria-label="Ver todos tus consumos"
-            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-5 transition-transform active:scale-[0.99]"
+            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
           >
             <div
               className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
