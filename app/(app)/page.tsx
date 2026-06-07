@@ -144,7 +144,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-1 flex-col space-y-5">
       <ScrollLock />
       {/* Header personalizado (sticky) */}
       <StickyPageHeader>
@@ -233,7 +233,7 @@ export default async function DashboardPage() {
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Próximos vencimientos
             </h2>
-            <div className="glass-card space-y-5 rounded-[20px] px-5 py-5">
+            <div className="glass-card space-y-4 rounded-[20px] px-5 py-4">
               <Link
                 href="/pagos"
                 className="group flex w-full items-center gap-3 text-left transition-colors"
@@ -281,6 +281,9 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </section>
+
+          {/* Espaciador: empuja la card de Consumos justo por encima de la barra inferior */}
+          <div className="flex-1" aria-hidden />
 
           {/* Consumos → lista de movimientos (push) */}
           <Link
