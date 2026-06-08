@@ -113,6 +113,43 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
     });
   }
 
+  /** Fila editable de categoría (sirve para propias y predefinidas) */
+  function categoryRow(cat: Category) {
+    return (
+      <div key={cat.id} className="flex items-center gap-2">
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
+          style={{ backgroundColor: cat.color_bg }}
+        >
+          {cat.emoji}
+        </span>
+        <span className="flex-1 text-sm font-medium">{cat.name}</span>
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(cat)}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger className="flex h-7 w-7 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
+            <Trash2 className="h-3.5 w-3.5" />
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Los consumos que usaban &quot;{cat.name}&quot; quedarán sin categoría.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction className="bg-destructive" onClick={() => handleDeleteCategory(cat.id)}>
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
   async function handleExport() {
     const result = await exportData();
     if (!result.success) return toast.error(result.error);
@@ -303,58 +340,14 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
         {userCategories.length === 0 && !showNewCat ? (
           <p className="text-sm text-muted-foreground">No tenés categorías personalizadas</p>
         ) : (
-          <div className="space-y-2">
-            {userCategories.map((cat) => (
-              <div key={cat.id} className="flex items-center gap-2">
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-xl text-base"
-                  style={{ backgroundColor: cat.color_bg }}
-                >
-                  {cat.emoji}
-                </span>
-                <span className="flex-1 text-sm font-medium">{cat.name}</span>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(cat)}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Los consumos que usaban &quot;{cat.name}&quot; quedarán sin categoría.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive" onClick={() => handleDeleteCategory(cat.id)}>
-                        Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            ))}
-          </div>
+          <div className="space-y-2">{userCategories.map(categoryRow)}</div>
         )}
 
         <Separator />
         <p className="text-xs text-muted-foreground">Categorías predefinidas</p>
-        <div className="flex flex-wrap gap-2">
-          {presetCategories.map((cat) => (
-            <span
-              key={cat.id}
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-              style={{ backgroundColor: cat.color_bg, color: cat.color_text }}
-            >
-              {cat.emoji} {cat.name}
-            </span>
-          ))}
-        </div>
+        {presetCategories.length > 0 && (
+          <div className="space-y-2">{presetCategories.map(categoryRow)}</div>
+        )}
       </section>
 
       {/* Backup */}

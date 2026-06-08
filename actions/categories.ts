@@ -67,26 +67,28 @@ export async function updateCategory(id: string, formData: CategoryFormData): Pr
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  // Validar nombre único case-insensitive (excluyendo la categoría actual)
+  // Validar nombre único case-insensitive entre las categorías visibles
+  // (propias + predefinidas), excluyendo la que estamos editando.
   const { data: existing } = await supabase
     .from("categories")
     .select("id")
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},is_preset.eq.true`)
     .ilike("name", parsed.data.name)
     .neq("id", id)
+    .limit(1)
     .maybeSingle();
 
   if (existing) {
-    return { success: false, error: "Ya tenés una categoría con ese nombre" };
+    return { success: false, error: "Ya existe una categoría con ese nombre" };
   }
 
-  // Solo puede editar sus propias (is_preset = false)
+  // App de uso personal: permite editar tanto las propias como las
+  // predefinidas (globales). Se conserva el id, así los consumos siguen ligados.
   const { error } = await supabase
     .from("categories")
     .update(parsed.data)
     .eq("id", id)
-    .eq("user_id", user.id)
-    .eq("is_preset", false);
+    .or(`user_id.eq.${user.id},is_preset.eq.true`);
 
   if (error) {
     if (error.code === "23505") {
@@ -108,12 +110,13 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  // App de uso personal: permite eliminar tanto las propias como las
+  // predefinidas. Los consumos asociados quedan sin categoría (ON DELETE SET NULL).
   const { error } = await supabase
     .from("categories")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id)
-    .eq("is_preset", false);
+    .or(`user_id.eq.${user.id},is_preset.eq.true`);
 
   if (error) return { success: false, error: error.message };
 
