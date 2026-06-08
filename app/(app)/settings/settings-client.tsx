@@ -48,6 +48,76 @@ const COLOR_PAIRS: Array<{ bg: string; text: string; label: string }> = [
   { bg: "#f5f5f4", text: "#57534e", label: "Gris"     },
 ];
 
+// ── Utilidades de color: a partir de un color base genera un fondo pastel
+//    (claro) y un texto oscuro legible, ambos con el mismo tono. ───────────
+const clamp = (n: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, n));
+
+function hexToRgb(hex: string) {
+  const m = hex.replace("#", "");
+  return {
+    r: parseInt(m.slice(0, 2), 16),
+    g: parseInt(m.slice(2, 4), 16),
+    b: parseInt(m.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+  const h = (n: number) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+
+function rgbToHsl(r: number, g: number, b: number) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d !== 0) {
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      default: h = (r - g) / d + 4;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+function hslToHex(h: number, s: number, l: number) {
+  h /= 360; s /= 100; l /= 100;
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  let r: number, g: number, b: number;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  return rgbToHex(r * 255, g * 255, b * 255);
+}
+
+/** Color base → { bg pastel, text oscuro } con el mismo tono. */
+function deriveColors(baseHex: string): { bg: string; text: string } {
+  const { r, g, b } = hexToRgb(baseHex);
+  const { h, s } = rgbToHsl(r, g, b);
+  return {
+    bg: hslToHex(h, clamp(s, 0, 75), 92),
+    text: hslToHex(h, clamp(s, 45, 90), 32),
+  };
+}
+
 interface SettingsClientProps {
   categories: Category[];
 }
@@ -62,18 +132,19 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
   const [editingId, setEditingId] = useState<string | null>(null);
   const [catName, setCatName] = useState("");
   const [catEmoji, setCatEmoji] = useState("📦");
-  const [catColors, setCatColors] = useState(COLOR_PAIRS[7]);
+  const [catColors, setCatColors] = useState<{ bg: string; text: string }>(COLOR_PAIRS[7]);
+  const [customColor, setCustomColor] = useState("#6366f1");
 
   const userCategories = initialCategories.filter((c) => !c.is_preset);
   const presetCategories = initialCategories.filter((c) => c.is_preset);
+  const isCustomColor = !COLOR_PAIRS.some((p) => p.bg === catColors.bg);
 
   function startEdit(cat: Category) {
     setEditingId(cat.id);
     setCatName(cat.name);
     setCatEmoji(cat.emoji);
-    setCatColors(
-      COLOR_PAIRS.find((c) => c.bg === cat.color_bg) ?? COLOR_PAIRS[7]
-    );
+    setCatColors({ bg: cat.color_bg, text: cat.color_text });
+    setCustomColor(cat.color_text);
   }
 
   function cancelEdit() {
@@ -309,12 +380,12 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1.5">Color</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {COLOR_PAIRS.map((pair) => (
                   <button
                     key={pair.bg}
                     type="button"
-                    onClick={() => setCatColors(pair)}
+                    onClick={() => setCatColors({ bg: pair.bg, text: pair.text })}
                     className={`rounded-lg px-2 py-1 text-xs font-medium transition-all ${
                       catColors.bg === pair.bg ? "ring-2 ring-primary scale-105" : ""
                     }`}
@@ -323,6 +394,43 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
                     {pair.label}
                   </button>
                 ))}
+
+                {/* Color personalizado */}
+                <label
+                  className={`relative flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition-all ${
+                    isCustomColor
+                      ? "scale-105 border-transparent ring-2 ring-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                  style={isCustomColor ? { backgroundColor: catColors.bg, color: catColors.text } : undefined}
+                >
+                  <span
+                    className="h-3.5 w-3.5 rounded-full border border-black/10"
+                    style={{ background: customColor }}
+                  />
+                  Personalizado
+                  <input
+                    type="color"
+                    value={customColor}
+                    onChange={(e) => {
+                      setCustomColor(e.target.value);
+                      setCatColors(deriveColors(e.target.value));
+                    }}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Elegir color personalizado"
+                  />
+                </label>
+              </div>
+
+              {/* Vista previa con el color elegido */}
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Vista previa:</span>
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                  style={{ backgroundColor: catColors.bg, color: catColors.text }}
+                >
+                  {catEmoji} {catName.trim() || "Categoría"}
+                </span>
               </div>
             </div>
             <div className="flex gap-2">
