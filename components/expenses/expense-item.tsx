@@ -216,19 +216,22 @@ export function ExpenseItem({
           </div>
         )}
 
-        {/* Category emoji — badge "3D soft (pastel)" */}
+        {/* Category emoji — badge "3D realista" (marco circular con luz + sombra,
+            emoji nativo con sombra propia para que "flote") */}
         {cat ? (
           <div
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[14px] text-[22px]"
+            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[15px] text-[26px]"
             style={{
-              background: `radial-gradient(120% 120% at 30% 20%, #ffffff 0%, ${cat.color_bg} 55%, ${cat.color_bg} 100%)`,
-              boxShadow: `0 6px 14px -4px ${cat.color_text}66, inset 0 1px 1px rgba(255,255,255,0.9), inset 0 -2px 3px ${cat.color_text}33`,
+              background: `radial-gradient(130% 130% at 32% 24%, #ffffff 0%, ${cat.color_bg} 72%, ${cat.color_bg} 100%)`,
+              boxShadow: `0 5px 12px -3px rgba(0,0,0,0.40), 0 2px 6px ${cat.color_text}40, inset 0 1px 1.5px rgba(255,255,255,0.95), inset 0 -2px 4px ${cat.color_text}26`,
             }}
           >
-            {cat.emoji}
+            <span style={{ filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.28))" }}>
+              {cat.emoji}
+            </span>
           </div>
         ) : (
-          <div className="h-11 w-11 flex-shrink-0" />
+          <div className="h-12 w-12 flex-shrink-0" />
         )}
 
         {/* Info */}

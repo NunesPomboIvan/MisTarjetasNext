@@ -65,12 +65,12 @@ export default async function ExpenseDetailPage({
       {/* Resumen */}
       <section className="rounded-[20px] border border-border bg-card p-5 text-center shadow-sm">
         <div
-          className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
+          className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] text-[34px]"
           style={
             cat
               ? {
-                  background: `radial-gradient(120% 120% at 30% 20%, #ffffff 0%, ${cat.color_bg} 55%, ${cat.color_bg} 100%)`,
-                  boxShadow: `0 6px 16px -4px ${cat.color_text}66, inset 0 1px 1px rgba(255,255,255,0.9), inset 0 -2px 3px ${cat.color_text}33`,
+                  background: `radial-gradient(130% 130% at 32% 24%, #ffffff 0%, ${cat.color_bg} 72%, ${cat.color_bg} 100%)`,
+                  boxShadow: `0 6px 16px -3px rgba(0,0,0,0.40), 0 3px 8px ${cat.color_text}40, inset 0 1px 1.5px rgba(255,255,255,0.95), inset 0 -2px 5px ${cat.color_text}26`,
                 }
               : {
                   backgroundColor: "var(--muted)",
@@ -78,7 +78,9 @@ export default async function ExpenseDetailPage({
                 }
           }
         >
-          {cat?.emoji ?? "•"}
+          <span style={cat ? { filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.28))" } : undefined}>
+            {cat?.emoji ?? "•"}
+          </span>
         </div>
         <p className="mt-3 text-[17px] font-semibold text-foreground">
           {expense.description}
