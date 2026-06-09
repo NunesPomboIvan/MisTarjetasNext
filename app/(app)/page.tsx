@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Banknote, Calendar, ChevronRight, Receipt } from "lucide-react";
+import { Banknote, Calendar, CalendarClock, ChevronRight, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
 
     // Período actual (según cierre) para la tarjeta-imagen del carousel.
     const currentPeriod = getCurrentPeriod(card);
-    const currentTotal = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, currentPeriod), 0);
+    const currentTotal = cardExpenses.reduce((s, e) => s + getAmountInPeriodArs(e, currentPeriod), 0);
 
     return { card, period, total, currentPeriod, currentTotal };
   });
@@ -246,6 +246,29 @@ export default async function DashboardPage() {
               </p>
               <p className="text-[11.5px] text-muted-foreground">
                 Ver todos tus movimientos
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </Link>
+
+          {/* Cierre de tarjetas → acceso directo a la pantalla de cierres */}
+          <Link
+            href="/cierres"
+            aria-label="Ver cierres de tarjetas"
+            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
+          >
+            <div
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+              style={{ background: "#6366f120", color: "#6366f1" }}
+            >
+              <CalendarClock className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold leading-tight text-foreground">
+                Cierre de tarjetas
+              </p>
+              <p className="text-[11.5px] text-muted-foreground">
+                Ver cuándo cierra cada tarjeta
               </p>
             </div>
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />

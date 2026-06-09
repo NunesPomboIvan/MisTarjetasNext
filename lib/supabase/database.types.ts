@@ -147,6 +147,8 @@ export interface Database {
           discount_cap: number | null;
           expense_date: string;
           currency: Currency;
+          /** Tipo de cambio (ARS por 1 USD) cuando currency = USD. null en ARS. */
+          exchange_rate: number | null;
           notes: string | null;
           tags: string[];
           created_at: string;
@@ -167,6 +169,7 @@ export interface Database {
           discount_cap?: number | null;
           expense_date: string;
           currency?: Currency;
+          exchange_rate?: number | null;
           notes?: string | null;
           tags?: string[];
           created_at?: string;
@@ -187,6 +190,7 @@ export interface Database {
           discount_cap?: number | null;
           expense_date?: string;
           currency?: Currency;
+          exchange_rate?: number | null;
           notes?: string | null;
           tags?: string[];
           updated_at?: string;

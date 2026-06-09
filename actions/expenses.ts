@@ -159,7 +159,7 @@ export async function updateInstallmentAmount(
   amount: number,
   cardId: string
 ): Promise<ActionResult> {
-  if (amount <= 0) return { success: false, error: "El monto debe ser mayor a 0" };
+  if (amount === 0) return { success: false, error: "El monto no puede ser 0" };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -212,7 +212,7 @@ export async function updateAllInstallmentAmounts(
   installmentAmount: number,
   cardId: string
 ): Promise<ActionResult> {
-  if (installmentAmount <= 0) return { success: false, error: "El monto debe ser mayor a 0" };
+  if (installmentAmount === 0) return { success: false, error: "El monto no puede ser 0" };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -282,6 +282,7 @@ export async function cloneExpense(id: string): Promise<ActionResult> {
     discount_cap: original.discount_cap,
     expense_date: today,
     currency: original.currency,
+    exchange_rate: original.exchange_rate,
     notes: original.notes,
     tags: original.tags,
   };

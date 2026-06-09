@@ -11,6 +11,7 @@ import {
   getPeriodForDate,
   getInstallmentDates,
   getInstallmentAmountForIndex,
+  toArs,
   parseLocalDate,
 } from "@/lib/periods/calculate";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
@@ -117,7 +118,7 @@ export function computeUpcomingByMonth({
       const dates = getInstallmentDates(exp);
       dates.forEach((d, i) => {
         const period = getPeriodForDate(card, d);
-        const amount = getInstallmentAmountForIndex(exp, i);
+        const amount = toArs(exp, getInstallmentAmountForIndex(exp, i));
         const entry = periodMap.get(period.key) ?? { due: period.due, total: 0 };
         entry.total += amount;
         periodMap.set(period.key, entry);

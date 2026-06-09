@@ -18,6 +18,7 @@ import { Money } from "@/components/shared/money";
 import { ExpenseItem } from "./expense-item";
 import { deleteExpenses } from "@/actions/expenses";
 import { cn, formatDate, capitalize } from "@/lib/utils";
+import { toArs } from "@/lib/periods/calculate";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
 export interface SelectableExpenseItem {
@@ -71,7 +72,7 @@ export function SelectableExpenseList({
     return [...map.entries()].map(([month, list]) => ({
       month,
       label: capitalize(formatDate(month + "-01T00:00:00", "MMMM yyyy")),
-      total: list.reduce((s, x) => s + x.expense.installment_amount, 0),
+      total: list.reduce((s, x) => s + toArs(x.expense, x.expense.installment_amount), 0),
       items: list,
     }));
   }, [items, groupByMonth]);

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { Money } from "@/components/shared/money";
@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import {
   getPeriodByOffset,
   expenseFallsInPeriod,
-  getAmountInPeriod,
+  getAmountInPeriodArs,
   getInstallmentIndexInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
@@ -85,7 +85,7 @@ export default async function CardDetailPage({
   );
 
   const saldo = periodExpenses.reduce(
-    (sum, e) => sum + getAmountInPeriod(e, period),
+    (sum, e) => sum + getAmountInPeriodArs(e, period),
     0
   );
 
@@ -93,7 +93,7 @@ export default async function CardDetailPage({
   // sin importar qué período se esté navegando abajo.
   const currentSaldo = allExpenses
     .filter((e) => expenseFallsInPeriod(e, currentPeriod))
-    .reduce((sum, e) => sum + getAmountInPeriod(e, currentPeriod), 0);
+    .reduce((sum, e) => sum + getAmountInPeriodArs(e, currentPeriod), 0);
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
   const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
@@ -220,13 +220,22 @@ export default async function CardDetailPage({
               ({periodExpenses.length})
             </span>
           </h2>
-          <Link
-            href={`/expenses/new?card_id=${id}`}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Agregar
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/expenses/new?card_id=${id}&fee=1`}
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+            >
+              <Landmark className="h-3.5 w-3.5" />
+              Gastos
+            </Link>
+            <Link
+              href={`/expenses/new?card_id=${id}`}
+              className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Agregar
+            </Link>
+          </div>
         </div>
 
         {periodExpenses.length === 0 ? (

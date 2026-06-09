@@ -96,6 +96,15 @@ export default async function ExpenseDetailPage({
             {formatCurrency(expense.installment_amount, expense.currency)}
           </p>
         )}
+        {expense.currency === "USD" && expense.exchange_rate && (
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            ≈{" "}
+            <span className="font-medium text-foreground">
+              {formatCurrency(expense.total_amount * expense.exchange_rate)}
+            </span>{" "}
+            en pesos · TC {formatCurrency(expense.exchange_rate)}
+          </p>
+        )}
       </section>
 
       {/* Detalle */}

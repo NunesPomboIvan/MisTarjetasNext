@@ -75,6 +75,10 @@ export interface ExpenseForPeriod {
   installments: number;
   /** Montos individuales por cuota. Clave = índice 0-based (string). null = todas usan installment_amount */
   installment_amounts?: Record<string, number> | null;
+  /** Moneda del consumo. Si es USD se convierte a ARS con exchange_rate en los totales. */
+  currency?: string | null;
+  /** Tipo de cambio (ARS por 1 USD). Sólo se usa cuando currency = USD. */
+  exchange_rate?: number | null;
 }
 
 export type PeriodStatus = "past" | "current" | "future";
@@ -302,7 +306,7 @@ export function getNextPayment(
   for (let offset = -6; offset <= 6; offset++) {
     const period = getPeriodByOffset(card, offset);
     if (isBefore(period.due, todayStart)) continue; // ya venció
-    const total = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
+    const total = cardExpenses.reduce((s, e) => s + getAmountInPeriodArs(e, period), 0);
     if (total <= 0) continue; // período sin saldo → lo saltamos
     if (!best || isBefore(period.due, best.period.due)) best = { period, total };
   }
@@ -412,4 +416,31 @@ export function getAmountInPeriod(
     }
     return sum;
   }, 0);
+}
+
+/**
+ * Convierte un monto del consumo a su equivalente en pesos (ARS).
+ * Si el consumo está en USD y tiene tipo de cambio, multiplica monto × TC.
+ * Para ARS (o USD sin TC) devuelve el monto sin cambios.
+ * Se usa SOLO para los totales que mezclan consumos de distintas monedas.
+ */
+export function toArs(
+  expense: { currency?: string | null; exchange_rate?: number | null },
+  amount: number
+): number {
+  if (expense.currency === "USD" && expense.exchange_rate) {
+    return amount * Number(expense.exchange_rate);
+  }
+  return amount;
+}
+
+/**
+ * Igual que getAmountInPeriod, pero devuelve el monto convertido a ARS.
+ * Es la versión que deben usar todos los totales (saldos, cierres, vencimientos).
+ */
+export function getAmountInPeriodArs(
+  expense: ExpenseForPeriod & { installment_amount: number },
+  period: Period
+): number {
+  return toArs(expense, getAmountInPeriod(expense, period));
 }

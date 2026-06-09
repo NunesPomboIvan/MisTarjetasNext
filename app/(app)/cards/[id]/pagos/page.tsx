@@ -8,7 +8,7 @@ import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import {
   getCurrentPeriod,
   expenseFallsInPeriod,
-  getAmountInPeriod,
+  getAmountInPeriodArs,
 } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -43,7 +43,7 @@ export default async function CardPagosPage({ params }: PageProps) {
   ) as ExpenseWithCategory[];
 
   const pagoTotal = periodExpenses.reduce(
-    (s, e) => s + getAmountInPeriod(e, period),
+    (s, e) => s + getAmountInPeriodArs(e, period),
     0
   );
   const pagoMinimo = Math.round(pagoTotal * 0.10);

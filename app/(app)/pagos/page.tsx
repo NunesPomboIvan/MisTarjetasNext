@@ -108,6 +108,9 @@ export default async function PagosPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[14px] font-semibold text-foreground">
                         {card.bank || card.name}
+                        <span className="ml-1.5 text-[12px] font-normal tabular-nums text-muted-foreground">
+                          •••• {card.last_four}
+                        </span>
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         {capitalize(formatDate(period.due, "EEEE d 'de' MMM"))}

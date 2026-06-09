@@ -44,6 +44,7 @@ const PRESET_CATEGORIES = [
   { name: "Servicios",       emoji: "⚡", color_bg: "#e0f2fe", color_text: "#0369a1" },
   { name: "Viajes",          emoji: "✈️", color_bg: "#f0fdf4", color_text: "#15803d" },
   { name: "Tecnología",      emoji: "💻", color_bg: "#f1f5f9", color_text: "#475569" },
+  { name: "Gastos de tarjeta", emoji: "🏦", color_bg: "#e0e7ff", color_text: "#4338ca" },
   { name: "Otro",            emoji: "📦", color_bg: "#f5f5f4", color_text: "#57534e" },
 ];
 

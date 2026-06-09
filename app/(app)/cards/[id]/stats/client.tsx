@@ -7,6 +7,7 @@ import { CategoryDonut } from "@/components/stats/category-donut";
 import { SpendBars } from "@/components/stats/spend-bars";
 import { startOfMonth, endOfMonth, isWithinInterval, subMonths, format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toArs } from "@/lib/periods/calculate";
 import type { Expense, Category } from "@/lib/supabase/database.types";
 
 type ExpenseWithCat = Expense & { category: Category | null };
@@ -41,7 +42,7 @@ export function CardStatsClient({ expenses }: CardStatsClientProps) {
     });
   }, [expenses, range]);
 
-  const total = filtered.reduce((s, e) => s + e.installment_amount, 0);
+  const total = filtered.reduce((s, e) => s + toArs(e, e.installment_amount), 0);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, { name: string; emoji: string; color: string; amount: number }>();
@@ -49,7 +50,7 @@ export function CardStatsClient({ expenses }: CardStatsClientProps) {
       const cat = e.category;
       const key = cat?.id ?? "none";
       const existing = map.get(key);
-      const amount = (existing?.amount ?? 0) + e.installment_amount;
+      const amount = (existing?.amount ?? 0) + toArs(e, e.installment_amount);
       map.set(key, {
         name: cat?.name ?? "Sin categoría",
         emoji: cat?.emoji ?? "❓",
@@ -66,7 +67,7 @@ export function CardStatsClient({ expenses }: CardStatsClientProps) {
     for (const e of filtered) {
       const d = new Date(e.expense_date + "T00:00:00");
       const key = byDay ? e.expense_date : format(d, "yyyy-MM");
-      map.set(key, (map.get(key) ?? 0) + e.installment_amount);
+      map.set(key, (map.get(key) ?? 0) + toArs(e, e.installment_amount));
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))

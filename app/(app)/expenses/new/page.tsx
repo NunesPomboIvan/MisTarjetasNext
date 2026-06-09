@@ -7,9 +7,9 @@ export const metadata = { title: "Nuevo consumo" };
 export default async function NewExpensePage({
   searchParams,
 }: {
-  searchParams: Promise<{ card_id?: string }>;
+  searchParams: Promise<{ card_id?: string; fee?: string }>;
 }) {
-  const { card_id } = await searchParams;
+  const { card_id, fee } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,6 +42,7 @@ export default async function NewExpensePage({
       categories={categoriesResult.data ?? []}
       defaultCardId={card_id}
       backHref={backHref}
+      feeMode={fee === "1"}
     />
   );
 }

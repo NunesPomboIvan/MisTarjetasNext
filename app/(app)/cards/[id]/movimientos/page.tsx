@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { MovimientosFilters } from "@/components/expenses/movimientos-filters";
-import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriod, getInstallmentIndexInPeriod, getInstallmentAmountForIndex } from "@/lib/periods/calculate";
+import { getCurrentPeriod, expenseFallsInPeriod, getAmountInPeriodArs, getInstallmentIndexInPeriod, getInstallmentAmountForIndex, toArs } from "@/lib/periods/calculate";
 import { formatDate, capitalize } from "@/lib/utils";
 import type { ExpenseWithCategory, Category } from "@/lib/supabase/database.types";
 
@@ -71,7 +71,7 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
   const currentPeriod = getCurrentPeriod(card);
   const pendientes = all.filter((e) => expenseFallsInPeriod(e, currentPeriod));
   const pendientesTotal = pendientes.reduce(
-    (s, e) => s + getAmountInPeriod(e, currentPeriod),
+    (s, e) => s + getAmountInPeriodArs(e, currentPeriod),
     0
   );
 
@@ -137,7 +137,7 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
           )}
 
           {Object.entries(previousByMonth).map(([month, items]) => {
-            const total = items.reduce((s, e) => s + e.installment_amount, 0);
+            const total = items.reduce((s, e) => s + toArs(e, e.installment_amount), 0);
             const monthLabel = capitalize(
               formatDate(month + "-01T00:00:00", "MMMM yyyy")
             );

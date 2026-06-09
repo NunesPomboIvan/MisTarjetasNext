@@ -283,7 +283,12 @@ export function ExpenseItem({
 
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
-          <Money amount={displayAmount} size="md" />
+          <Money
+            amount={displayAmount}
+            currency={expense.currency}
+            size="md"
+            className={cn(displayAmount < 0 && "text-emerald-600 dark:text-emerald-400")}
+          />
           {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}

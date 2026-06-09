@@ -18,6 +18,8 @@ interface AmountInputProps {
   className?: string;
   /** Tamaño visual: lg = más grande para el campo principal */
   size?: "default" | "lg";
+  /** Muestra un botón +/− para alternar el signo (devoluciones / reintegros) */
+  signToggle?: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export function AmountInput({
   autoFocus,
   className,
   size = "default",
+  signToggle = false,
 }: AmountInputProps) {
   // Mantenemos el string crudo localmente para no perder ceros decimales mientras se tipea ("100,0" → "100,00")
   const [display, setDisplay] = React.useState<string>(() =>
@@ -58,7 +61,18 @@ export function AmountInput({
     const next = formatAmountInput(e.target.value);
     setDisplay(next);
     const parsed = unformatAmount(next);
-    onChange(next === "" ? undefined : parsed);
+    onChange(next === "" || next === "-" ? undefined : parsed);
+  }
+
+  const isNegative = (value ?? 0) < 0;
+
+  function toggleSign() {
+    // Alterna el signo del valor actual. Con campo vacío, prepara un "-".
+    if (value == null || value === 0) {
+      setDisplay((d) => (d.startsWith("-") ? d.replace(/^-/, "") : `-${d}`));
+      return;
+    }
+    onChange(-value);
   }
 
   return (
@@ -82,10 +96,27 @@ export function AmountInput({
         onChange={handleChange}
         className={cn(
           "pl-7 tabular-nums",
+          signToggle && "pr-12",
           size === "lg" && "h-12 text-lg font-semibold",
           invalid && "border-destructive"
         )}
       />
+      {signToggle && (
+        <button
+          type="button"
+          onClick={toggleSign}
+          aria-label={isNegative ? "Cambiar a positivo" : "Cambiar a negativo (devolución)"}
+          title={isNegative ? "Es una devolución (negativo)" : "Marcar como devolución (negativo)"}
+          className={cn(
+            "absolute right-2 top-1/2 flex h-7 w-8 -translate-y-1/2 items-center justify-center rounded-lg border text-base font-bold transition-colors",
+            isNegative
+              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              : "border-border bg-muted/60 text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {isNegative ? "−" : "+"}
+        </button>
+      )}
     </div>
   );
 }

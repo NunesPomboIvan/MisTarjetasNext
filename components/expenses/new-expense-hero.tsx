@@ -46,19 +46,40 @@ interface NewExpenseHeroProps {
   categories: Category[];
   defaultCardId?: string;
   backHref: string;
+  /** Modo "gastos de tarjeta": preselecciona la categoría y muestra chips rápidos */
+  feeMode?: boolean;
 }
+
+/** Descripciones rápidas para los gastos propios de la tarjeta */
+const FEE_PRESETS = [
+  "Mantenimiento",
+  "IVA",
+  "Intereses",
+  "Seguro de vida",
+  "Sellos",
+  "Percepción",
+  "Comisión",
+  "Renovación",
+];
 
 export function NewExpenseHero({
   cards,
   categories,
   defaultCardId,
   backHref,
+  feeMode = false,
 }: NewExpenseHeroProps) {
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
   const [isPending, startTransition] = React.useTransition();
   const [showAdvanced, setShowAdvanced] = React.useState(false);
   const [discountActive, setDiscountActive] = React.useState(false);
+
+  // Categoría "Gastos de tarjeta" para preseleccionar en feeMode
+  const feeCategoryId = React.useMemo(
+    () => categories.find((c) => c.name === "Gastos de tarjeta")?.id ?? null,
+    [categories]
+  );
   const [duplicate, setDuplicate] = React.useState<{
     description: string;
     total_amount: number;
@@ -92,6 +113,7 @@ export function NewExpenseHero({
       tags: [],
       expense_date: today,
       description: "",
+      category_id: feeMode ? feeCategoryId : undefined,
     },
   });
 
@@ -99,6 +121,19 @@ export function NewExpenseHero({
   const installments = watch("installments");
   const discountPct = watch("discount_percentage") ?? 0;
   const discountCap = watch("discount_cap");
+  const currency = watch("currency");
+  const exchangeRate = watch("exchange_rate");
+  const isUsd = currency === "USD";
+  const amountPrefix = isUsd ? "US$" : "$";
+
+  function changeCurrency(next: "ARS" | "USD") {
+    setValue("currency", next);
+    if (next === "ARS") setValue("exchange_rate", null);
+  }
+
+  function toggleAmountSign() {
+    if (totalAmount) setValue("total_amount", -totalAmount);
+  }
 
   const discountCalc =
     discountActive && totalAmount
@@ -187,7 +222,9 @@ export function NewExpenseHero({
           >
             Cancelar
           </Link>
-          <h1 className="text-[15px] font-semibold tracking-tight">Nuevo consumo</h1>
+          <h1 className="text-[15px] font-semibold tracking-tight">
+            {feeMode ? "Gasto de tarjeta" : "Nuevo consumo"}
+          </h1>
           <Button
             type="submit"
             disabled={isPending}
@@ -203,9 +240,12 @@ export function NewExpenseHero({
 
         {/* Hero: monto */}
         <div className="halo-warm relative -mx-4 px-4 pt-4 pb-8 text-center">
-          <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
-            Monto
-          </span>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
+              Monto
+            </span>
+            <CurrencyToggle value={currency} onChange={changeCurrency} />
+          </div>
           <Controller
             control={control}
             name="total_amount"
@@ -214,13 +254,80 @@ export function NewExpenseHero({
                 value={field.value}
                 onChange={(v) => field.onChange(v ?? 0)}
                 invalid={!!errors.total_amount}
+                prefix={amountPrefix}
               />
             )}
           />
           {errors.total_amount && (
             <p className="mt-1 text-xs text-destructive">{errors.total_amount.message}</p>
           )}
+
+          {/* Marcar como devolución (negativo) */}
+          <button
+            type="button"
+            onClick={toggleAmountSign}
+            className={cn(
+              "mt-1 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+              (totalAmount ?? 0) < 0
+                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                : "border-border bg-muted/50 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {(totalAmount ?? 0) < 0 ? "− Devolución / reintegro" : "Marcar como devolución"}
+          </button>
+
+          {/* Tipo de cambio (sólo USD) */}
+          {isUsd && (
+            <div className="mx-auto mt-3 max-w-xs space-y-1.5 rounded-xl border border-border bg-card/70 p-3 text-left">
+              <Label htmlFor="ne-rate" className="text-xs">
+                Tipo de cambio (ARS por 1 USD)
+              </Label>
+              <Input
+                id="ne-rate"
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                placeholder="Ej: 1200"
+                className={cn(errors.exchange_rate && "border-destructive")}
+                {...register("exchange_rate", {
+                  setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                })}
+              />
+              {errors.exchange_rate ? (
+                <p className="text-xs text-destructive">{errors.exchange_rate.message}</p>
+              ) : totalAmount && exchangeRate ? (
+                <p className="text-xs text-muted-foreground">
+                  ≈{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCurrency(totalAmount * exchangeRate)}
+                  </span>{" "}
+                  en pesos
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Se suma en pesos en los totales.
+                </p>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Chips rápidos de gastos de tarjeta */}
+        {feeMode && (
+          <div className="-mt-2 flex flex-wrap gap-2">
+            {FEE_PRESETS.map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setValue("description", label)}
+                className="inline-flex items-center rounded-full border border-white/[0.08] bg-card/70 px-3 py-1.5 text-[13px] font-semibold text-foreground/85 transition-colors hover:border-primary/40 hover:text-foreground active:scale-[0.97]"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Comercio — campo prominente, primero a completar */}
         <div className="space-y-2">
@@ -285,11 +392,11 @@ export function NewExpenseHero({
         </div>
 
         {/* Hint: monto por cuota */}
-        {totalAmount > 0 && installments > 1 && (
+        {!!totalAmount && totalAmount !== 0 && installments > 1 && (
           <p className="-mt-2 text-right text-xs text-muted-foreground">
             {installments} cuotas de{" "}
             <span className="font-medium text-foreground">
-              {formatCurrency((discountActive ? finalPrice : totalAmount) / installments)}
+              {formatCurrency((discountActive ? finalPrice : totalAmount) / installments, currency)}
             </span>
           </p>
         )}
@@ -397,7 +504,7 @@ export function NewExpenseHero({
                   {totalAmount > 0 && (
                     <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
                       <span className="text-muted-foreground">Precio final</span>
-                      <span className="font-semibold">{formatCurrency(finalPrice)}</span>
+                      <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
                     </div>
                   )}
                 </div>
@@ -565,9 +672,10 @@ interface HeroAmountInputProps {
   value: number | undefined | null;
   onChange: (v: number | undefined) => void;
   invalid?: boolean;
+  prefix?: string;
 }
 
-function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
+function HeroAmountInput({ value, onChange, invalid, prefix = "$" }: HeroAmountInputProps) {
   const [display, setDisplay] = React.useState<string>(() =>
     value == null || value === 0
       ? ""
@@ -612,7 +720,7 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
     const next = formatAmountInput(cleaned);
     setDisplay(next);
     const parsed = unformatAmount(next);
-    onChange(next === "" ? undefined : parsed);
+    onChange(next === "" || next === "-" ? undefined : parsed);
   }
 
   const len = display.length || 1;
@@ -631,7 +739,7 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
         )}
         style={{ fontSize: 18 }}
       >
-        $
+        {prefix}
       </span>
       <input
         type="text"
@@ -648,6 +756,35 @@ function HeroAmountInput({ value, onChange, invalid }: HeroAmountInputProps) {
         )}
         style={{ fontSize } as React.CSSProperties}
       />
+    </div>
+  );
+}
+
+/** Selector compacto de moneda: Pesos (ARS) / Dólares (USD) */
+function CurrencyToggle({
+  value,
+  onChange,
+}: {
+  value: "ARS" | "USD";
+  onChange: (v: "ARS" | "USD") => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px] font-bold">
+      {(["ARS", "USD"] as const).map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-md px-2 py-0.5 transition-colors",
+            value === c
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {c === "ARS" ? "$" : "US$"}
+        </button>
+      ))}
     </div>
   );
 }

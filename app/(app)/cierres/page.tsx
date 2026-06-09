@@ -6,7 +6,7 @@ import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
-import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getCurrentPeriod, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
@@ -42,7 +42,7 @@ export default async function CierresPage() {
     .map((card) => {
       const cardExpenses = allExpenses.filter((e) => e.card_id === card.id);
       const period = getCurrentPeriod(card);
-      const total = cardExpenses.reduce((s, e) => s + getAmountInPeriod(e, period), 0);
+      const total = cardExpenses.reduce((s, e) => s + getAmountInPeriodArs(e, period), 0);
       const daysUntilClose = differenceInCalendarDays(period.end, todayStart);
       return { card, period, total, daysUntilClose };
     })

@@ -137,6 +137,10 @@ export function ExpenseForm({
   const installments = watch("installments");
   const discountPct = watch("discount_percentage") ?? 0;
   const discountCap = watch("discount_cap");
+  const currency = watch("currency");
+  const exchangeRate = watch("exchange_rate");
+  const isUsd = currency === "USD";
+  const amountPrefix = isUsd ? "US$" : "$";
 
   // Descuento calculado: min(monto * %, tope)
   const discountCalculado =
@@ -166,6 +170,11 @@ export function ExpenseForm({
       setValue("discount_percentage", undefined);
       setValue("discount_cap", undefined);
     }
+  }
+
+  function changeCurrency(next: "ARS" | "USD") {
+    setValue("currency", next);
+    if (next === "ARS") setValue("exchange_rate", null);
   }
 
   function onSubmit(data: ExpenseFormData) {
@@ -353,7 +362,9 @@ export function ExpenseForm({
                   value={field.value}
                   onChange={(v) => field.onChange(v ?? 0)}
                   invalid={!!errors.installment_amount}
+                  prefix={amountPrefix}
                   size="lg"
+                  signToggle
                 />
               )}
             />
@@ -368,7 +379,10 @@ export function ExpenseForm({
         {!editingSingleInstallment && (
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="total_amount">Monto total</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="total_amount">Monto total</Label>
+              <CurrencyToggle value={currency} onChange={changeCurrency} />
+            </div>
             <Controller
               control={control}
               name="total_amount"
@@ -378,7 +392,9 @@ export function ExpenseForm({
                   value={field.value}
                   onChange={(v) => field.onChange(v ?? 0)}
                   invalid={!!errors.total_amount}
+                  prefix={amountPrefix}
                   size="lg"
+                  signToggle
                 />
               )}
             />
@@ -386,6 +402,42 @@ export function ExpenseForm({
               <p className="text-xs text-destructive">{errors.total_amount.message}</p>
             )}
           </div>
+
+          {/* Tipo de cambio (sólo en USD) */}
+          {isUsd && (
+            <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
+              <Label htmlFor="exchange_rate">Tipo de cambio (ARS por 1 USD)</Label>
+              <Input
+                id="exchange_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                placeholder="Ej: 1200"
+                className={cn(errors.exchange_rate && "border-destructive")}
+                {...register("exchange_rate", {
+                  setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
+                })}
+              />
+              {errors.exchange_rate ? (
+                <p className="text-xs text-destructive">{errors.exchange_rate.message}</p>
+              ) : (
+                totalAmount && exchangeRate ? (
+                  <p className="text-xs text-muted-foreground">
+                    Equivale a{" "}
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(totalAmount * exchangeRate)}
+                    </span>{" "}
+                    en pesos
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Se usa para sumar el consumo en pesos en los totales.
+                  </p>
+                )
+              )}
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Cuotas</Label>
@@ -400,11 +452,11 @@ export function ExpenseForm({
                 />
               )}
             />
-            {totalAmount > 0 && installments > 1 && (
+            {!!totalAmount && totalAmount !== 0 && installments > 1 && (
               <p className="text-xs text-muted-foreground">
                 {installments} cuotas de{" "}
                 <span className="font-medium text-foreground">
-                  {formatCurrency((discountActive ? precioFinal : totalAmount) / installments)}
+                  {formatCurrency((discountActive ? precioFinal : totalAmount) / installments, currency)}
                 </span>
               </p>
             )}
@@ -471,17 +523,17 @@ export function ExpenseForm({
                 <div className="rounded-lg bg-card border border-border p-2.5 space-y-1 text-sm">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Monto original</span>
-                    <span>{formatCurrency(totalAmount)}</span>
+                    <span>{formatCurrency(totalAmount, currency)}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Descuento calculado</span>
                     <span className="text-green-600 dark:text-green-400">
-                      -{formatCurrency(discountCalculado)}
+                      -{formatCurrency(discountCalculado, currency)}
                     </span>
                   </div>
                   <div className="flex justify-between font-semibold border-t border-border pt-1">
                     <span>Precio final</span>
-                    <span>{formatCurrency(precioFinal)}</span>
+                    <span>{formatCurrency(precioFinal, currency)}</span>
                   </div>
                 </div>
               )}
@@ -536,6 +588,8 @@ export function ExpenseForm({
                         value={field.value}
                         onChange={(v) => field.onChange(v ?? 0)}
                         invalid={!!errors.installment_amount}
+                        prefix={amountPrefix}
+                        signToggle
                       />
                     )}
                   />
@@ -713,5 +767,34 @@ export function ExpenseForm({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+/** Selector compacto de moneda: Pesos (ARS) / Dólares (USD) */
+function CurrencyToggle({
+  value,
+  onChange,
+}: {
+  value: "ARS" | "USD";
+  onChange: (v: "ARS" | "USD") => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs font-semibold">
+      {(["ARS", "USD"] as const).map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-md px-2.5 py-1 transition-colors",
+            value === c
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {c === "ARS" ? "$ Pesos" : "US$ Dólar"}
+        </button>
+      ))}
+    </div>
   );
 }

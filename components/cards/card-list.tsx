@@ -2,7 +2,7 @@ import { Archive } from "lucide-react";
 import { WalletCard } from "./wallet-card";
 import { CardPressWrapper } from "./card-press-wrapper";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getCurrentPeriod, getAmountInPeriod } from "@/lib/periods/calculate";
+import { getCurrentPeriod, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
@@ -16,7 +16,7 @@ interface CardListProps {
 
 function getCardTotal(card: CardWithExpenses): number {
   const period = getCurrentPeriod(card);
-  return card.expenses.reduce((sum, e) => sum + getAmountInPeriod(e, period), 0);
+  return card.expenses.reduce((sum, e) => sum + getAmountInPeriodArs(e, period), 0);
 }
 
 export function CardList({ cards }: CardListProps) {

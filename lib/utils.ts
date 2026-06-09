@@ -122,9 +122,13 @@ export function parseArgentineNumber(value: string): number {
  */
 export function formatAmountInput(raw: string): string {
   if (!raw) return "";
+  // Preservar un signo negativo inicial (devoluciones / reintegros).
+  const negative = /^\s*-/.test(raw);
   // Normalizar: quitar puntos (separador de miles) pero mantener coma/punto decimal
   // Sólo permitir dígitos y un único separador
   const cleaned = raw.replace(/[^\d.,]/g, "");
+  // Si todavía no se escribió ningún dígito, devolver sólo el signo (o vacío).
+  if (cleaned === "") return negative ? "-" : "";
 
   // Determinar separador decimal: el último ',' o '.' que aparezca con dígitos después
   const lastComma = cleaned.lastIndexOf(",");
@@ -159,7 +163,8 @@ export function formatAmountInput(raw: string): string {
   // Insertar puntos cada 3 dígitos
   const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-  return decimalIdx > -1 ? `${intFormatted},${decPart}` : intFormatted;
+  const out = decimalIdx > -1 ? `${intFormatted},${decPart}` : intFormatted;
+  return negative ? `-${out}` : out;
 }
 
 /**
