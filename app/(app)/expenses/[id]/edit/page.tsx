@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 
@@ -27,6 +28,15 @@ export default async function EditExpensePage({
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let cardsQuery = supabase
+    .from("cards")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("name");
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
   const [expenseResult, cardsResult, categoriesResult] = await Promise.all([
     supabase
@@ -35,12 +45,7 @@ export default async function EditExpensePage({
       .eq("id", id)
       .eq("user_id", user!.id)
       .single(),
-    supabase
-      .from("cards")
-      .select("*")
-      .eq("user_id", user!.id)
-      .eq("archived", false)
-      .order("name"),
+    cardsQuery,
     supabase
       .from("categories")
       .select("*")

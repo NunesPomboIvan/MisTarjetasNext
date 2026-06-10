@@ -45,7 +45,14 @@ interface NewExpenseHeroProps {
   cards: Card[];
   categories: Category[];
   defaultCardId?: string;
-  backHref: string;
+  /** Destino del botón "Cancelar" cuando se usa como pantalla (no modal). */
+  backHref?: string;
+  /**
+   * Cuando se renderiza como modal/bottom sheet: en vez de navegar a una ruta,
+   * "Cancelar" y el guardado exitoso cierran el modal. Si se pasa, tiene
+   * prioridad sobre `backHref`.
+   */
+  onClose?: () => void;
   /** Modo "gastos de tarjeta": preselecciona la categoría y muestra chips rápidos */
   feeMode?: boolean;
 }
@@ -67,6 +74,7 @@ export function NewExpenseHero({
   categories,
   defaultCardId,
   backHref,
+  onClose,
   feeMode = false,
 }: NewExpenseHeroProps) {
   const router = useRouter();
@@ -177,8 +185,14 @@ export function NewExpenseHero({
       if (result.success) {
         setLastCardId(payload.card_id);
         toast.success("Consumo registrado");
-        router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
-        router.refresh();
+        if (onClose) {
+          // Modal/bottom sheet: cerramos y refrescamos la pantalla de fondo.
+          onClose();
+          router.refresh();
+        } else {
+          router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
+          router.refresh();
+        }
         return;
       }
 
@@ -216,12 +230,22 @@ export function NewExpenseHero({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Header sticky: Cancelar / Título / Guardar */}
         <div className="-mx-4 -mt-4 sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-border/50 bg-background/85 px-4 py-3 backdrop-blur supports-backdrop-filter:bg-background/70">
-          <Link
-            href={backHref}
-            className="justify-self-start text-[15px] font-medium text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Cancelar
-          </Link>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="justify-self-start text-[15px] font-medium text-foreground/80 transition-colors hover:text-foreground"
+            >
+              Cancelar
+            </button>
+          ) : (
+            <Link
+              href={backHref ?? "/"}
+              className="justify-self-start text-[15px] font-medium text-foreground/80 transition-colors hover:text-foreground"
+            >
+              Cancelar
+            </Link>
+          )}
           <h1 className="text-[15px] font-semibold tracking-tight">
             {feeMode ? "Gasto de tarjeta" : "Nuevo consumo"}
           </h1>

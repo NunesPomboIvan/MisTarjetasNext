@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { CardForm } from "@/components/cards/card-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 
@@ -11,16 +12,20 @@ export default async function EditCardPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let parentsQuery = supabase
+    .from("cards")
+    .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .eq("is_extension", false)
+    .order("created_at");
+  if (activeTitularId) parentsQuery = parentsQuery.eq("titular_id", activeTitularId);
 
   const [{ data: card }, { data: allCards }] = await Promise.all([
     supabase.from("cards").select("*").eq("id", id).eq("user_id", user!.id).single(),
-    supabase
-      .from("cards")
-      .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit")
-      .eq("user_id", user!.id)
-      .eq("archived", false)
-      .eq("is_extension", false)
-      .order("created_at"),
+    parentsQuery,
   ]);
 
   if (!card) notFound();
