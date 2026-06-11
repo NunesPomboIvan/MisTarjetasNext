@@ -17,15 +17,15 @@ export function BottomNav() {
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
-      {/* Velo de desvanecimiento: el contenido se "apaga" antes de llegar a
-          la barra en vez de cortarse contra su borde. Cubre todo el ancho
-          del viewport, el alto de la barra y el safe area inferior. */}
+      {/* Telón opaco detrás de toda la zona de la barra: el contenido NO se
+          ve por detrás ni en el hueco bajo la barra (incluye el safe area).
+          Solo el borde superior tiene unos px de fundido para no cortar seco. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-12 bottom-[calc(-1*env(safe-area-inset-bottom))]"
+        className="pointer-events-none absolute inset-x-0 -top-4 bottom-[calc(-1*env(safe-area-inset-bottom))]"
         style={{
           background:
-            "linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 62%, transparent) 38%, var(--background) 78%)",
+            "linear-gradient(to bottom, transparent 0px, var(--background) 22px)",
         }}
       />
       <div className="pointer-events-auto relative mx-auto w-full max-w-lg px-3 pb-3 pt-3">
@@ -48,14 +48,12 @@ export function BottomNav() {
             <Plus className="h-5 w-5" strokeWidth={2.6} />
           </Link>
 
-          {/* Barra flotante glass: fondo translúcido + blur fuerte para que
-              lo que pase por detrás se vea difuminado, nunca nítido */}
+          {/* Barra flotante OPACA con halo violeta exterior. Nada de
+              transparencia: el contenido nunca se lee a través de la barra
+              (el telón de fondo de arriba cubre el resto de la zona). */}
           <div
-            className="relative rounded-[24px] border border-white/[0.08] px-2 py-1.5"
+            className="relative rounded-[24px] border border-white/[0.08] bg-card px-2 py-1.5"
             style={{
-              background: "color-mix(in srgb, var(--card) 78%, transparent)",
-              backdropFilter: "blur(24px) saturate(160%)",
-              WebkitBackdropFilter: "blur(24px) saturate(160%)",
               boxShadow:
                 "0 0 36px -4px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
             }}
