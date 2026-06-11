@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, Copy, Check } from "lucide-react";
+import { Trash2, Pencil, Copy, Check, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -283,12 +283,21 @@ export function ExpenseItem({
 
         {/* Amount */}
         <div className="flex flex-shrink-0 flex-col items-end gap-1">
-          <Money
-            amount={displayAmount}
-            currency={expense.currency}
-            size="md"
-            className={cn(displayAmount < 0 && "text-emerald-600 dark:text-emerald-400")}
-          />
+          <span className="inline-flex items-center gap-1">
+            {/* Candado: consumo en USD con TC personalizado (no sigue el global) */}
+            {expense.currency === "USD" && expense.exchange_rate_custom && (
+              <Lock
+                className="h-3 w-3 text-amber-500"
+                aria-label="Tipo de cambio personalizado"
+              />
+            )}
+            <Money
+              amount={displayAmount}
+              currency={expense.currency}
+              size="md"
+              className={cn(displayAmount < 0 && "text-emerald-600 dark:text-emerald-400")}
+            />
+          </span>
           {expense.installments > 1 && !showInstallmentBadge && (
             <span className="text-[10px] text-muted-foreground">c/u</span>
           )}

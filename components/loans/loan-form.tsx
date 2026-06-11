@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 const COLOR_PRESETS = [
   "#6366f1", "#f97316", "#ef4444", "#eab308",
@@ -26,7 +26,12 @@ interface ManualInstallment {
   due_date: string;
 }
 
-export function LoanForm() {
+interface LoanFormProps {
+  /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
+  globalRate?: number | null;
+}
+
+export function LoanForm({ globalRate = null }: LoanFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -36,6 +41,19 @@ export function LoanForm() {
   const [bank, setBank] = useState("");
   const [color, setColor] = useState<string>("#6366f1");
   const [issueDate, setIssueDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
+  // Moneda + tipo de cambio (USD)
+  const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const isUsd = currency === "USD";
+  const amountPrefix = isUsd ? "US$" : "$";
+
+  function changeCurrency(next: "ARS" | "USD") {
+    setCurrency(next);
+    if (next === "ARS") setExchangeRate(null);
+    // Precargar el TC global al pasar a USD (editable)
+    else if (exchangeRate == null && globalRate != null) setExchangeRate(globalRate);
+  }
 
   // Simple mode
   const [total, setTotal] = useState<number | null>(null);
@@ -91,6 +109,10 @@ export function LoanForm() {
       toast.error("Todas las cuotas deben tener fecha de vencimiento");
       return;
     }
+    if (isUsd && !(exchangeRate && exchangeRate > 0)) {
+      toast.error("Ingresá el tipo de cambio");
+      return;
+    }
 
     const totalAmount =
       mode === "simple"
@@ -108,7 +130,8 @@ export function LoanForm() {
       total_amount: totalAmount,
       installment_amount: installmentBase,
       issue_date: issueDate,
-      currency: "ARS" as const,
+      currency,
+      exchange_rate: isUsd ? exchangeRate : null,
       installments,
     };
 
@@ -218,14 +241,26 @@ export function LoanForm() {
       {mode === "simple" && (
         <div className="space-y-4 rounded-[16px] border border-border bg-muted/30 p-4">
           <div className="space-y-1.5">
-            <Label htmlFor="total">Importe total del préstamo</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="total">Importe total del préstamo</Label>
+              <CurrencyToggle value={currency} onChange={changeCurrency} />
+            </div>
             <AmountInput
               id="total"
               value={total}
               onChange={(v) => setTotal(v ?? null)}
+              prefix={amountPrefix}
               size="lg"
             />
           </div>
+
+          {isUsd && (
+            <ExchangeRateField
+              value={exchangeRate}
+              onChange={setExchangeRate}
+              equivalentBase={total}
+            />
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="count">Cantidad de cuotas</Label>
@@ -269,6 +304,7 @@ export function LoanForm() {
                         onChange={(v) =>
                           setSimpleAmounts((prev) => ({ ...prev, [idx]: v ?? 0 }))
                         }
+                        prefix={amountPrefix}
                       />
                     </div>
                     <span className="text-[11px] text-muted-foreground tabular-nums w-[78px] text-right">
@@ -285,8 +321,20 @@ export function LoanForm() {
       {/* Modo manual */}
       {mode === "manual" && (
         <div className="space-y-3 rounded-[16px] border border-border bg-muted/30 p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-[13px] font-semibold text-foreground">Cuotas</p>
+            <CurrencyToggle value={currency} onChange={changeCurrency} />
+          </div>
+
+          {isUsd && (
+            <ExchangeRateField
+              value={exchangeRate}
+              onChange={setExchangeRate}
+              equivalentBase={manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null}
+            />
+          )}
+
+          <div className="flex items-center justify-end">
             <Button
               type="button"
               variant="outline"
@@ -336,6 +384,7 @@ export function LoanForm() {
                           prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
                         )
                       }
+                      prefix={amountPrefix}
                     />
                   </div>
                   <div className="space-y-1">
@@ -375,6 +424,79 @@ export function LoanForm() {
           </>
         )}
       </Button>
+    </div>
+  );
+}
+
+/** Selector compacto de moneda: Pesos (ARS) / Dólares (USD) — mismo patrón que consumos */
+function CurrencyToggle({
+  value,
+  onChange,
+}: {
+  value: "ARS" | "USD";
+  onChange: (v: "ARS" | "USD") => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs font-semibold">
+      {(["ARS", "USD"] as const).map((c) => (
+        <button
+          key={c}
+          type="button"
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-md px-2.5 py-1 transition-colors",
+            value === c
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {c === "ARS" ? "$ Pesos" : "US$ Dólar"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Campo de tipo de cambio (sólo USD), con el equivalente en pesos como ayuda */
+function ExchangeRateField({
+  value,
+  onChange,
+  equivalentBase,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  /** Monto en USD para mostrar el equivalente en pesos (null = sin hint) */
+  equivalentBase: number | null;
+}) {
+  return (
+    <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
+      <Label htmlFor="loan-exchange-rate">Tipo de cambio (ARS por 1 USD)</Label>
+      <Input
+        id="loan-exchange-rate"
+        type="number"
+        step="0.01"
+        min="0"
+        inputMode="decimal"
+        placeholder="Ej: 1200"
+        value={value ?? ""}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          onChange(e.target.value === "" || isNaN(n) ? null : n);
+        }}
+      />
+      {equivalentBase && value ? (
+        <p className="text-xs text-muted-foreground">
+          Equivale a{" "}
+          <span className="font-medium text-foreground">
+            {formatCurrency(equivalentBase * value)}
+          </span>{" "}
+          en pesos
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Se usa para sumar las cuotas en pesos en los totales.
+        </p>
+      )}
     </div>
   );
 }

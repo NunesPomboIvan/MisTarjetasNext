@@ -163,6 +163,7 @@ function StackedLoans({ items }: { items: LoanItem[] }) {
             bank={it.loan.bank}
             description={it.loan.description}
             color={it.loan.color}
+            currency={it.loan.currency}
             issueDate={it.loan.issue_date}
             pending={it.pendingAmount}
             paid={it.paidAmount}

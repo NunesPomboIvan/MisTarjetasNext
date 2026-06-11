@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
-import { parseLocalDate } from "@/lib/periods/calculate";
+import { parseLocalDate, toArs } from "@/lib/periods/calculate";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -67,6 +67,11 @@ export default async function PrestamosPagosPage() {
         dueDate,
         daysUntil: differenceInCalendarDays(dueDate, todayStart),
         totalForLoan: totalByLoan.get(inst.loan_id) ?? inst.installment_number,
+        // Cuotas en USD: convertidas a pesos con el TC efectivo de la cuota.
+        amountArs: toArs(
+          { currency: loan.currency, exchange_rate: inst.exchange_rate },
+          Number(inst.amount)
+        ),
       };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
@@ -76,7 +81,7 @@ export default async function PrestamosPagosPage() {
       return true;
     });
 
-  const totalAPagar = upcoming.reduce((s, u) => s + Number(u.inst.amount), 0);
+  const totalAPagar = upcoming.reduce((s, u) => s + u.amountArs, 0);
 
   return (
     <div className="space-y-5">
@@ -113,7 +118,7 @@ export default async function PrestamosPagosPage() {
 
           {/* Lista de cuotas próximas */}
           <section className="space-y-2.5">
-            {upcoming.map(({ inst, loan, dueDate, daysUntil, totalForLoan }) => {
+            {upcoming.map(({ inst, loan, dueDate, daysUntil, totalForLoan, amountArs }) => {
               const isUrgent = daysUntil <= 3;
               const accent = loan.color || "#6366f1";
               return (
@@ -148,7 +153,7 @@ export default async function PrestamosPagosPage() {
 
                     <div className="flex-shrink-0 text-right">
                       <Money
-                        amount={Number(inst.amount)}
+                        amount={amountArs}
                         className="block text-[15px] font-semibold tabular-nums text-foreground"
                       />
                       <p

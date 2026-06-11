@@ -6,6 +6,7 @@ import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { InstallmentsList } from "@/components/loans/installments-list";
 import { DeleteLoanButton } from "@/components/loans/delete-loan-button";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 interface LoanDetailPageProps {
@@ -37,6 +38,7 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
 
   const all = (installments ?? []) as LoanInstallment[];
   const accent = loan.color || "#6366f1";
+  const globalRate = loan.currency === "USD" ? await getGlobalExchangeRate() : null;
 
   return (
     <div className="space-y-5">
@@ -63,7 +65,12 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
         </div>
       </StickyPageHeader>
 
-      <InstallmentsList installments={all} accent={accent} />
+      <InstallmentsList
+        installments={all}
+        accent={accent}
+        currency={loan.currency}
+        globalRate={globalRate?.rate ?? null}
+      />
     </div>
   );
 }

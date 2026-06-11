@@ -4,16 +4,25 @@ import { useMemo, useState } from "react";
 import { Money } from "@/components/shared/money";
 import { InstallmentRow } from "@/components/loans/installment-row";
 import { cn } from "@/lib/utils";
-import type { LoanInstallment } from "@/lib/supabase/database.types";
+import type { Currency, LoanInstallment } from "@/lib/supabase/database.types";
 
 type Filter = "all" | "pending" | "paid";
 
 interface InstallmentsListProps {
   installments: LoanInstallment[];
   accent: string;
+  /** Moneda del préstamo */
+  currency?: Currency;
+  /** TC global vigente (para el editor de TC por cuota). null = sin configurar */
+  globalRate?: number | null;
 }
 
-export function InstallmentsList({ installments, accent }: InstallmentsListProps) {
+export function InstallmentsList({
+  installments,
+  accent,
+  currency = "ARS",
+  globalRate = null,
+}: InstallmentsListProps) {
   const [filter, setFilter] = useState<Filter>("all");
 
   const stats = useMemo(() => {
@@ -53,6 +62,7 @@ export function InstallmentsList({ installments, accent }: InstallmentsListProps
           </p>
           <Money
             amount={stats.paidAmount}
+            currency={currency}
             className="mt-0.5 block text-[11.5px] font-semibold tabular-nums"
             style={{ color: accent }}
           />
@@ -66,6 +76,7 @@ export function InstallmentsList({ installments, accent }: InstallmentsListProps
           </p>
           <Money
             amount={stats.pendingAmount}
+            currency={currency}
             className="mt-0.5 block text-[11.5px] font-semibold tabular-nums text-foreground"
           />
         </div>
@@ -100,6 +111,8 @@ export function InstallmentsList({ installments, accent }: InstallmentsListProps
               total={total}
               accent={accent}
               isNext={i.id === nextPendingId}
+              currency={currency}
+              globalRate={globalRate}
             />
           ))}
         </div>

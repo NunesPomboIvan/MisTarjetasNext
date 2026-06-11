@@ -5,12 +5,11 @@ import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs, toArs } from "@/lib/periods/calculate";
 import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
-import { ScrollLock } from "@/components/shared/scroll-lock";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
@@ -127,7 +126,11 @@ export default async function DashboardPage() {
         accent: loan.color,
         primary,
         suffix: `· Cuota ${next.installment_number}/${totalForLoan}`,
-        amount: Number(next.amount),
+        // Cuotas en USD: convertidas a pesos con el TC efectivo de la cuota.
+        amount: toArs(
+          { currency: loan.currency, exchange_rate: next.exchange_rate },
+          Number(next.amount)
+        ),
         days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
       };
     })
@@ -139,13 +142,13 @@ export default async function DashboardPage() {
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
   const hour = today.getHours();
-  const weekdayLabel = capitalize(formatDate(today, "EEEE"));
-  const dayMonthLabel = formatDate(today, "dd/MM/yyyy");
+  const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
+  const dayNumber = formatDate(today, "d");
+  const monthYearUpper = formatDate(today, "MMMM yyyy").toUpperCase();
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
     <div className="flex flex-1 flex-col space-y-2">
-      <ScrollLock />
       {/* Header personalizado (sticky) */}
       <StickyPageHeader>
         <header className="flex min-w-0 items-center justify-between gap-3">
@@ -205,11 +208,10 @@ export default async function DashboardPage() {
             aria-label="Ver próximos vencimientos"
             className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
           >
-            <div className="flex w-full items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+            <div className="flex w-full items-stretch justify-between gap-4">
+              <div className="flex min-w-0 flex-1 flex-col justify-center">
+                <p className="text-[12px] font-medium text-muted-foreground">
                   Próximo a vencer
-                  <ChevronRight className="h-3.5 w-3.5" />
                 </p>
                 <Money
                   amount={saldoTotal}
@@ -217,13 +219,20 @@ export default async function DashboardPage() {
                 />
               </div>
 
-              <div className="flex-shrink-0 text-right">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  {weekdayLabel}
-                </p>
-                <p className="mt-1 text-[17px] font-bold leading-none tabular-nums text-foreground">
-                  {dayMonthLabel}
-                </p>
+              {/* Divisor + caja de fecha tipo calendario */}
+              <div className="flex flex-shrink-0 items-center gap-4">
+                <div className="h-12 w-px bg-border" aria-hidden />
+                <div className="flex flex-col items-center rounded-[14px] border border-primary/40 px-4 py-2 text-center">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    {weekdayUpper}
+                  </span>
+                  <span className="mt-0.5 font-display text-[26px] font-bold leading-none tabular-nums text-foreground">
+                    {dayNumber}
+                  </span>
+                  <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {monthYearUpper}
+                  </span>
+                </div>
               </div>
             </div>
           </Link>

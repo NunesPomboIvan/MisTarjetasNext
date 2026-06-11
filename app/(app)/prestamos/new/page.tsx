@@ -2,10 +2,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { LoanForm } from "@/components/loans/loan-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 
 export const metadata = { title: "Nuevo préstamo" };
 
-export default function NewLoanPage() {
+export default async function NewLoanPage() {
+  const globalRate = await getGlobalExchangeRate();
+
   return (
     <div className="space-y-4">
       <StickyPageHeader>
@@ -26,7 +29,7 @@ export default function NewLoanPage() {
       </StickyPageHeader>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <LoanForm />
+        <LoanForm globalRate={globalRate?.rate ?? null} />
       </div>
     </div>
   );

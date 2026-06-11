@@ -159,7 +159,11 @@ export function computeUpcomingByMonth({
     const g = getMonth(due);
     const daysUntil = differenceInCalendarDays(due, todayStart);
     const overdue = daysUntil < 0;
-    const amount = Number(inst.amount);
+    // Cuotas en USD: se suman convertidas a pesos con el TC efectivo de la cuota.
+    const amount = toArs(
+      { currency: loan.currency, exchange_rate: inst.exchange_rate },
+      Number(inst.amount)
+    );
     g.loans.push({
       kind: "loan",
       loanId: loan.id,

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
 
 export const metadata = { title: "Nuevo consumo" };
@@ -24,7 +25,7 @@ export default async function NewExpensePage({
     .order("name");
   if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
-  const [cardsResult, categoriesResult] = await Promise.all([
+  const [cardsResult, categoriesResult, globalRate] = await Promise.all([
     cardsQuery,
     supabase
       .from("categories")
@@ -32,6 +33,7 @@ export default async function NewExpensePage({
       .or(`user_id.eq.${user!.id},user_id.is.null`)
       .order("is_preset", { ascending: false })
       .order("name"),
+    getGlobalExchangeRate(),
   ]);
 
   const backHref = card_id ? `/cards/${card_id}` : "/";
@@ -44,6 +46,7 @@ export default async function NewExpensePage({
         defaultCardId={card_id}
         backHref={backHref}
         feeMode={fee === "1"}
+        globalRate={globalRate?.rate ?? null}
       />
     </div>
   );

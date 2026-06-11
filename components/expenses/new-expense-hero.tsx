@@ -48,6 +48,8 @@ interface NewExpenseHeroProps {
   backHref: string;
   /** Modo "gastos de tarjeta": preselecciona la categoría y muestra chips rápidos */
   feeMode?: boolean;
+  /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
+  globalRate?: number | null;
 }
 
 /** Descripciones rápidas para los gastos propios de la tarjeta */
@@ -68,6 +70,7 @@ export function NewExpenseHero({
   defaultCardId,
   backHref,
   feeMode = false,
+  globalRate = null,
 }: NewExpenseHeroProps) {
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
@@ -129,6 +132,8 @@ export function NewExpenseHero({
   function changeCurrency(next: "ARS" | "USD") {
     setValue("currency", next);
     if (next === "ARS") setValue("exchange_rate", null);
+    // Precargar el TC global al pasar a USD (editable)
+    else if (!exchangeRate && globalRate != null) setValue("exchange_rate", globalRate);
   }
 
   function toggleAmountSign() {

@@ -223,10 +223,6 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
         : "text-muted-foreground";
 
   const href = item.kind === "card" ? `/cards/${item.cardId}` : `/prestamos/${item.loanId}`;
-  const sub =
-    item.kind === "loan"
-      ? `Cuota ${item.installmentNumber}/${item.totalInstallments}`
-      : capitalize(formatDate(item.due, "EEEE d"));
 
   return (
     <Link
@@ -256,7 +252,11 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
             </span>
           )}
         </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
+        {item.kind === "loan" && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Cuota {item.installmentNumber}/{item.totalInstallments}
+          </p>
+        )}
       </div>
 
       <div className="flex-shrink-0 text-right">

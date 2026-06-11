@@ -4,6 +4,8 @@ import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { Money } from "@/components/shared/money";
 import { ExpenseDetailActions } from "@/components/expenses/expense-detail-actions";
+import { ExchangeRateOverride } from "@/components/expenses/exchange-rate-override";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { formatDate, capitalize, formatCurrency } from "@/lib/utils";
 import type { ExpenseWithAll } from "@/lib/supabase/database.types";
 
@@ -38,6 +40,8 @@ export default async function ExpenseDetailPage({
   const expense = data as ExpenseWithAll;
   const cat = expense.category;
   const card = expense.card;
+  const globalRate =
+    expense.currency === "USD" ? await getGlobalExchangeRate() : null;
 
   const backHref = card_id ? `/cards/${card_id}` : "/expenses";
   const editParams = new URLSearchParams();
@@ -103,9 +107,25 @@ export default async function ExpenseDetailPage({
               {formatCurrency(expense.total_amount * expense.exchange_rate)}
             </span>{" "}
             en pesos · TC {formatCurrency(expense.exchange_rate)}
+            {expense.exchange_rate_custom && (
+              <span className="ml-1 text-amber-500" title="TC personalizado">
+                🔒
+              </span>
+            )}
           </p>
         )}
       </section>
+
+      {/* Tipo de cambio: general vs personalizado */}
+      {expense.currency === "USD" && expense.exchange_rate && (
+        <ExchangeRateOverride
+          expenseId={expense.id}
+          amountUsd={expense.total_amount}
+          rate={Number(expense.exchange_rate)}
+          custom={!!expense.exchange_rate_custom}
+          globalRate={globalRate?.rate ?? null}
+        />
+      )}
 
       {/* Detalle */}
       <section className="overflow-hidden rounded-[18px] border border-border bg-card">

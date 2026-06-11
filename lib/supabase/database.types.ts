@@ -153,6 +153,8 @@ export interface Database {
           currency: Currency;
           /** Tipo de cambio (ARS por 1 USD) cuando currency = USD. null en ARS. */
           exchange_rate: number | null;
+          /** true = TC personalizado: los cambios del TC global no lo pisan */
+          exchange_rate_custom: boolean;
           notes: string | null;
           tags: string[];
           created_at: string;
@@ -174,6 +176,7 @@ export interface Database {
           expense_date: string;
           currency?: Currency;
           exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           notes?: string | null;
           tags?: string[];
           created_at?: string;
@@ -195,6 +198,7 @@ export interface Database {
           expense_date?: string;
           currency?: Currency;
           exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           notes?: string | null;
           tags?: string[];
           updated_at?: string;
@@ -228,6 +232,10 @@ export interface Database {
           installment_amount: number;
           issue_date: string; // YYYY-MM-DD
           currency: Currency;
+          /** Tipo de cambio (ARS por 1 USD) cuando currency = USD. null en ARS. */
+          exchange_rate: number | null;
+          /** true = TC propio del préstamo: los cambios del TC global no lo pisan */
+          exchange_rate_custom: boolean;
           archived: boolean;
           created_at: string;
           updated_at: string;
@@ -243,6 +251,8 @@ export interface Database {
           installment_amount: number;
           issue_date: string;
           currency?: Currency;
+          exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           archived?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -258,6 +268,8 @@ export interface Database {
           installment_amount?: number;
           issue_date?: string;
           currency?: Currency;
+          exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           archived?: boolean;
           updated_at?: string;
         };
@@ -271,6 +283,10 @@ export interface Database {
           installment_number: number;
           amount: number;
           due_date: string; // YYYY-MM-DD
+          /** TC efectivo de la cuota (ARS por 1 USD). null para préstamos en ARS. */
+          exchange_rate: number | null;
+          /** true = TC personalizado: los cambios globales/del préstamo no la pisan */
+          exchange_rate_custom: boolean;
           paid: boolean;
           paid_date: string | null;
           created_at: string;
@@ -283,6 +299,8 @@ export interface Database {
           installment_number: number;
           amount: number;
           due_date: string;
+          exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           paid?: boolean;
           paid_date?: string | null;
           created_at?: string;
@@ -295,6 +313,8 @@ export interface Database {
           installment_number?: number;
           amount?: number;
           due_date?: string;
+          exchange_rate?: number | null;
+          exchange_rate_custom?: boolean;
           paid?: boolean;
           paid_date?: string | null;
           updated_at?: string;
@@ -308,6 +328,28 @@ export interface Database {
             referencedColumns: ["id"];
           }
         ];
+      };
+      exchange_rate_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          /** Tipo de cambio global (ARS por 1 USD). El vigente = fila más reciente. */
+          rate: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          rate: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          rate?: number;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       budgets: {
         Row: {
@@ -383,6 +425,8 @@ export type LoanUpdate = TablesUpdate<"loans">;
 export type LoanInstallment = Tables<"loan_installments">;
 export type LoanInstallmentInsert = TablesInsert<"loan_installments">;
 export type LoanInstallmentUpdate = TablesUpdate<"loan_installments">;
+
+export type ExchangeRateEntry = Tables<"exchange_rate_history">;
 
 export type LoanWithInstallments = Loan & { installments: LoanInstallment[] };
 

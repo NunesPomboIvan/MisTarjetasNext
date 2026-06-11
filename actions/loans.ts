@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { loanSchema } from "@/lib/schemas/loan";
 import type { LoanFormData } from "@/lib/schemas/loan";
 
@@ -28,12 +29,25 @@ export async function createLoan(formData: LoanFormData): Promise<ActionResult> 
 
   // Si el form no trae titular_id explícito, asignamos al titular activo.
   const titularId = parsed.data.titular_id ?? (await getActiveTitularId());
-  const { installments, ...loanFields } = parsed.data;
+  const { installments, exchange_rate, ...loanFields } = parsed.data;
+
+  // Préstamo en USD: guardamos el TC usado. Si difiere del global vigente
+  // (o no hay global), queda como custom y los cambios globales no lo pisan.
+  const isUsd = loanFields.currency === "USD";
+  let rateFields: { exchange_rate: number; exchange_rate_custom: boolean } | undefined;
+  if (isUsd && exchange_rate) {
+    const global = await getGlobalExchangeRate();
+    rateFields = {
+      exchange_rate,
+      exchange_rate_custom: global == null || exchange_rate !== global.rate,
+    };
+  }
 
   const { data: loanRow, error: loanError } = await supabase
     .from("loans")
     .insert({
       ...loanFields,
+      ...rateFields,
       user_id: user.id,
       titular_id: titularId,
       bank: loanFields.bank ?? null,
@@ -51,6 +65,12 @@ export async function createLoan(formData: LoanFormData): Promise<ActionResult> 
     installment_number: i.installment_number,
     amount: i.amount,
     due_date: i.due_date,
+    ...(rateFields
+      ? {
+          exchange_rate: rateFields.exchange_rate,
+          exchange_rate_custom: rateFields.exchange_rate_custom,
+        }
+      : {}),
   }));
 
   const { error: instError } = await supabase
@@ -72,11 +92,21 @@ const loanUpdateSchema = z.object({
   bank: z.string().max(40).nullable().optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color inválido"),
   issue_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha de emisión inválida"),
+  // Solo préstamos en USD: nuevo TC a aplicar a TODAS las cuotas.
+  exchange_rate: z
+    .number()
+    .positive("El tipo de cambio debe ser mayor a 0")
+    .nullable()
+    .optional(),
 });
 
 export type LoanUpdateData = z.infer<typeof loanUpdateSchema>;
 
-/** Actualiza los datos de un préstamo (sin tocar sus cuotas) */
+/**
+ * Actualiza los datos de un préstamo. Si viene exchange_rate (préstamos en
+ * USD) y cambió, recalcula TODAS las cuotas con el nuevo TC — la
+ * confirmación previa la pide el formulario.
+ */
 export async function updateLoan(id: string, formData: LoanUpdateData): Promise<ActionResult> {
   const parsed = loanUpdateSchema.safeParse(formData);
   if (!parsed.success) {
@@ -91,6 +121,30 @@ export async function updateLoan(id: string, formData: LoanUpdateData): Promise<
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
+  const { data: loan, error: fetchError } = await supabase
+    .from("loans")
+    .select("currency, exchange_rate")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !loan) return { success: false, error: "Préstamo no encontrado" };
+
+  const newRate = parsed.data.exchange_rate;
+  const rateChanged =
+    loan.currency === "USD" &&
+    newRate != null &&
+    Number(loan.exchange_rate ?? 0) !== newRate;
+
+  let rateFields: { exchange_rate: number; exchange_rate_custom: boolean } | undefined;
+  if (rateChanged) {
+    const global = await getGlobalExchangeRate();
+    rateFields = {
+      exchange_rate: newRate,
+      exchange_rate_custom: global == null || newRate !== global.rate,
+    };
+  }
+
   const { error } = await supabase
     .from("loans")
     .update({
@@ -98,11 +152,26 @@ export async function updateLoan(id: string, formData: LoanUpdateData): Promise<
       bank: parsed.data.bank ?? null,
       color: parsed.data.color,
       issue_date: parsed.data.issue_date,
+      ...(rateFields ?? {}),
     })
     .eq("id", id)
     .eq("user_id", user.id);
 
   if (error) return { success: false, error: error.message };
+
+  // Recalcular todas las cuotas con el nuevo TC (el usuario ya confirmó).
+  if (rateFields) {
+    const { error: instError } = await supabase
+      .from("loan_installments")
+      .update({
+        exchange_rate: rateFields.exchange_rate,
+        exchange_rate_custom: rateFields.exchange_rate_custom,
+      })
+      .eq("loan_id", id)
+      .eq("user_id", user.id);
+
+    if (instError) return { success: false, error: instError.message };
+  }
 
   revalidatePath("/", "layout");
   return { success: true, id };

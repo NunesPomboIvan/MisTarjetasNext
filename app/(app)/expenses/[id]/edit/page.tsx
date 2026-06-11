@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 
@@ -58,6 +59,7 @@ export default async function EditExpensePage({
 
   const expense = expenseResult.data;
   const backHref = card_id ? `/cards/${card_id}` : "/expenses";
+  const globalRate = await getGlobalExchangeRate();
 
   // Estamos editando una cuota específica
   const isInstallmentEdit =
@@ -104,6 +106,7 @@ export default async function EditExpensePage({
           categories={categoriesResult.data ?? []}
           expense={expense}
           installmentIndex={installmentIndex}
+          globalRate={globalRate?.rate ?? null}
         />
       </div>
     </div>

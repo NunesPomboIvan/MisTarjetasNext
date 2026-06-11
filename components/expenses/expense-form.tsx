@@ -50,6 +50,8 @@ interface ExpenseFormProps {
   defaultCardId?: string;
   /** Índice 0-based de la cuota que se estaba viendo. Undefined = edición desde lista global */
   installmentIndex?: number;
+  /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
+  globalRate?: number | null;
 }
 
 export function ExpenseForm({
@@ -58,6 +60,7 @@ export function ExpenseForm({
   expense,
   defaultCardId,
   installmentIndex,
+  globalRate = null,
 }: ExpenseFormProps) {
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
@@ -175,6 +178,8 @@ export function ExpenseForm({
   function changeCurrency(next: "ARS" | "USD") {
     setValue("currency", next);
     if (next === "ARS") setValue("exchange_rate", null);
+    // Precargar el TC global al pasar a USD (editable)
+    else if (!exchangeRate && globalRate != null) setValue("exchange_rate", globalRate);
   }
 
   function onSubmit(data: ExpenseFormData) {

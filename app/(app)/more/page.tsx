@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BarChart3,
+  DollarSign,
   Settings,
   HelpCircle,
   Shield,
@@ -45,7 +46,13 @@ export default function MorePage() {
 
       {/* Herramientas: cosas de los datos / finanzas */}
       <MoreSection title="Herramientas">
-        <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" last />
+        <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" />
+        <MoreRow
+          href="/settings/tipo-cambio"
+          icon={<DollarSign className="h-5 w-5" />}
+          label="Tipo de cambio"
+          last
+        />
       </MoreSection>
 
       {/* Cuenta: ajustes y ayuda */}

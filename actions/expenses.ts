@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { expenseSchema } from "@/lib/schemas/expense";
 import type { ExpenseFormData } from "@/lib/schemas/expense";
 import type { ActionResult } from "./cards";
@@ -46,9 +47,19 @@ export async function createExpense(
     }
   }
 
+  // Consumo en USD: si el TC usado difiere del global vigente (o no hay
+  // global configurado), queda como custom y los cambios globales no lo pisan.
+  let customFlag: { exchange_rate_custom: boolean } | undefined;
+  if (parsed.data.currency === "USD" && parsed.data.exchange_rate) {
+    const global = await getGlobalExchangeRate();
+    customFlag = {
+      exchange_rate_custom: global == null || parsed.data.exchange_rate !== global.rate,
+    };
+  }
+
   const { data, error } = await supabase
     .from("expenses")
-    .insert({ ...parsed.data, user_id: user.id })
+    .insert({ ...parsed.data, ...customFlag, user_id: user.id })
     .select("id")
     .single();
 
@@ -133,9 +144,29 @@ export async function updateExpense(
     }
   }
 
+  // Si el TC en USD cambió respecto del guardado, recalculamos el flag de
+  // override: igual al global → sigue el global; distinto → queda custom.
+  let customFlag: { exchange_rate_custom: boolean } | undefined;
+  if (parsed.data.currency === "USD" && parsed.data.exchange_rate) {
+    const { data: existing } = await supabase
+      .from("expenses")
+      .select("exchange_rate")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const rateChanged =
+      existing != null && Number(existing.exchange_rate ?? 0) !== parsed.data.exchange_rate;
+    if (rateChanged) {
+      const global = await getGlobalExchangeRate();
+      customFlag = {
+        exchange_rate_custom: global == null || parsed.data.exchange_rate !== global.rate,
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("expenses")
-    .update(parsed.data)
+    .update({ ...parsed.data, ...customFlag })
     .eq("id", id)
     .eq("user_id", user.id);
 
@@ -283,6 +314,7 @@ export async function cloneExpense(id: string): Promise<ActionResult> {
     expense_date: today,
     currency: original.currency,
     exchange_rate: original.exchange_rate,
+    exchange_rate_custom: original.exchange_rate_custom,
     notes: original.notes,
     tags: original.tags,
   };

@@ -53,6 +53,8 @@ export default async function EditLoanPage({
             bank: loan.bank,
             color: loan.color,
             issue_date: loan.issue_date,
+            currency: loan.currency,
+            exchange_rate: loan.exchange_rate,
           }}
         />
       </div>
