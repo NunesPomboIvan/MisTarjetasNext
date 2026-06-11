@@ -1,9 +1,7 @@
-import { Archive } from "lucide-react";
-import { WalletCard } from "./wallet-card";
-import { CardPressWrapper } from "./card-press-wrapper";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getCurrentPeriod, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
+import { CardsSortable, type CardSortItem } from "./cards-sortable";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
 interface CardWithExpenses extends Card {
@@ -14,15 +12,33 @@ interface CardListProps {
   cards: CardWithExpenses[];
 }
 
-function getCardTotal(card: CardWithExpenses): number {
+/**
+ * Calcula la metadata de período (total, cierre, vencimiento) en el servidor y
+ * la pasa al componente cliente que ordena y renderiza. `getCurrentPeriod`
+ * devuelve el período que está acumulando, así que `end`/`due` son siempre el
+ * próximo cierre y vencimiento — lo mismo que se muestra en cada tarjeta.
+ */
+function toItem(card: CardWithExpenses): CardSortItem {
   const period = getCurrentPeriod(card);
-  return card.expenses.reduce((sum, e) => sum + getAmountInPeriodArs(e, period), 0);
+  const total = card.expenses.reduce(
+    (sum, e) => sum + getAmountInPeriodArs(e, period),
+    0
+  );
+  // No enviamos los consumos al cliente: la metadata ya está calculada acá.
+  const cardData: Card = { ...card };
+  delete (cardData as Partial<CardWithExpenses>).expenses;
+  return {
+    card: cardData,
+    total,
+    closeLabel: formatDate(period.end, "d MMM"),
+    dueLabel: formatDate(period.due, "d MMM"),
+    closeTime: period.end.getTime(),
+    dueTime: period.due.getTime(),
+    bank: (card.bank || card.name || "").trim(),
+  };
 }
 
 export function CardList({ cards }: CardListProps) {
-  const activeCards = cards.filter((c) => !c.archived);
-  const archivedCards = cards.filter((c) => c.archived);
-
   if (cards.length === 0) {
     return (
       <EmptyState
@@ -34,54 +50,8 @@ export function CardList({ cards }: CardListProps) {
     );
   }
 
-  return (
-    <div className="space-y-5">
-      {activeCards.length > 0 && (
-        <StackedWallet cards={activeCards} />
-      )}
+  const active = cards.filter((c) => !c.archived).map(toItem);
+  const archived = cards.filter((c) => c.archived).map(toItem);
 
-      {archivedCards.length > 0 && (
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center gap-2 py-2 text-sm text-muted-foreground">
-            <Archive className="h-4 w-4" />
-            <span>
-              {archivedCards.length} tarjeta
-              {archivedCards.length !== 1 ? "s" : ""} archivada
-              {archivedCards.length !== 1 ? "s" : ""}
-            </span>
-          </summary>
-          <div className="mt-2 opacity-60">
-            <StackedWallet cards={archivedCards} />
-          </div>
-        </details>
-      )}
-    </div>
-  );
-}
-
-function StackedWallet({ cards }: { cards: CardWithExpenses[] }) {
-  return (
-    <div className="space-y-3">
-      {cards.map((card) => {
-        const period = getCurrentPeriod(card);
-        const total = getCardTotal(card);
-        return (
-          <CardPressWrapper
-            key={card.id}
-            href={`/cards/${card.id}`}
-            cardId={card.id}
-            cardName={card.bank || card.name}
-            className="block transition-transform duration-150 active:scale-[0.985]"
-          >
-            <WalletCard
-              card={card}
-              total={total}
-              closeLabel={formatDate(period.end, "d MMM")}
-              dueLabel={formatDate(period.due, "d MMM")}
-            />
-          </CardPressWrapper>
-        );
-      })}
-    </div>
-  );
+  return <CardsSortable active={active} archived={archived} />;
 }

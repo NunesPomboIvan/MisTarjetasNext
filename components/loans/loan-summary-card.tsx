@@ -105,9 +105,6 @@ export function LoanSummaryCard({
           </p>
           {showDescription && (
             <p className="mt-1 truncate text-[12px] text-muted-foreground">
-              <span className="font-semibold text-foreground/70">
-                Descripción:
-              </span>{" "}
               {description}
             </p>
           )}

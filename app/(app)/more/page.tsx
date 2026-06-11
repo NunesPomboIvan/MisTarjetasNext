@@ -5,8 +5,6 @@ import {
   HelpCircle,
   Shield,
   ChevronRight,
-  CalendarClock,
-  PieChart,
 } from "lucide-react";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 import {
@@ -47,8 +45,6 @@ export default function MorePage() {
 
       {/* Herramientas: cosas de los datos / finanzas */}
       <MoreSection title="Herramientas">
-        <MoreRow href="/expenses" icon={<PieChart className="h-5 w-5" />} label="Consumos" />
-        <MoreRow href="/cierres" icon={<CalendarClock className="h-5 w-5" />} label="Cierre de tarjetas" />
         <MoreRow href="/stats" icon={<BarChart3 className="h-5 w-5" />} label="Estadísticas" last />
       </MoreSection>
 

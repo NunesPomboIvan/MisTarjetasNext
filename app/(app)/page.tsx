@@ -228,51 +228,54 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          {/* Consumos → lista de movimientos (push) */}
-          <Link
-            href="/expenses"
-            aria-label="Ver todos tus consumos"
-            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
-          >
-            <div
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-              style={{ background: "#6366f120", color: "#6366f1" }}
+          {/* Consumos + Cierre de tarjetas → agrupados en un único bloque */}
+          <div className="glass-card space-y-3 rounded-[20px] px-5 py-3">
+            <Link
+              href="/expenses"
+              aria-label="Ver todos tus consumos"
+              className="group flex w-full items-center gap-3 text-left transition-colors"
             >
-              <Receipt className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold leading-tight text-foreground">
-                Consumos
-              </p>
-              <p className="text-[11.5px] text-muted-foreground">
-                Ver todos tus movimientos
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          </Link>
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                style={{ background: "#6366f120", color: "#6366f1" }}
+              >
+                <Receipt className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-tight text-foreground">
+                  Consumos
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  Ver todos tus movimientos
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            </Link>
 
-          {/* Cierre de tarjetas → acceso directo a la pantalla de cierres */}
-          <Link
-            href="/cierres"
-            aria-label="Ver cierres de tarjetas"
-            className="glass-card flex items-center gap-3 rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
-          >
-            <div
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-              style={{ background: "#6366f120", color: "#6366f1" }}
+            <div className="h-px bg-border" />
+
+            <Link
+              href="/cierres"
+              aria-label="Ver cierres de tarjetas"
+              className="group flex w-full items-center gap-3 text-left transition-colors"
             >
-              <CalendarClock className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold leading-tight text-foreground">
-                Cierre de tarjetas
-              </p>
-              <p className="text-[11.5px] text-muted-foreground">
-                Ver cuándo cierra cada tarjeta
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          </Link>
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                style={{ background: "#6366f120", color: "#6366f1" }}
+              >
+                <CalendarClock className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-tight text-foreground">
+                  Cierre de tarjetas
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  Ver cuándo cierra cada tarjeta
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            </Link>
+          </div>
 
           {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
           <section className="mt-2 space-y-2">

@@ -37,12 +37,14 @@ export default async function NewExpensePage({
   const backHref = card_id ? `/cards/${card_id}` : "/";
 
   return (
-    <NewExpenseHero
-      cards={cardsResult.data ?? []}
-      categories={categoriesResult.data ?? []}
-      defaultCardId={card_id}
-      backHref={backHref}
-      feeMode={fee === "1"}
-    />
+    <div className="animate-in fade-in slide-in-from-bottom-8 duration-300 ease-out">
+      <NewExpenseHero
+        cards={cardsResult.data ?? []}
+        categories={categoriesResult.data ?? []}
+        defaultCardId={card_id}
+        backHref={backHref}
+        feeMode={fee === "1"}
+      />
+    </div>
   );
 }
