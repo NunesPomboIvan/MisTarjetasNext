@@ -24,7 +24,6 @@ import {
   getDaysInMonth,
   isBefore,
   isAfter,
-  isWithinInterval,
   format,
   addDays,
 } from "date-fns";
@@ -63,10 +62,24 @@ function nowAr(): Date {
 // TIPOS
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Historial de fechas de cierre/vencimiento por período.
+ * Clave  = period key "YYYY-MM" HASTA el cual (inclusive) aplican esas fechas.
+ * Valor  = las fechas que regían hasta ese período.
+ * Los períodos posteriores a la mayor clave usan close_date/due_date de la
+ * tarjeta. Esto permite que un cambio de fechas rija solo hacia adelante sin
+ * reescribir los períodos históricos.
+ */
+export type PeriodDateOverrides = Record<
+  string,
+  { close_date: string; due_date: string }
+>;
+
 /** Subconjunto de Card necesario para calcular períodos */
 export interface CardForPeriod {
   close_date: string; // YYYY-MM-DD — solo se usa el día del mes
   due_date: string;   // YYYY-MM-DD — solo se usa el día del mes
+  date_overrides?: PeriodDateOverrides | null;
 }
 
 /** Subconjunto de Expense necesario para cálculos */
@@ -96,6 +109,12 @@ export interface Period {
   label: string;
   /** Clave estable para comparación: "2026-03" */
   key: string;
+  /**
+   * Tarjeta con la que se construyó el período. Referencia interna: permite
+   * que las funciones de bucketing (expenseFallsInPeriod, etc.) anclen las
+   * cuotas a la cadena de períodos sin cambiar sus firmas.
+   */
+  card: CardForPeriod;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -129,6 +148,63 @@ function nextYearMonth(year: number, month: number): { year: number; month: numb
   return { year, month: month + 1 };
 }
 
+/** Construye la clave "YYYY-MM" de un período. */
+function keyOf(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+/** Parsea una clave "YYYY-MM" a year/month 1-based. */
+function parseKey(key: string): { year: number; month: number } {
+  const [y, m] = key.split("-").map(Number);
+  return { year: y, month: m };
+}
+
+/** Suma (o resta) meses a una clave "YYYY-MM", con salto de año. */
+export function addMonthsToKey(key: string, months: number): string {
+  const { year, month } = parseKey(key);
+  const total = year * 12 + (month - 1) + months;
+  return keyOf(Math.floor(total / 12), (total % 12) + 1);
+}
+
+/** Diferencia en meses entre dos claves: monthsBetweenKeys("2026-03", "2026-05") = 2 */
+function monthsBetweenKeys(from: string, to: string): number {
+  const a = parseKey(from);
+  const b = parseKey(to);
+  return (b.year - a.year) * 12 + (b.month - a.month);
+}
+
+/**
+ * Resuelve qué días de cierre/vencimiento rigen para un período dado.
+ * Si hay overrides, aplica el de menor clave que sea >= key (las claves son
+ * "hasta este período inclusive"). Si no hay ninguno que cubra el período,
+ * rigen las fechas actuales de la tarjeta.
+ */
+function configForKey(
+  card: CardForPeriod,
+  key: string
+): { closeDay: number; dueDay: number } {
+  const overrides = card.date_overrides;
+  if (overrides) {
+    let bestUntil: string | null = null;
+    for (const until of Object.keys(overrides)) {
+      if (key <= until && (bestUntil === null || until < bestUntil)) {
+        bestUntil = until;
+      }
+    }
+    if (bestUntil !== null) {
+      const entry = overrides[bestUntil];
+      return {
+        closeDay: parseLocalDate(entry.close_date).getDate(),
+        dueDay: parseLocalDate(entry.due_date).getDate(),
+      };
+    }
+  }
+  return {
+    closeDay: parseLocalDate(card.close_date).getDate(),
+    dueDay: parseLocalDate(card.due_date).getDate(),
+  };
+}
+
 /**
  * Construye un Period completo dado el mes/año de cierre.
  *
@@ -144,8 +220,12 @@ function buildPeriod(
   closeMonth: number, // 1-based
   now: Date
 ): Period {
-  const closeDay = parseLocalDate(card.close_date).getDate();
-  const dueDay = parseLocalDate(card.due_date).getDate();
+  // Key estable
+  const key = keyOf(closeYear, closeMonth);
+
+  // Las fechas pueden variar por período (overrides históricos): este período
+  // usa su propia config, y el inicio depende del cierre del período ANTERIOR.
+  const { closeDay, dueDay } = configForKey(card, key);
 
   // Fecha de cierre
   const closeDate = setDayOfMonth(closeYear, closeMonth, closeDay);
@@ -153,7 +233,8 @@ function buildPeriod(
 
   // start = día siguiente al cierre del mes anterior
   const prev = prevYearMonth(closeYear, closeMonth);
-  const prevClose = setDayOfMonth(prev.year, prev.month, closeDay);
+  const prevCloseDay = configForKey(card, keyOf(prev.year, prev.month)).closeDay;
+  const prevClose = setDayOfMonth(prev.year, prev.month, prevCloseDay);
   const start = startOfDay(addDays(prevClose, 1));
 
   // Vencimiento: si el día de vencimiento es MAYOR O IGUAL al día de cierre,
@@ -184,10 +265,7 @@ function buildPeriod(
   const rawLabel = format(closeDate, "MMMM yyyy", { locale: es });
   const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
 
-  // Key estable
-  const key = `${closeYear}-${String(closeMonth).padStart(2, "0")}`;
-
-  return { start, end, due, status, label, key };
+  return { start, end, due, status, label, key, card };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -206,7 +284,7 @@ export function getPeriodForDate(card: CardForPeriod, date: Date): Period {
   const year = d.getFullYear();
   const month = d.getMonth() + 1; // 1-based
 
-  const closeDay = parseLocalDate(card.close_date).getDate();
+  const { closeDay } = configForKey(card, keyOf(year, month));
   const closeDateThisMonth = setDayOfMonth(year, month, closeDay);
 
   let closeYear: number;
@@ -231,6 +309,14 @@ export function getPeriodForDate(card: CardForPeriod, date: Date): Period {
  */
 export function getCurrentPeriod(card: CardForPeriod): Period {
   return getPeriodForDate(card, nowAr());
+}
+
+/**
+ * Construye el período identificado por su clave "YYYY-MM".
+ */
+export function getPeriodByKey(card: CardForPeriod, key: string): Period {
+  const { year, month } = parseKey(key);
+  return buildPeriod(card, year, month, nowAr());
 }
 
 /**
@@ -314,6 +400,33 @@ export function getNextPayment(
 }
 
 /**
+ * Clave del período base de un gasto: el período en que cae la COMPRA
+ * (cuota 0) según su fecha. Las cuotas siguientes quedan ANCLADAS a la
+ * cadena: cuota N → período base + N meses. Esto garantiza que un cambio
+ * de fechas de cierre hacia adelante nunca re-asigne cuotas ya cargadas.
+ */
+function getExpenseBaseKey(card: CardForPeriod, expense: ExpenseForPeriod): string {
+  const expenseDate =
+    typeof expense.expense_date === "string"
+      ? parseLocalDate(expense.expense_date)
+      : expense.expense_date;
+  return getPeriodForDate(card, expenseDate).key;
+}
+
+/**
+ * Período en el que cae la cuota `index` (0-based) de un gasto:
+ * período de la compra + index meses.
+ */
+export function getInstallmentPeriod(
+  card: CardForPeriod,
+  expense: ExpenseForPeriod,
+  index: number
+): Period {
+  const baseKey = getExpenseBaseKey(card, expense);
+  return getPeriodByKey(card, addMonthsToKey(baseKey, index));
+}
+
+/**
  * Determina si la cuota `installmentIndex` (0-based) de un gasto cae dentro del período.
  * Si no se pasa installmentIndex, retorna true si CUALQUIER cuota cae en el período.
  */
@@ -322,17 +435,9 @@ export function expenseFallsInPeriod(
   period: Period,
   installmentIndex?: number
 ): boolean {
-  const dates = getInstallmentDates(expense);
-
-  if (installmentIndex !== undefined) {
-    const d = dates[installmentIndex];
-    if (!d) return false;
-    return isWithinInterval(startOfDay(d), { start: period.start, end: period.end });
-  }
-
-  return dates.some((d) =>
-    isWithinInterval(startOfDay(d), { start: period.start, end: period.end })
-  );
+  const idx = getInstallmentIndexInPeriod(expense, period);
+  if (installmentIndex !== undefined) return idx === installmentIndex;
+  return idx !== -1;
 }
 
 /**
@@ -343,10 +448,9 @@ export function getInstallmentIndexInPeriod(
   expense: ExpenseForPeriod,
   period: Period
 ): number {
-  const dates = getInstallmentDates(expense);
-  return dates.findIndex((d) =>
-    isWithinInterval(startOfDay(d), { start: period.start, end: period.end })
-  );
+  const baseKey = getExpenseBaseKey(period.card, expense);
+  const idx = monthsBetweenKeys(baseKey, period.key);
+  return idx >= 0 && idx < expense.installments ? idx : -1;
 }
 
 /**
@@ -402,20 +506,15 @@ export function getInstallmentAmountForIndex(
 }
 
 /**
- * Calcula el monto de cuotas que caen en un período específico.
+ * Calcula el monto de la cuota que cae en un período específico.
  * Respeta montos individuales (installment_amounts) si existen.
  */
 export function getAmountInPeriod(
   expense: ExpenseForPeriod & { installment_amount: number },
   period: Period
 ): number {
-  const dates = getInstallmentDates(expense);
-  return dates.reduce((sum, d, index) => {
-    if (isWithinInterval(startOfDay(d), { start: period.start, end: period.end })) {
-      return sum + getInstallmentAmountForIndex(expense, index);
-    }
-    return sum;
-  }, 0);
+  const index = getInstallmentIndexInPeriod(expense, period);
+  return index === -1 ? 0 : getInstallmentAmountForIndex(expense, index);
 }
 
 /**
@@ -443,4 +542,66 @@ export function getAmountInPeriodArs(
   period: Period
 ): number {
   return toArs(expense, getAmountInPeriod(expense, period));
+}
+
+/** Resultado de aplicar un cambio de fechas de período a una tarjeta. */
+export interface PeriodDatesUpdate {
+  close_date: string;
+  due_date: string;
+  date_overrides: PeriodDateOverrides | null;
+}
+
+/**
+ * Calcula el update a aplicar cuando el usuario carga nuevas fechas de
+ * cierre/vencimiento para un período (edición del vigente o renovación).
+ *
+ * Las fechas nuevas rigen desde el período al que pertenece la nueva fecha de
+ * cierre, y se replican hacia adelante (mismo día, mes +1 por período, con
+ * ajuste a fin de mes y salto de año — eso lo resuelve buildPeriod). Las
+ * fechas ANTERIORES quedan congeladas en date_overrides para los períodos
+ * previos, que conservan así sus fechas históricas.
+ *
+ * Función pura — el server action persiste el resultado.
+ */
+export function applyPeriodDatesChange(
+  card: CardForPeriod,
+  newCloseDate: string,
+  newDueDate: string
+): PeriodDatesUpdate {
+  const overrides: PeriodDateOverrides = { ...(card.date_overrides ?? {}) };
+
+  const newClose = parseLocalDate(newCloseDate);
+  const newKey = keyOf(newClose.getFullYear(), newClose.getMonth() + 1);
+
+  // Las fechas nuevas rigen de newKey en adelante: cualquier override que
+  // pretenda cubrir esos períodos queda obsoleto.
+  for (const until of Object.keys(overrides)) {
+    if (until >= newKey) delete overrides[until];
+  }
+
+  // Congelamos las fechas viejas para los períodos anteriores al editado,
+  // solo si el día de cierre o vencimiento realmente cambió. Si ya existe un
+  // override que cubre esos períodos (edición repetida del mismo período),
+  // se conserva el histórico original.
+  const oldCloseDay = parseLocalDate(card.close_date).getDate();
+  const oldDueDay = parseLocalDate(card.due_date).getDate();
+  const dayChanged =
+    oldCloseDay !== newClose.getDate() ||
+    oldDueDay !== parseLocalDate(newDueDate).getDate();
+
+  if (dayChanged) {
+    const untilKey = addMonthsToKey(newKey, -1);
+    if (!overrides[untilKey]) {
+      overrides[untilKey] = {
+        close_date: card.close_date,
+        due_date: card.due_date,
+      };
+    }
+  }
+
+  return {
+    close_date: newCloseDate,
+    due_date: newDueDate,
+    date_overrides: Object.keys(overrides).length > 0 ? overrides : null,
+  };
 }

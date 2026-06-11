@@ -21,6 +21,8 @@ export interface Database {
           last_four: string;
           close_date: string; // YYYY-MM-DD, el día del mes se usa para calcular períodos
           due_date: string;   // YYYY-MM-DD, el día del mes es el día de vencimiento
+          /** Historial de fechas por período. Clave = period key "YYYY-MM" hasta el cual aplican (inclusive). null = todos los períodos usan close_date/due_date */
+          date_overrides: Record<string, { close_date: string; due_date: string }> | null;
           color: string;
           bank: string | null;
           is_extension: boolean;
@@ -41,6 +43,7 @@ export interface Database {
           last_four: string;
           close_date: string;
           due_date: string;
+          date_overrides?: Record<string, { close_date: string; due_date: string }> | null;
           color?: string;
           bank?: string | null;
           is_extension?: boolean;
@@ -61,6 +64,7 @@ export interface Database {
           last_four?: string;
           close_date?: string;
           due_date?: string;
+          date_overrides?: Record<string, { close_date: string; due_date: string }> | null;
           color?: string;
           bank?: string | null;
           is_extension?: boolean;

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { cardSchema } from "@/lib/schemas/card";
 import type { CardFormData } from "@/lib/schemas/card";
+import { applyPeriodDatesChange } from "@/lib/periods/calculate";
 
 export type ActionResult =
   | { success: true; id?: string }
@@ -107,7 +108,13 @@ export async function toggleCardArchived(id: string, archived: boolean): Promise
   return { success: true };
 }
 
-/** Actualiza solo las fechas de cierre y vencimiento del período vigente */
+/**
+ * Actualiza las fechas de cierre y vencimiento del período vigente.
+ * Las fechas nuevas se replican hacia adelante (mismo día, mes +1 por
+ * período); las anteriores quedan congeladas en date_overrides para que los
+ * períodos pasados conserven sus fechas históricas. Los consumos no se
+ * re-asignan: cada cuota queda anclada al período de su compra + N meses.
+ */
 export async function updateCardPeriod(
   id: string,
   closeDate: string,
@@ -121,11 +128,35 @@ export async function updateCardPeriod(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  const { error } = await supabase
+  const { data: card, error: fetchError } = await supabase
     .from("cards")
-    .update({ close_date: closeDate, due_date: dueDate })
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !card) {
+    return { success: false, error: fetchError?.message ?? "Tarjeta no encontrada" };
+  }
+
+  const update = applyPeriodDatesChange(card, closeDate, dueDate);
+
+  let { error } = await supabase
+    .from("cards")
+    .update(update)
     .eq("id", id)
     .eq("user_id", user.id);
+
+  // Fallback si la migración 0010 todavía no se aplicó (falta la columna
+  // date_overrides): guardamos solo las fechas, como antes, para no romper
+  // la renovación de períodos.
+  if (error?.message.includes("date_overrides")) {
+    ({ error } = await supabase
+      .from("cards")
+      .update({ close_date: closeDate, due_date: dueDate })
+      .eq("id", id)
+      .eq("user_id", user.id));
+  }
 
   if (error) return { success: false, error: error.message };
 

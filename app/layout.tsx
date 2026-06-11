@@ -34,9 +34,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // Sin "cover", iOS no extiende la app bajo el notch/home indicator y todos
+  // los env(safe-area-inset-*) valen 0 — los paddings de safe area no harían nada.
+  viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f97316" },
-    { media: "(prefers-color-scheme: dark)", color: "#fb923c" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0a14" },
   ],
 };
 

@@ -80,14 +80,18 @@ export function WalletCard({
   const shadowHex = shade(base, 0.1);
   const { r, g, b } = hexToRgb(shadowHex);
 
-  const cardH = compact ? 186 : 188;
-
   return (
     <div
       className={cn("relative rounded-[24px]", className)}
       style={{
         width: "100%",
-        height: cardH,
+        // Proporción de tarjeta física (ISO/IEC 7810): escala con el ancho
+        // de pantalla en vez de una altura fija en px. El container query
+        // permite que la tipografía interna acompañe (unidades cqw).
+        aspectRatio: "1.586 / 1",
+        minHeight: 170,
+        maxHeight: 240,
+        containerType: "inline-size",
         // Sombra coloreada en la capa externa — no se recorta con el contenido.
         boxShadow: `0 18px 40px -16px rgba(${r},${g},${b},0.45)`,
         // Capa propia: aísla la card del transform del ancestro (active:scale
@@ -99,7 +103,7 @@ export function WalletCard({
       <div
         className={cn(
           "relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[24px]",
-          compact ? "p-5" : "p-[22px]"
+          compact ? "p-[clamp(16px,5.5cqw,24px)]" : "p-[clamp(18px,6cqw,26px)]"
         )}
         style={{
           backgroundColor: g1,
@@ -180,7 +184,7 @@ export function WalletCard({
               <>
                 {bank && (
                   <div
-                    className="mb-0.5 text-[13.5px] font-bold uppercase"
+                    className="mb-0.5 text-[clamp(12px,4cqw,16px)] font-bold uppercase"
                     style={{ color: fg, letterSpacing: "0.14em" }}
                   >
                     {bank}
@@ -188,7 +192,7 @@ export function WalletCard({
                 )}
                 {(!bank || !sameAsBank) && name && (
                   <div
-                    className="text-[13.5px] font-bold uppercase"
+                    className="text-[clamp(12px,4cqw,16px)] font-bold uppercase"
                     style={{ color: fg, letterSpacing: "0.14em" }}
                   >
                     {name}
@@ -298,12 +302,12 @@ export function WalletCard({
                 amount={total}
                 currency={currency}
                 hide={hideBalance}
-                className="font-display text-[26px] font-bold tabular-nums leading-none"
+                className="font-display text-[clamp(22px,7.5cqw,32px)] font-bold tabular-nums leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               />
             ) : (
               <span
-                className="font-display text-[26px] font-bold leading-none"
+                className="font-display text-[clamp(22px,7.5cqw,32px)] font-bold leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               >
                 ·····
@@ -311,7 +315,7 @@ export function WalletCard({
             )}
           </div>
           <div
-            className="mb-0.5 text-[13px] tabular-nums"
+            className="mb-0.5 text-[clamp(11px,3.6cqw,14px)] tabular-nums"
             style={{ color: fgMuted, letterSpacing: "0.14em" }}
           >
             •••• {card.last_four}

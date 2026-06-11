@@ -8,8 +8,7 @@
  */
 import { differenceInCalendarDays, format, startOfDay } from "date-fns";
 import {
-  getPeriodForDate,
-  getInstallmentDates,
+  getInstallmentPeriod,
   getInstallmentAmountForIndex,
   toArs,
   parseLocalDate,
@@ -115,14 +114,15 @@ export function computeUpcomingByMonth({
     const cardExpenses = expenses.filter((e) => e.card_id === card.id);
     const periodMap = new Map<string, { due: Date; total: number }>();
     for (const exp of cardExpenses) {
-      const dates = getInstallmentDates(exp);
-      dates.forEach((d, i) => {
-        const period = getPeriodForDate(card, d);
+      for (let i = 0; i < exp.installments; i++) {
+        // Cada cuota queda anclada a "período de la compra + i meses": un
+        // cambio de fechas del período no re-asigna cuotas ya cargadas.
+        const period = getInstallmentPeriod(card, exp, i);
         const amount = toArs(exp, getInstallmentAmountForIndex(exp, i));
         const entry = periodMap.get(period.key) ?? { due: period.due, total: 0 };
         entry.total += amount;
         periodMap.set(period.key, entry);
-      });
+      }
     }
     for (const { due, total } of periodMap.values()) {
       if (total <= 0) continue;

@@ -71,7 +71,8 @@ export function PeriodRenewalDialog({
           <DialogDescription className="text-center">
             El período de <strong>{cardName}</strong> cerró el{" "}
             {format(oldClose, "d 'de' MMMM 'de' yyyy", { locale: es })}.
-            Ingresá las nuevas fechas para continuar.
+            Ingresá las nuevas fechas para continuar: se replican a los
+            períodos siguientes y los pasados conservan las suyas.
           </DialogDescription>
         </DialogHeader>
 

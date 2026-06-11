@@ -66,7 +66,9 @@ export function PeriodEditDialog({
         <DialogHeader>
           <DialogTitle>Editar período actual</DialogTitle>
           <DialogDescription>
-            Modificá las fechas del período vigente. Útil para simular distintos escenarios.
+            Modificá las fechas del período vigente. Las fechas nuevas se
+            replican a los períodos siguientes (mismo día, un mes más); los
+            períodos pasados conservan sus fechas.
           </DialogDescription>
         </DialogHeader>
 

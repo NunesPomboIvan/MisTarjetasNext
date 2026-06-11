@@ -17,7 +17,18 @@ export function BottomNav() {
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
-      <div className="pointer-events-auto mx-auto w-full max-w-lg px-3 pb-3 pt-3">
+      {/* Velo de desvanecimiento: el contenido se "apaga" antes de llegar a
+          la barra en vez de cortarse contra su borde. Cubre todo el ancho
+          del viewport, el alto de la barra y el safe area inferior. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-12 bottom-[calc(-1*env(safe-area-inset-bottom))]"
+        style={{
+          background:
+            "linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 62%, transparent) 38%, var(--background) 78%)",
+        }}
+      />
+      <div className="pointer-events-auto relative mx-auto w-full max-w-lg px-3 pb-3 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}
           <Link
@@ -37,10 +48,14 @@ export function BottomNav() {
             <Plus className="h-5 w-5" strokeWidth={2.6} />
           </Link>
 
-          {/* Barra flotante (opaca) con halo violeta exterior */}
+          {/* Barra flotante glass: fondo translúcido + blur fuerte para que
+              lo que pase por detrás se vea difuminado, nunca nítido */}
           <div
-            className="relative rounded-[24px] border border-white/[0.08] bg-card px-2 py-1.5"
+            className="relative rounded-[24px] border border-white/[0.08] px-2 py-1.5"
             style={{
+              background: "color-mix(in srgb, var(--card) 78%, transparent)",
+              backdropFilter: "blur(24px) saturate(160%)",
+              WebkitBackdropFilter: "blur(24px) saturate(160%)",
               boxShadow:
                 "0 0 36px -4px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
             }}

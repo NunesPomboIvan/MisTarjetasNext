@@ -14,10 +14,15 @@ import {
   getCurrentPeriod,
   getPeriodByOffset,
   getPeriods,
+  getPeriodByKey,
   expenseFallsInPeriod,
   getInstallmentDates,
+  getInstallmentIndexInPeriod,
+  getInstallmentPeriod,
   getNextPayment,
   parseLocalDate,
+  addMonthsToKey,
+  applyPeriodDatesChange,
   type CardForPeriod,
   type Period,
 } from "@/lib/periods/calculate";
@@ -486,5 +491,218 @@ describe("getNextPayment — CARD_23_10", () => {
     vi.setSystemTime(d(2026, 5, 15));
 
     expect(getNextPayment(CARD_23_10, [])).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// SUITE 12: date_overrides — propagación hacia adelante
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Tarjeta que cerraba el 23 / vencía el 10 y cuyo período 2026-07 se cargó
+ * con fechas nuevas: cierra el 25, vence el 7. Las fechas viejas quedan
+ * congeladas hasta el período 2026-06 inclusive.
+ */
+const CARD_WITH_HISTORY: CardForPeriod = {
+  close_date: "2026-07-25",
+  due_date: "2026-08-07",
+  date_overrides: {
+    "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+  },
+};
+
+describe("date_overrides — propagación de fechas", () => {
+  afterEach(() => vi.useRealTimers());
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 7, 1));
+  });
+
+  it("los períodos pasados conservan sus fechas históricas", () => {
+    const jun = getPeriodByKey(CARD_WITH_HISTORY, "2026-06");
+    expect(jun.end.getDate()).toBe(23);
+    expect(jun.due).toEqual(d(2026, 7, 10));
+
+    const may = getPeriodByKey(CARD_WITH_HISTORY, "2026-05");
+    expect(may.end.getDate()).toBe(23);
+    expect(may.due).toEqual(d(2026, 6, 10));
+  });
+
+  it("el período editado usa las fechas nuevas y arranca donde terminó el viejo", () => {
+    const jul = getPeriodByKey(CARD_WITH_HISTORY, "2026-07");
+    // Empieza el día siguiente al cierre VIEJO (23/jun), no al nuevo día 25
+    expect(jul.start).toEqual(d(2026, 6, 24));
+    expect(jul.end.getDate()).toBe(25);
+    expect(jul.due).toEqual(d(2026, 8, 7));
+  });
+
+  it("las fechas nuevas se replican hacia adelante: mismo día, mes +1", () => {
+    const ago = getPeriodByKey(CARD_WITH_HISTORY, "2026-08");
+    expect(ago.end).toEqual(endOfDayDate(2026, 8, 25));
+    expect(ago.due).toEqual(d(2026, 9, 7));
+
+    const sep = getPeriodByKey(CARD_WITH_HISTORY, "2026-09");
+    expect(sep.due).toEqual(d(2026, 10, 7));
+  });
+
+  it("maneja el salto de año: el período de diciembre vence en enero", () => {
+    const dic = getPeriodByKey(CARD_WITH_HISTORY, "2026-12");
+    expect(dic.end.getDate()).toBe(25);
+    expect(dic.due).toEqual(d(2027, 1, 7));
+  });
+
+  it("ajusta al último día válido en meses cortos", () => {
+    const card: CardForPeriod = {
+      close_date: "2026-07-31",
+      due_date: "2026-08-30",
+      date_overrides: {
+        "2026-06": { close_date: "2026-06-28", due_date: "2026-07-05" },
+      },
+    };
+    // Septiembre tiene 30 días → cierra el 30
+    const sep = getPeriodByKey(card, "2026-09");
+    expect(sep.end.getDate()).toBe(30);
+    // Febrero 2027 → cierra el 28
+    const feb = getPeriodByKey(card, "2027-02");
+    expect(feb.end.getDate()).toBe(28);
+  });
+});
+
+// Helper local: fin de día para comparar `end`
+function endOfDayDate(year: number, month: number, day: number): Date {
+  return new Date(year, month - 1, day, 23, 59, 59, 999);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUITE 13: applyPeriodDatesChange
+// ─────────────────────────────────────────────────────────────
+
+describe("applyPeriodDatesChange", () => {
+  it("congela las fechas viejas para los períodos anteriores", () => {
+    const card: CardForPeriod = { close_date: "2026-06-23", due_date: "2026-07-10" };
+    const update = applyPeriodDatesChange(card, "2026-07-25", "2026-08-07");
+
+    expect(update.close_date).toBe("2026-07-25");
+    expect(update.due_date).toBe("2026-08-07");
+    expect(update.date_overrides).toEqual({
+      "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+    });
+  });
+
+  it("no agrega historial si los días no cambiaron (solo avanza el mes)", () => {
+    const card: CardForPeriod = { close_date: "2026-06-23", due_date: "2026-07-10" };
+    const update = applyPeriodDatesChange(card, "2026-07-23", "2026-08-10");
+
+    expect(update.date_overrides).toBeNull();
+  });
+
+  it("ediciones repetidas del mismo período conservan el histórico original", () => {
+    // Primera edición: 23 → 25 (ya aplicada)
+    const card: CardForPeriod = {
+      close_date: "2026-07-25",
+      due_date: "2026-08-07",
+      date_overrides: {
+        "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+      },
+    };
+    // Segunda edición del MISMO período: 25 → 27
+    const update = applyPeriodDatesChange(card, "2026-07-27", "2026-08-07");
+
+    expect(update.close_date).toBe("2026-07-27");
+    // El histórico sigue siendo el original (día 23), no el intermedio (25)
+    expect(update.date_overrides).toEqual({
+      "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+    });
+  });
+
+  it("renovaciones sucesivas acumulan historial por tramos", () => {
+    const card: CardForPeriod = {
+      close_date: "2026-07-25",
+      due_date: "2026-08-07",
+      date_overrides: {
+        "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+      },
+    };
+    // Renueva el período siguiente con otro corrimiento: 25 → 28
+    const update = applyPeriodDatesChange(card, "2026-08-28", "2026-09-09");
+
+    expect(update.date_overrides).toEqual({
+      "2026-06": { close_date: "2026-06-23", due_date: "2026-07-10" },
+      "2026-07": { close_date: "2026-07-25", due_date: "2026-08-07" },
+    });
+
+    // Y los tramos resuelven bien: jun→23, jul→25, ago en adelante→28
+    const cardAfter: CardForPeriod = { ...card, ...update };
+    expect(getPeriodByKey(cardAfter, "2026-06").end.getDate()).toBe(23);
+    expect(getPeriodByKey(cardAfter, "2026-07").end.getDate()).toBe(25);
+    expect(getPeriodByKey(cardAfter, "2026-08").end.getDate()).toBe(28);
+    expect(getPeriodByKey(cardAfter, "2026-09").end.getDate()).toBe(28);
+  });
+
+  it("descarta overrides que quedaron obsoletos (claves >= período editado)", () => {
+    const card: CardForPeriod = {
+      close_date: "2026-07-25",
+      due_date: "2026-08-07",
+      date_overrides: {
+        "2026-09": { close_date: "2026-06-23", due_date: "2026-07-10" },
+      },
+    };
+    const update = applyPeriodDatesChange(card, "2026-08-28", "2026-09-09");
+
+    // El override "2026-09" tapaba al período editado → se elimina
+    expect(update.date_overrides).toEqual({
+      "2026-07": { close_date: "2026-07-25", due_date: "2026-08-07" },
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// SUITE 14: los consumos quedan anclados a su período
+// ─────────────────────────────────────────────────────────────
+
+describe("consumos anclados — el cambio de fechas no re-asigna cuotas", () => {
+  afterEach(() => vi.useRealTimers());
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 7, 1));
+  });
+
+  // Compra del 24/mar (después del cierre viejo del 23) en 6 cuotas.
+  // Período base = 2026-04; cuota N → 2026-04 + N.
+  const expense = { expense_date: "2026-03-24", installments: 6 };
+
+  it("addMonthsToKey suma meses con salto de año", () => {
+    expect(addMonthsToKey("2026-04", 3)).toBe("2026-07");
+    expect(addMonthsToKey("2026-11", 2)).toBe("2027-01");
+    expect(addMonthsToKey("2026-01", -1)).toBe("2025-12");
+  });
+
+  it("cada cuota vive en período base + N, también tras el cambio de fechas", () => {
+    for (let i = 0; i < 6; i++) {
+      const p = getInstallmentPeriod(CARD_WITH_HISTORY, expense, i);
+      expect(p.key).toBe(addMonthsToKey("2026-04", i));
+    }
+  });
+
+  it("la cuota NO se muda aunque su fecha caiga dentro de los límites corridos", () => {
+    // Cuota 4 tiene fecha 24/jul. El período 2026-07 ahora abarca hasta el
+    // 25/jul (cierre nuevo), o sea que por FECHA la cuota caería en 2026-07.
+    // Pero la cadena la mantiene en 2026-08 (base 2026-04 + 4).
+    const jul = getPeriodByKey(CARD_WITH_HISTORY, "2026-07");
+    const ago = getPeriodByKey(CARD_WITH_HISTORY, "2026-08");
+
+    expect(getInstallmentIndexInPeriod(expense, ago)).toBe(4);
+    expect(expenseFallsInPeriod(expense, jul, 4)).toBe(false);
+    expect(getInstallmentIndexInPeriod(expense, jul)).toBe(3); // la cuota 3, no la 4
+  });
+
+  it("consumos de períodos pasados conservan su período", () => {
+    const exp = { expense_date: "2026-05-15", installments: 1 };
+    const may = getPeriodByKey(CARD_WITH_HISTORY, "2026-05");
+
+    expect(expenseFallsInPeriod(exp, may)).toBe(true);
+    expect(getPeriodForDate(CARD_WITH_HISTORY, d(2026, 5, 15)).key).toBe("2026-05");
   });
 });

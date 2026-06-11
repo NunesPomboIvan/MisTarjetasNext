@@ -10,15 +10,19 @@ interface StickyPageHeaderProps {
  * scrolleable y pinta un velo con degradé detrás (opaco arriba, transparente
  * abajo) para que el contenido scrolleando no se corte de forma brusca, sino
  * que se desvanezca al pasar por debajo. Compensa el `pt-6 px-4` del wrapper
- * de app/(app)/layout con `-mt-6 -mx-4` y aporta su propio padding.
+ * de app/(app)/layout (y el safe-area-inset-top del body) con márgenes
+ * negativos y aporta su propio padding: así, en reposo queda en el mismo
+ * lugar, pero al scrollear cubre también la zona de la status bar/notch en
+ * vez de dejar que el contenido se vea por detrás.
  */
 export function StickyPageHeader({ children, className }: StickyPageHeaderProps) {
   return (
     <div
-      className={cn(
-        "sticky top-0 z-20 -mx-4 -mt-6 px-4 pt-6 pb-3",
-        className
-      )}
+      className={cn("sticky top-0 z-20 -mx-4 px-4 pb-3", className)}
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)",
+        marginTop: "calc(-1 * (env(safe-area-inset-top) + 1.5rem))",
+      }}
     >
       <div
         aria-hidden
