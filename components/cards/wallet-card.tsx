@@ -18,6 +18,8 @@ interface WalletCardProps {
   closeLabel?: string;
   /** Fecha de vencimiento formateada, ej: "10 jun" */
   dueLabel?: string;
+  /** Altura máxima en px (en pantallas anchas la proporción la topea acá). Default 240. */
+  maxH?: number;
 }
 
 /* ─── Color utilities ─────────────────────────────────────── */
@@ -63,6 +65,7 @@ export function WalletCard({
   className,
   closeLabel,
   dueLabel,
+  maxH = 240,
 }: WalletCardProps) {
   const base = card.color || "#6366f1";
   const lum = relativeLuminance(base);
@@ -90,7 +93,7 @@ export function WalletCard({
         // permite que la tipografía interna acompañe (unidades cqw).
         aspectRatio: "1.586 / 1",
         minHeight: 170,
-        maxHeight: 240,
+        maxHeight: maxH,
         containerType: "inline-size",
         // Sombra coloreada en la capa externa — no se recorta con el contenido.
         boxShadow: `0 18px 40px -16px rgba(${r},${g},${b},0.45)`,

@@ -105,7 +105,7 @@ export default async function CardDetailPage({
       position={currentIndex >= 0 ? currentIndex + 1 : undefined}
       total={orderedIds.length}
     >
-    <div className="space-y-5">
+    <div className="space-y-3">
       {periodExpired && (
         <PeriodRenewalDialog
           cardId={card.id}
@@ -130,6 +130,7 @@ export default async function CardDetailPage({
         total={currentSaldo}
         closeLabel={formatDate(currentPeriod.end, "d MMM")}
         dueLabel={formatDate(currentPeriod.due, "d MMM")}
+        maxH={196}
       />
 
       {/* Period Navigator */}
@@ -143,7 +144,7 @@ export default async function CardDetailPage({
 
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
           en dos columnas para reducir la altura de la card. */}
-      <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
+      <section className="rounded-[20px] border border-border bg-card p-4 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
@@ -156,16 +157,16 @@ export default async function CardDetailPage({
           {limite > 0 && (
             <UtilizationDonut
               percent={utilizacion}
-              size={84}
-              thickness={9}
+              size={76}
+              thickness={8}
               label="Utilizado"
             />
           )}
         </div>
 
-        <div className="my-4 h-px bg-border" />
+        <div className="my-3 h-px bg-border" />
 
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           {/* Límite total + Disponible, lado a lado */}
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
