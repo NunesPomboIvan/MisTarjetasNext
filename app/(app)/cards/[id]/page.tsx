@@ -105,7 +105,7 @@ export default async function CardDetailPage({
       position={currentIndex >= 0 ? currentIndex + 1 : undefined}
       total={orderedIds.length}
     >
-    <div className="space-y-3">
+    <div className="space-y-4">
       {periodExpired && (
         <PeriodRenewalDialog
           cardId={card.id}
@@ -130,7 +130,6 @@ export default async function CardDetailPage({
         total={currentSaldo}
         closeLabel={formatDate(currentPeriod.end, "d MMM")}
         dueLabel={formatDate(currentPeriod.due, "d MMM")}
-        maxH={196}
       />
 
       {/* Period Navigator */}
@@ -144,52 +143,52 @@ export default async function CardDetailPage({
 
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
           en dos columnas para reducir la altura de la card. */}
-      <section className="rounded-[20px] border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center gap-4">
+      <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
+        <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
+            <p className="text-[10.5px] font-medium text-muted-foreground">Saldo actual</p>
             <Money
               amount={saldo}
-              className="mt-0.5 block font-display text-[22px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+              className="mt-0.5 block font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
             />
           </div>
 
           {limite > 0 && (
             <UtilizationDonut
               percent={utilizacion}
-              size={76}
-              thickness={8}
+              size={62}
+              thickness={7}
               label="Utilizado"
             />
           )}
         </div>
 
-        <div className="my-3 h-px bg-border" />
+        <div className="my-2.5 h-px bg-border" />
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Límite total + Disponible, lado a lado */}
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Límite total</p>
+              <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
               {limite > 0 ? (
                 <Money
                   amount={limite}
-                  className="mt-1 block font-display text-[16px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+                  className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
                 />
               ) : (
                 <Link
                   href={`/cards/${id}/edit`}
-                  className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                  className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
                 >
                   Definir límite
                 </Link>
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
+              <p className="text-[10px] font-medium text-muted-foreground">Disponible</p>
               <Money
                 amount={disponible}
-                className="mt-1 block font-display text-[16px] font-bold leading-tight tracking-tight tabular-nums"
+                className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
                 style={{ color: "#10b981" }}
               />
             </div>
@@ -198,14 +197,14 @@ export default async function CardDetailPage({
           {/* Cierre + Vencimiento, lado a lado */}
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>
-              <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+              <p className="text-[10px] font-medium text-muted-foreground">Cierre</p>
+              <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
                 {capitalize(formatDate(period.end, "d 'de' MMM"))}
               </p>
             </div>
             <div className="min-w-0">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Vencimiento</p>
-              <p className="mt-1 text-[14px] font-bold leading-tight text-foreground tabular-nums">
+              <p className="text-[10px] font-medium text-muted-foreground">Vencimiento</p>
+              <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
                 {capitalize(formatDate(period.due, "d 'de' MMM"))}
               </p>
             </div>
