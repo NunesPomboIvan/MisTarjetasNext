@@ -132,7 +132,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-2">
+    <div className="flex flex-1 flex-col space-y-1.5">
       {/* Selector de titular (sin saludo: la pantalla arranca arriba de todo) */}
       {titulares.length > 0 && (
         <div className="flex justify-end">
@@ -152,12 +152,13 @@ export default async function DashboardPage() {
           <DueTodayAlert todayKey={todayKey} cards={dueToday} />
 
           {/* Mis tarjetas */}
-          <section className="space-y-3">
+          <section className="space-y-2">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Mis tarjetas
             </h2>
 
             <HomeCardsCarousel
+              maxH={200}
               items={[...cardSummaries]
                 .sort((a, b) => b.currentTotal - a.currentTotal)
                 .map(({ card, currentTotal, currentPeriod }) => ({
@@ -173,7 +174,7 @@ export default async function DashboardPage() {
           <Link
             href="/vencimientos"
             aria-label="Ver próximos vencimientos"
-            className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
+            className="glass-card block rounded-[20px] px-5 py-2 transition-transform active:scale-[0.99]"
           >
             <div className="flex w-full items-stretch justify-between gap-4">
               <div className="flex min-w-0 flex-1 flex-col justify-center">
@@ -205,14 +206,14 @@ export default async function DashboardPage() {
           </Link>
 
           {/* Consumos + Cierre de tarjetas → agrupados en un único bloque */}
-          <div className="glass-card space-y-3 rounded-[20px] px-5 py-3">
+          <div className="glass-card space-y-2 rounded-[20px] px-5 py-1.5">
             <Link
               href="/expenses"
               aria-label="Ver todos tus consumos"
               className="group flex w-full items-center gap-3 text-left transition-colors"
             >
               <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
                 style={{ background: "#6366f120", color: "#6366f1" }}
               >
                 <Receipt className="h-4 w-4" />
@@ -236,7 +237,7 @@ export default async function DashboardPage() {
               className="group flex w-full items-center gap-3 text-left transition-colors"
             >
               <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
                 style={{ background: "#6366f120", color: "#6366f1" }}
               >
                 <CalendarClock className="h-4 w-4" />
@@ -254,18 +255,18 @@ export default async function DashboardPage() {
           </div>
 
           {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
-          <section className="mt-2 space-y-2">
+          <section className="space-y-2">
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Próximos vencimientos
             </h2>
-            <div className="glass-card space-y-3 rounded-[20px] px-5 py-3">
+            <div className="glass-card space-y-2 rounded-[20px] px-5 py-1.5">
               <Link
                 href="/pagos"
                 className="group flex w-full items-center gap-3 text-left transition-colors"
                 aria-label="Ver vencimientos de tarjetas de crédito"
               >
                 <div
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
                   style={{ background: "#6366f120", color: "#6366f1" }}
                 >
                   <Calendar className="h-4 w-4" />
@@ -289,7 +290,7 @@ export default async function DashboardPage() {
                 aria-label="Ver cuotas de préstamos bancarios"
               >
                 <div
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
                   style={{ background: "#6366f120", color: "#6366f1" }}
                 >
                   <Banknote className="h-4 w-4" />

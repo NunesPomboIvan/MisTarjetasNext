@@ -13,9 +13,11 @@ export interface HomeCardItem {
 
 interface HomeCardsCarouselProps {
   items: HomeCardItem[];
+  /** Altura máxima de cada tarjeta en px (para compactar la home). */
+  maxH?: number;
 }
 
-export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
+export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
   const multi = items.length > 1;
 
   if (items.length === 0) return null;
@@ -50,6 +52,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
               compact
               closeLabel={closeLabel}
               dueLabel={dueLabel}
+              maxH={maxH}
             />
           </CardPressWrapper>
         </div>
