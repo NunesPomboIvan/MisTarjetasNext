@@ -6,7 +6,7 @@ import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { getNextPayment } from "@/lib/periods/calculate";
-import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
+import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
@@ -113,7 +113,7 @@ export default async function PagosPage() {
                         </span>
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {capitalize(formatDate(period.due, "EEEE d 'de' MMM"))}
+                        {formatWeekdayLongDate(period.due)}
                       </p>
                       <Money
                         amount={total}

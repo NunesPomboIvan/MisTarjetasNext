@@ -6,34 +6,19 @@ import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs, toArs } from "@/lib/periods/calculate";
-import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
+import { formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
 
-function greeting(hour: number): string {
-  if (hour < 6) return "Buenas noches";
-  if (hour < 13) return "Buen día";
-  if (hour < 20) return "Buenas tardes";
-  return "Buenas noches";
-}
-
-function greetingEmoji(hour: number): string {
-  if (hour < 6) return "🌙";
-  if (hour < 13) return "🌞";
-  if (hour < 20) return "☀️";
-  return "🌙";
-}
-
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { titulares, activeId: activeTitularId, active: activeTitular } = await resolveTitulares();
+  const { titulares, activeId: activeTitularId } = await resolveTitulares();
 
   let cardsQuery = supabase
     .from("cards")
@@ -141,7 +126,6 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
-  const hour = today.getHours();
   const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
   const dayNumber = formatDate(today, "d");
   const monthYearUpper = formatDate(today, "MMMM yyyy").toUpperCase();
@@ -149,29 +133,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col space-y-2">
-      {/* Header personalizado (sticky) */}
-      <StickyPageHeader>
-        <header className="flex min-w-0 items-center justify-between gap-3">
-          <h1 className="min-w-0 flex-1 truncate font-display text-[26px] tracking-tight text-muted-foreground">
-            {greeting(hour)}
-            {activeTitular ? (
-              <>
-                ,{" "}
-                <span className="font-bold text-foreground">{activeTitular.name}</span>
-              </>
-            ) : null}
-            <span
-              className="ml-1.5 inline-block"
-              style={greetingEmoji(hour) === "🌙" ? { transform: "scaleX(-1)" } : undefined}
-            >
-              {greetingEmoji(hour)}
-            </span>
-          </h1>
-          {titulares.length > 0 && (
-            <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
-          )}
-        </header>
-      </StickyPageHeader>
+      {/* Selector de titular (sin saludo: la pantalla arranca arriba de todo) */}
+      {titulares.length > 0 && (
+        <div className="flex justify-end">
+          <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
+        </div>
+      )}
 
       {cards.length === 0 ? (
         <EmptyState

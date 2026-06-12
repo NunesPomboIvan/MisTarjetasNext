@@ -62,6 +62,30 @@ export function formatDate(date: Date | string, fmt = "dd/MM/yyyy"): string {
 }
 
 /**
+ * Fecha larga con día de la semana: "Jueves, 18 de Junio".
+ * Coma tras el día de la semana, mes completo, ambos capitalizados.
+ */
+export function formatWeekdayLongDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const weekday = capitalize(format(d, "EEEE", { locale: es }));
+  const day = format(d, "d", { locale: es });
+  const month = capitalize(format(d, "MMMM", { locale: es }));
+  return `${weekday}, ${day} de ${month}`;
+}
+
+/**
+ * Fecha larga sin día de la semana, mes completo: "18 de Junio"
+ * (o "18 de Junio 2024" con withYear).
+ */
+export function formatLongDate(date: Date | string, withYear = false): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const day = format(d, "d", { locale: es });
+  const month = capitalize(format(d, "MMMM", { locale: es }));
+  const year = withYear ? ` ${format(d, "yyyy")}` : "";
+  return `${day} de ${month}${year}`;
+}
+
+/**
  * Formatea una fecha relativa (ej: "hace 2 días")
  */
 export function formatRelativeDate(date: Date | string): string {

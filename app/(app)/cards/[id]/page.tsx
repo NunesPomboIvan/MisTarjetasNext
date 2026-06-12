@@ -141,34 +141,16 @@ export default async function CardDetailPage({
         dueLabel={formatDate(period.due, "d/M")}
       />
 
-      {/* Stats card: límite/saldo + anillo, y disponible/cierre/vencimiento */}
+      {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
+          en dos columnas para reducir la altura de la card. */}
       <section className="rounded-[20px] border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-4">
-          {/* Saldo + Límite apilados (ancho completo → entran enteros) */}
-          <div className="min-w-0 flex-1 space-y-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
-              <Money
-                amount={saldo}
-                className="mt-0.5 block font-display text-[22px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Límite total</p>
-              {limite > 0 ? (
-                <Money
-                  amount={limite}
-                  className="mt-0.5 block font-display text-[18px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-                />
-              ) : (
-                <Link
-                  href={`/cards/${id}/edit`}
-                  className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Definir límite
-                </Link>
-              )}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-muted-foreground">Saldo actual</p>
+            <Money
+              amount={saldo}
+              className="mt-0.5 block font-display text-[22px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+            />
           </div>
 
           {limite > 0 && (
@@ -184,16 +166,35 @@ export default async function CardDetailPage({
         <div className="my-4 h-px bg-border" />
 
         <div className="space-y-3.5">
-          {/* Disponible en su propia fila: los montos grandes necesitan el ancho
-              completo para no pisarse con las fechas. */}
-          <div className="min-w-0">
-            <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
-            <Money
-              amount={disponible}
-              className="mt-1 block text-[16px] font-bold leading-tight tabular-nums"
-              style={{ color: "#10b981" }}
-            />
+          {/* Límite total + Disponible, lado a lado */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-medium text-muted-foreground">Límite total</p>
+              {limite > 0 ? (
+                <Money
+                  amount={limite}
+                  className="mt-1 block font-display text-[16px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+                />
+              ) : (
+                <Link
+                  href={`/cards/${id}/edit`}
+                  className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  Definir límite
+                </Link>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10.5px] font-medium text-muted-foreground">Disponible</p>
+              <Money
+                amount={disponible}
+                className="mt-1 block font-display text-[16px] font-bold leading-tight tracking-tight tabular-nums"
+                style={{ color: "#10b981" }}
+              />
+            </div>
           </div>
+
+          {/* Cierre + Vencimiento, lado a lado */}
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <p className="text-[10.5px] font-medium text-muted-foreground">Cierre</p>

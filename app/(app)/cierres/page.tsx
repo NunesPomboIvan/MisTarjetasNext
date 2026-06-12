@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { getCurrentPeriod, getAmountInPeriodArs } from "@/lib/periods/calculate";
-import { formatDate, capitalize, nowInArgentina } from "@/lib/utils";
+import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
@@ -101,7 +101,7 @@ export default async function CierresPage() {
                       </span>
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {capitalize(formatDate(period.end, "EEEE d 'de' MMM"))}
+                      {formatWeekdayLongDate(period.end)}
                     </p>
                     <Money
                       amount={total}

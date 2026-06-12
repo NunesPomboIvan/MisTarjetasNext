@@ -471,18 +471,12 @@ function ExchangeRateField({
   return (
     <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
       <Label htmlFor="loan-exchange-rate">Tipo de cambio (ARS por 1 USD)</Label>
-      <Input
+      <AmountInput
         id="loan-exchange-rate"
-        type="number"
-        step="0.01"
-        min="0"
-        inputMode="decimal"
-        placeholder="Ej: 1200"
-        value={value ?? ""}
-        onChange={(e) => {
-          const n = Number(e.target.value);
-          onChange(e.target.value === "" || isNaN(n) ? null : n);
-        }}
+        value={value}
+        onChange={(v) => onChange(v ?? null)}
+        prefix="$"
+        placeholder="1.187,50"
       />
       {equivalentBase && value ? (
         <p className="text-xs text-muted-foreground">

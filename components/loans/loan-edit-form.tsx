@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { AmountInput } from "@/components/expenses/amount-input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -129,18 +130,12 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
         {isUsd && (
           <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
             <Label htmlFor="exchange_rate">Tipo de cambio (ARS por 1 USD)</Label>
-            <Input
+            <AmountInput
               id="exchange_rate"
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              placeholder="Ej: 1200"
-              value={exchangeRate ?? ""}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                setExchangeRate(e.target.value === "" || isNaN(n) ? null : n);
-              }}
+              value={exchangeRate}
+              onChange={(v) => setExchangeRate(v ?? null)}
+              prefix="$"
+              placeholder="1.187,50"
             />
             <p className="text-xs text-muted-foreground">
               {rateChanged

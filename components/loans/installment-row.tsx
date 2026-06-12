@@ -19,7 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { capitalize, cn, formatCurrency, formatDate, nowInArgentina } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatLongDate, nowInArgentina } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Currency, LoanInstallment } from "@/lib/supabase/database.types";
@@ -65,7 +65,7 @@ export function InstallmentRow({
   }
 
   const dueDate = parseLocalDate(installment.due_date);
-  const dueLabel = capitalize(formatDate(dueDate, "d 'de' MMM"));
+  const dueLabel = formatLongDate(dueDate);
   const daysUntil = differenceInCalendarDays(dueDate, startOfDay(nowInArgentina()));
   const isOverdue = !paid && daysUntil < 0;
   const isUrgent = !paid && daysUntil >= 0 && daysUntil <= 3;

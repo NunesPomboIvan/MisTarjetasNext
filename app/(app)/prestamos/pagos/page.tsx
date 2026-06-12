@@ -6,7 +6,7 @@ import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
-import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
+import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
 import { parseLocalDate, toArs } from "@/lib/periods/calculate";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
@@ -147,7 +147,7 @@ export default async function PrestamosPagosPage() {
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
                         Cuota {inst.installment_number}/{totalForLoan} ·{" "}
-                        {capitalize(formatDate(dueDate, "EEEE d 'de' MMM"))}
+                        {formatWeekdayLongDate(dueDate)}
                       </p>
                     </div>
 

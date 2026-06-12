@@ -8,7 +8,7 @@ import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import type { CardVencimiento, LoanVencimiento, MonthGroup } from "@/lib/vencimientos";
-import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
+import { capitalize, cn, formatDate, formatLongDate, nowInArgentina } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Próximos vencimientos" };
@@ -209,7 +209,7 @@ function dueText(item: CardVencimiento | LoanVencimiento): { text: string; tone:
   }
   if (item.daysUntil === 0) return { text: "Vence hoy", tone: "amber" };
   if (item.daysUntil <= 3) return { text: `Vence en ${item.daysUntil} días`, tone: "amber" };
-  return { text: `Vence el ${formatDate(item.due, "d 'de' MMM")}`, tone: "muted" };
+  return { text: `Vence el ${formatLongDate(item.due)}`, tone: "muted" };
 }
 
 function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {

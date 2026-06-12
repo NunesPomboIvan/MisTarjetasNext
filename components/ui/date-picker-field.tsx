@@ -11,7 +11,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn, formatLongDate } from "@/lib/utils";
 
 interface DatePickerFieldProps {
   value: string; // YYYY-MM-DD or ""
@@ -53,9 +53,7 @@ export function DatePickerField({
         )}
       >
         <span className="min-w-0 flex-1 truncate text-left">
-          {selected
-            ? format(selected, "d 'de' MMM yyyy", { locale: es })
-            : placeholder}
+          {selected ? formatLongDate(selected, true) : placeholder}
         </span>
         <CalendarIcon className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
       </button>

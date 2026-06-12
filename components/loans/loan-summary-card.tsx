@@ -1,6 +1,6 @@
 import { Calendar } from "lucide-react";
 import { Money } from "@/components/shared/money";
-import { capitalize, cn, formatDate } from "@/lib/utils";
+import { cn, formatLongDate } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import type { Currency } from "@/lib/supabase/database.types";
 
@@ -193,10 +193,7 @@ export function LoanSummaryCard({
       <div className="mt-4 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
         <Calendar className="h-3.5 w-3.5" />
         <span>
-          Emitido el{" "}
-          {capitalize(
-            formatDate(parseLocalDate(issueDate), "d 'de' MMM yyyy")
-          )}
+          Emitido el {formatLongDate(parseLocalDate(issueDate), true)}
         </span>
       </div>
     </article>

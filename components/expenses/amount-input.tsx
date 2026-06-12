@@ -66,6 +66,11 @@ export function AmountInput({
 
   const isNegative = (value ?? 0) < 0;
 
+  // El prefijo ("$", "US$"…) se posiciona absoluto sobre el input; el padding
+  // izquierdo se calcula según su ancho para que el valor nunca se le superponga.
+  const charWidth = size === "lg" ? 10 : 8;
+  const paddingLeft = 12 + prefix.length * charWidth + 6;
+
   function toggleSign() {
     // Alterna el signo del valor actual. Con campo vacío, prepara un "-".
     if (value == null || value === 0) {
@@ -94,8 +99,9 @@ export function AmountInput({
         placeholder={placeholder}
         value={display}
         onChange={handleChange}
+        style={{ paddingLeft }}
         className={cn(
-          "pl-7 tabular-nums",
+          "tabular-nums",
           signToggle && "pr-12",
           size === "lg" && "h-12 text-lg font-semibold",
           invalid && "border-destructive"
