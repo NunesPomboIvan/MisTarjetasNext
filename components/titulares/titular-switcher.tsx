@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Check, Loader2, Pencil, Trash2, X, ChevronDown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -119,17 +119,24 @@ export function TitularSwitcher({ titulares, activeId }: TitularSwitcherProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white backdrop-blur-xl transition-all hover:shadow-md active:scale-95"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[13px] font-semibold text-foreground backdrop-blur-xl transition-all hover:shadow-md active:scale-95"
         style={{
           background: `linear-gradient(135deg, ${active.color}55 0%, ${active.color}22 100%)`,
           border: `1px solid ${active.color}55`,
-          boxShadow: `0 0 20px -2px ${active.color}66, inset 0 1px 0 rgba(255,255,255,0.10)`,
+          boxShadow: `0 0 16px -4px ${active.color}55, inset 0 1px 0 rgba(255,255,255,0.10)`,
           backdropFilter: "blur(20px) saturate(160%)",
           WebkitBackdropFilter: "blur(20px) saturate(160%)",
         }}
         aria-label={`Cambiar de titular (actual: ${active.name})`}
       >
-        {active.name.charAt(0).toUpperCase()}
+        <span
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+          style={{ background: active.color }}
+        >
+          {active.name.charAt(0).toUpperCase()}
+        </span>
+        <span className="max-w-[140px] truncate">{active.name}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
       </button>
 
       <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) cancelEdit(); }}>
