@@ -153,10 +153,6 @@ export default async function DashboardPage() {
 
           {/* Mis tarjetas */}
           <section className="space-y-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Mis tarjetas
-            </h2>
-
             <HomeCardsCarousel
               maxH={200}
               items={[...cardSummaries]

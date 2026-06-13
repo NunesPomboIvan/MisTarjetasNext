@@ -19,7 +19,7 @@ import {
   getInstallmentIndexInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
-import { formatDate, capitalize } from "@/lib/utils";
+import { formatDate, formatLongDate } from "@/lib/utils";
 import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -199,13 +199,13 @@ export default async function CardDetailPage({
             <div className="min-w-0">
               <p className="text-[10px] font-medium text-muted-foreground">Cierre</p>
               <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
-                {capitalize(formatDate(period.end, "d 'de' MMM"))}
+                {formatLongDate(period.end)}
               </p>
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-medium text-muted-foreground">Vencimiento</p>
               <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
-                {capitalize(formatDate(period.due, "d 'de' MMM"))}
+                {formatLongDate(period.due)}
               </p>
             </div>
           </div>
