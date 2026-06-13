@@ -183,9 +183,8 @@ export default async function DashboardPage() {
                 />
               </div>
 
-              {/* Divisor + caja de fecha tipo calendario */}
-              <div className="flex flex-shrink-0 items-center gap-4">
-                <div className="h-12 w-px bg-border" aria-hidden />
+              {/* Caja de fecha tipo calendario */}
+              <div className="flex flex-shrink-0 items-center">
                 <div className="flex flex-col items-center rounded-[14px] border border-primary/40 px-4 py-2 text-center">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     {weekdayUpper}
