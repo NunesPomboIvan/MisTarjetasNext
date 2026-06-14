@@ -10,6 +10,7 @@ import { formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
+import { LockScroll } from "@/components/shared/lock-scroll";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -132,7 +133,8 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-3">
+    <div className="flex flex-1 flex-col space-y-2.5">
+      <LockScroll />
       {/* Selector de titular (sin saludo: la pantalla arranca arriba de todo) */}
       {titulares.length > 0 && (
         <div className="flex justify-end">
