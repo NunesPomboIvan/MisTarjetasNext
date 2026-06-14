@@ -26,7 +26,7 @@ function greeting(hour: number): string {
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { titulares, activeId: activeTitularId } = await resolveTitulares();
+  const { titulares, activeId: activeTitularId, active: activeTitular } = await resolveTitulares();
 
   let cardsQuery = supabase
     .from("cards")
@@ -138,13 +138,9 @@ export default async function DashboardPage() {
   const saludo = greeting(hour);
   const isNight = hour < 6 || hour >= 20;
 
-  // Nombre para el saludo (metadata de la cuenta o el prefijo del email).
-  const rawName =
-    (user?.user_metadata?.full_name as string | undefined) ??
-    (user?.user_metadata?.name as string | undefined) ??
-    (user?.email?.split("@")[0] ?? "");
-  const firstName = rawName.split(/[\s._-]/)[0] ?? "";
-  const displayName = firstName ? capitalize(firstName) : "";
+  // Nombre para el saludo: el del titular activo (no el de la cuenta).
+  const titularName = activeTitular?.name?.trim() ?? "";
+  const displayName = titularName ? capitalize(titularName.split(/\s+/)[0]) : "";
 
   const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
   const dayNumber = formatDate(today, "d");
