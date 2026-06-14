@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Banknote, Calendar, CalendarClock, ChevronRight, Receipt } from "lucide-react";
+import { Banknote, Calendar, CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs, toArs } from "@/lib/periods/calculate";
-import { formatDate, nowInArgentina } from "@/lib/utils";
+import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
@@ -134,7 +134,18 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
-  const saludo = greeting(today.getHours());
+  const hour = today.getHours();
+  const saludo = greeting(hour);
+  const isNight = hour < 6 || hour >= 20;
+
+  // Nombre para el saludo (metadata de la cuenta o el prefijo del email).
+  const rawName =
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name as string | undefined) ??
+    (user?.email?.split("@")[0] ?? "");
+  const firstName = rawName.split(/[\s._-]/)[0] ?? "";
+  const displayName = firstName ? capitalize(firstName) : "";
+
   const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
   const dayNumber = formatDate(today, "d");
   const monthYearUpper = formatDate(today, "MMMM yyyy").toUpperCase();
@@ -143,11 +154,20 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col space-y-2.5">
       <LockScroll />
-      {/* Saludo + selector de titular en la misma fila (sin sumar alto) */}
+      {/* Saludo + selector de titular en la misma fila (sin sumar alto).
+          El icono cambia según sea de día (sol) o de noche (luna). */}
       <div className="flex items-center justify-between gap-3">
-        <p className="truncate font-display text-[18px] font-bold tracking-tight text-foreground">
-          {saludo}
-        </p>
+        <div className="flex min-w-0 items-center gap-2">
+          {isNight ? (
+            <Moon className="h-[18px] w-[18px] flex-shrink-0 text-indigo-300" />
+          ) : (
+            <Sun className="h-[18px] w-[18px] flex-shrink-0 text-amber-400" />
+          )}
+          <p className="truncate font-display text-[18px] font-bold tracking-tight text-foreground">
+            {saludo}
+            {displayName ? `, ${displayName}` : ""}
+          </p>
+        </div>
         {titulares.length > 0 && (
           <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
         )}
