@@ -199,25 +199,50 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          {/* Consumos + Cierre de tarjetas → agrupados en un único bloque */}
+          {/* Accesos: vencimientos, cierre y consumos en una sola card,
+              ordenados de lo más accionable (lo que vence) a lo informativo. */}
           <div className="glass-card space-y-2.5 rounded-[20px] px-5 py-2.5">
             <Link
-              href="/expenses"
-              aria-label="Ver todos tus consumos"
+              href="/pagos"
               className="group flex w-full items-center gap-3 text-left transition-colors"
+              aria-label="Ver vencimientos de tarjetas de crédito"
             >
               <div
                 className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
                 style={{ background: "#6366f120", color: "#6366f1" }}
               >
-                <Receipt className="h-4 w-4" />
+                <Calendar className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Consumos
+                  Vencimiento de tarjetas
                 </p>
                 <p className="text-[11.5px] text-muted-foreground">
-                  Ver todos tus movimientos
+                  Ver vencimientos de tus tarjetas
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            </Link>
+
+            <div className="h-px bg-border" />
+
+            <Link
+              href={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
+              className="group flex w-full items-center gap-3 text-left transition-colors"
+              aria-label="Ver vencimientos de préstamos bancarios"
+            >
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                style={{ background: "#6366f120", color: "#6366f1" }}
+              >
+                <Banknote className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-tight text-foreground">
+                  Vencimiento de préstamos
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  Ver cuotas de tus préstamos
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
@@ -246,58 +271,31 @@ export default async function DashboardPage() {
               </div>
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
             </Link>
+
+            <div className="h-px bg-border" />
+
+            <Link
+              href="/expenses"
+              aria-label="Ver todos tus consumos"
+              className="group flex w-full items-center gap-3 text-left transition-colors"
+            >
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                style={{ background: "#6366f120", color: "#6366f1" }}
+              >
+                <Receipt className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-tight text-foreground">
+                  Consumos
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  Ver todos tus movimientos
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            </Link>
           </div>
-
-          {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
-          <section className="space-y-2">
-            <div className="glass-card space-y-2.5 rounded-[20px] px-5 py-2.5">
-              <Link
-                href="/pagos"
-                className="group flex w-full items-center gap-3 text-left transition-colors"
-                aria-label="Ver vencimientos de tarjetas de crédito"
-              >
-                <div
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "#6366f120", color: "#6366f1" }}
-                >
-                  <Calendar className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold leading-tight text-foreground">
-                    Vencimiento de tarjetas
-                  </p>
-                  <p className="text-[11.5px] text-muted-foreground">
-                    Ver vencimientos de tus tarjetas
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-              </Link>
-
-              <div className="h-px bg-border" />
-
-              <Link
-                href={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
-                className="group flex w-full items-center gap-3 text-left transition-colors"
-                aria-label="Ver cuotas de préstamos bancarios"
-              >
-                <div
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "#6366f120", color: "#6366f1" }}
-                >
-                  <Banknote className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold leading-tight text-foreground">
-                    Préstamos bancarios
-                  </p>
-                  <p className="text-[11.5px] text-muted-foreground">
-                    Ver cuotas de tus préstamos
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-              </Link>
-            </div>
-          </section>
 
         </>
       )}
