@@ -201,7 +201,11 @@ export default async function DashboardPage() {
 
           {/* Accesos: vencimientos, cierre y consumos en una sola card,
               ordenados de lo más accionable (lo que vence) a lo informativo. */}
-          <div className="glass-card space-y-2.5 rounded-[20px] px-5 py-2.5">
+          <section className="space-y-2">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Tarjetas y préstamos
+            </h2>
+            <div className="glass-card space-y-2 rounded-[20px] px-5 py-2">
             <Link
               href="/pagos"
               className="group flex w-full items-center gap-3 text-left transition-colors"
@@ -296,6 +300,7 @@ export default async function DashboardPage() {
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
             </Link>
           </div>
+          </section>
 
         </>
       )}
