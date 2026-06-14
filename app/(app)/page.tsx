@@ -132,7 +132,7 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-1.5">
+    <div className="flex flex-1 flex-col space-y-3">
       {/* Selector de titular (sin saludo: la pantalla arranca arriba de todo) */}
       {titulares.length > 0 && (
         <div className="flex justify-end">
@@ -174,12 +174,9 @@ export default async function DashboardPage() {
           >
             <div className="flex w-full items-stretch justify-between gap-4">
               <div className="flex min-w-0 flex-1 flex-col justify-center">
-                <p className="text-[12px] font-medium text-muted-foreground">
-                  Próximo a vencer
-                </p>
                 <Money
                   amount={saldoTotal}
-                  className="mt-1.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
+                  className="block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
                 />
               </div>
 
@@ -251,9 +248,6 @@ export default async function DashboardPage() {
 
           {/* Próximos vencimientos: accesos a Tarjetas y Préstamos */}
           <section className="space-y-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Próximos vencimientos
-            </h2>
             <div className="glass-card space-y-2.5 rounded-[20px] px-5 py-2.5">
               <Link
                 href="/pagos"
@@ -268,7 +262,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold leading-tight text-foreground">
-                    Tarjeta de crédito
+                    Vencimiento de tarjetas
                   </p>
                   <p className="text-[11.5px] text-muted-foreground">
                     Ver vencimientos de tus tarjetas
