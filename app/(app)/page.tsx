@@ -16,6 +16,13 @@ import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supab
 
 export const metadata = { title: "Inicio" };
 
+function greeting(hour: number): string {
+  if (hour < 6) return "Buenas noches";
+  if (hour < 13) return "Buen día";
+  if (hour < 20) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -127,6 +134,7 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
+  const saludo = greeting(today.getHours());
   const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
   const dayNumber = formatDate(today, "d");
   const monthYearUpper = formatDate(today, "MMMM yyyy").toUpperCase();
@@ -135,12 +143,15 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col space-y-2.5">
       <LockScroll />
-      {/* Selector de titular (sin saludo: la pantalla arranca arriba de todo) */}
-      {titulares.length > 0 && (
-        <div className="flex justify-end">
+      {/* Saludo + selector de titular en la misma fila (sin sumar alto) */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="truncate font-display text-[18px] font-bold tracking-tight text-foreground">
+          {saludo}
+        </p>
+        {titulares.length > 0 && (
           <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
-        </div>
-      )}
+        )}
+      </div>
 
       {cards.length === 0 ? (
         <EmptyState
@@ -178,7 +189,7 @@ export default async function DashboardPage() {
               <div className="flex min-w-0 flex-1 flex-col justify-center">
                 <Money
                   amount={saldoTotal}
-                  className="block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
+                  className="block font-display text-[24px] font-bold leading-none tracking-tight text-foreground"
                 />
               </div>
 
