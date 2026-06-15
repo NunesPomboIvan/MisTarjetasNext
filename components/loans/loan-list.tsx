@@ -107,9 +107,14 @@ export function LoanList({ active, archived }: LoanListProps) {
     <div className="space-y-5">
       {/* Selector de orden — se recuerda la última elección */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[12px] text-muted-foreground">
-          {active.length} préstamo{active.length !== 1 ? "s" : ""}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-primary/15 px-1.5 text-[12px] font-bold tabular-nums text-primary">
+            {active.length}
+          </span>
+          <span className="text-[13px] font-medium text-foreground">
+            Préstamo{active.length !== 1 ? "s" : ""}
+          </span>
+        </div>
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
           <SelectTrigger
             size="sm"
