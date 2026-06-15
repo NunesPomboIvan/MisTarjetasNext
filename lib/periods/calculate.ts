@@ -92,6 +92,11 @@ export interface ExpenseForPeriod {
   currency?: string | null;
   /** Tipo de cambio (ARS por 1 USD). Sólo se usa cuando currency = USD. */
   exchange_rate?: number | null;
+  /**
+   * Consumo fijo mensual (sin fin): cae en TODOS los períodos desde su fecha
+   * en adelante, ignorando `installments`. El monto mensual es installment_amount.
+   */
+  recurring?: boolean | null;
 }
 
 export type PeriodStatus = "past" | "current" | "future";
@@ -450,7 +455,12 @@ export function getInstallmentIndexInPeriod(
 ): number {
   const baseKey = getExpenseBaseKey(period.card, expense);
   const idx = monthsBetweenKeys(baseKey, period.key);
-  return idx >= 0 && idx < expense.installments ? idx : -1;
+  if (idx < 0) return -1;
+  // Recurrente: aparece en todos los períodos desde su fecha en adelante,
+  // sin tope de cuotas. El índice = cantidad de meses desde la compra, lo que
+  // permite además overrides de monto por mes vía installment_amounts.
+  if (expense.recurring) return idx;
+  return idx < expense.installments ? idx : -1;
 }
 
 /**

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, Copy, Check, Lock } from "lucide-react";
+import { Trash2, Pencil, Copy, Check, Lock, Repeat } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -242,7 +242,15 @@ export function ExpenseItem({
               {formatDate(expense.expense_date + "T00:00:00")}
             </span>
 
-            {showInstallmentBadge ? (
+            {expense.recurring ? (
+              <Badge
+                variant="secondary"
+                className="h-4 gap-0.5 bg-primary/10 px-1.5 text-[10px] text-primary"
+              >
+                <Repeat className="h-2.5 w-2.5" />
+                Mensual
+              </Badge>
+            ) : showInstallmentBadge ? (
               <Badge
                 variant="secondary"
                 className="h-4 bg-amber-100 px-1.5 text-[10px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"

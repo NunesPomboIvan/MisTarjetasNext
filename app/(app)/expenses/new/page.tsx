@@ -8,9 +8,9 @@ export const metadata = { title: "Nuevo consumo" };
 export default async function NewExpensePage({
   searchParams,
 }: {
-  searchParams: Promise<{ card_id?: string; fee?: string }>;
+  searchParams: Promise<{ card_id?: string; fee?: string; recurring?: string }>;
 }) {
-  const { card_id, fee } = await searchParams;
+  const { card_id, fee, recurring } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,6 +47,7 @@ export default async function NewExpensePage({
         backHref={backHref}
         feeMode={fee === "1"}
         globalRate={globalRate?.rate ?? null}
+        recurringMode={recurring === "1"}
       />
     </div>
   );

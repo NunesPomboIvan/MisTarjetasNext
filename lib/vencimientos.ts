@@ -10,10 +10,25 @@ import { differenceInCalendarDays, format, startOfDay } from "date-fns";
 import {
   getInstallmentPeriod,
   getInstallmentAmountForIndex,
+  getCurrentPeriod,
   toArs,
   parseLocalDate,
 } from "@/lib/periods/calculate";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
+
+/**
+ * Hasta cuántos meses hacia adelante proyectamos un consumo recurrente (sin
+ * fin) al listar vencimientos. Las demás vistas (navegador de períodos) lo
+ * resuelven on-demand, pero esta consolidación necesita un tope finito.
+ */
+const RECURRING_HORIZON_MONTHS = 12;
+
+/** Diferencia en meses entre dos claves "YYYY-MM" (b - a). */
+function monthsBetweenKeys(a: string, b: string): number {
+  const [ay, am] = a.split("-").map(Number);
+  const [by, bm] = b.split("-").map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
 
 export interface CardVencimiento {
   kind: "card";
@@ -114,7 +129,18 @@ export function computeUpcomingByMonth({
     const cardExpenses = expenses.filter((e) => e.card_id === card.id);
     const periodMap = new Map<string, { due: Date; total: number }>();
     for (const exp of cardExpenses) {
-      for (let i = 0; i < exp.installments; i++) {
+      // Recurrente: en vez de iterar las cuotas, proyectamos desde el período
+      // actual de la tarjeta hacia adelante (hasta el horizonte). Para cuotas
+      // normales recorremos cada cuota como siempre.
+      let startI = 0;
+      let endI = exp.installments;
+      if (exp.recurring) {
+        const baseKey = getInstallmentPeriod(card, exp, 0).key;
+        const currentKey = getCurrentPeriod(card).key;
+        startI = Math.max(0, monthsBetweenKeys(baseKey, currentKey));
+        endI = startI + RECURRING_HORIZON_MONTHS;
+      }
+      for (let i = startI; i < endI; i++) {
         // Cada cuota queda anclada a "período de la compra + i meses": un
         // cambio de fechas del período no re-asigna cuotas ya cargadas.
         const period = getInstallmentPeriod(card, exp, i);

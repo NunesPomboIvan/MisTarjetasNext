@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown, Loader2, Save } from "lucide-react";
+import { ChevronDown, Loader2, Repeat, Save } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import {
   createExpense,
@@ -119,6 +119,7 @@ export function ExpenseForm({
           installment_amount: editingSingleInstallment
             ? currentCuotaAmount
             : expense.installment_amount,
+          recurring: expense.recurring ?? false,
           discount_percentage: expense.discount_percentage ?? undefined,
           discount_cap: expense.discount_cap ?? undefined,
           expense_date: expense.expense_date,
@@ -130,6 +131,7 @@ export function ExpenseForm({
           card_id: initialCard,
           currency: "ARS",
           installments: 1,
+          recurring: false,
           tags: [],
           expense_date: today,
           description: "",
@@ -138,6 +140,7 @@ export function ExpenseForm({
 
   const totalAmount = watch("total_amount");
   const installments = watch("installments");
+  const recurring = watch("recurring");
   const discountPct = watch("discount_percentage") ?? 0;
   const discountCap = watch("discount_cap");
   const currency = watch("currency");
@@ -180,6 +183,12 @@ export function ExpenseForm({
     if (next === "ARS") setValue("exchange_rate", null);
     // Precargar el TC global al pasar a USD (editable)
     else if (!exchangeRate && globalRate != null) setValue("exchange_rate", globalRate);
+  }
+
+  function toggleRecurring(next: boolean) {
+    setValue("recurring", next);
+    // Un consumo fijo mensual es un cargo único por mes: sin cuotas.
+    if (next) setValue("installments", 1);
   }
 
   function onSubmit(data: ExpenseFormData) {
@@ -385,7 +394,9 @@ export function ExpenseForm({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="total_amount">Monto total</Label>
+              <Label htmlFor="total_amount">
+                {recurring ? "Monto mensual" : "Monto total"}
+              </Label>
               <CurrencyToggle value={currency} onChange={changeCurrency} />
             </div>
             <Controller
@@ -444,28 +455,69 @@ export function ExpenseForm({
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label>Cuotas</Label>
-            <Controller
-              control={control}
-              name="installments"
-              render={({ field }) => (
-                <InstallmentPresets
-                  value={field.value ?? 1}
-                  onChange={field.onChange}
-                  invalid={!!errors.installments}
-                />
-              )}
-            />
-            {!!totalAmount && totalAmount !== 0 && installments > 1 && (
-              <p className="text-xs text-muted-foreground">
-                {installments} cuotas de{" "}
-                <span className="font-medium text-foreground">
-                  {formatCurrency((discountActive ? precioFinal : totalAmount) / installments, currency)}
+          {/* Consumo fijo mensual (recurrente) */}
+          <button
+            type="button"
+            onClick={() => toggleRecurring(!recurring)}
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-left"
+          >
+            <span className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-primary" />
+              <span className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  Consumo fijo mensual
                 </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Se repite todos los meses (ej: seguro del auto)
+                </span>
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className={cn(
+                "relative h-6 w-10 shrink-0 rounded-full transition-colors",
+                recurring ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                  recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
+                )}
+              />
+            </span>
+          </button>
+
+          {!recurring ? (
+            <div className="space-y-1.5">
+              <Label>Cuotas</Label>
+              <Controller
+                control={control}
+                name="installments"
+                render={({ field }) => (
+                  <InstallmentPresets
+                    value={field.value ?? 1}
+                    onChange={field.onChange}
+                    invalid={!!errors.installments}
+                  />
+                )}
+              />
+              {!!totalAmount && totalAmount !== 0 && installments > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  {installments} cuotas de{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCurrency((discountActive ? precioFinal : totalAmount) / installments, currency)}
+                  </span>
+                </p>
+              )}
+            </div>
+          ) : (
+            !!totalAmount && totalAmount !== 0 && (
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(totalAmount, currency)} todos los meses
               </p>
-            )}
-          </div>
+            )
+          )}
 
           {/* Toggle descuento */}
           <label className="flex cursor-pointer items-center gap-2">
@@ -577,7 +629,7 @@ export function ExpenseForm({
               )}
             </div>
 
-            {!editingSingleInstallment && (
+            {!editingSingleInstallment && !recurring && (
               <>
                 <Separator />
 

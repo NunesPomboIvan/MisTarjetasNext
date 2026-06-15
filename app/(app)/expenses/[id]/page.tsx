@@ -94,12 +94,16 @@ export default async function ExpenseDetailPage({
           currency={expense.currency}
           className="mt-1 block font-display text-[26px] font-bold tracking-tight text-foreground"
         />
-        {expense.installments > 1 && (
+        {expense.recurring ? (
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            Se repite todos los meses
+          </p>
+        ) : expense.installments > 1 ? (
           <p className="mt-1 text-[12.5px] text-muted-foreground">
             {expense.installments} cuotas de{" "}
             {formatCurrency(expense.installment_amount, expense.currency)}
           </p>
-        )}
+        ) : null}
         {expense.currency === "USD" && expense.exchange_rate && (
           <p className="mt-1 text-[12px] text-muted-foreground">
             ≈{" "}
@@ -141,13 +145,15 @@ export default async function ExpenseDetailPage({
           )}
         />
         <DetailRow
-          label="Cuotas"
+          label={expense.recurring ? "Tipo" : "Cuotas"}
           value={
-            expense.installments > 1
-              ? installmentIdx !== undefined && installmentIdx >= 0
-                ? `Cuota ${installmentIdx + 1} de ${expense.installments}`
-                : `${expense.installments} cuotas`
-              : "Pago único"
+            expense.recurring
+              ? "Fijo mensual (todos los meses)"
+              : expense.installments > 1
+                ? installmentIdx !== undefined && installmentIdx >= 0
+                  ? `Cuota ${installmentIdx + 1} de ${expense.installments}`
+                  : `${expense.installments} cuotas`
+                : "Pago único"
           }
         />
         {expense.discount_percentage != null &&

@@ -309,6 +309,7 @@ export async function cloneExpense(id: string): Promise<ActionResult> {
     total_amount: original.total_amount,
     installments: original.installments,
     installment_amount: original.installment_amount,
+    recurring: original.recurring,
     discount_percentage: original.discount_percentage,
     discount_cap: original.discount_cap,
     expense_date: today,

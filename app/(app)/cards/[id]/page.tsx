@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, Landmark } from "lucide-react";
+import { Plus, Landmark, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { Money } from "@/components/shared/money";
@@ -222,6 +222,13 @@ export default async function CardDetailPage({
             </span>
           </h2>
           <div className="flex items-center gap-2">
+            <Link
+              href={`/expenses/new?card_id=${id}&recurring=1`}
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+            >
+              <Repeat className="h-3.5 w-3.5" />
+              Fijo
+            </Link>
             <Link
               href={`/expenses/new?card_id=${id}&fee=1`}
               className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"

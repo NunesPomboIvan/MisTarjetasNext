@@ -411,6 +411,51 @@ describe("expenseFallsInPeriod", () => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// SUITE 9b: Consumos recurrentes (fijos mensuales)
+// ─────────────────────────────────────────────────────────────
+
+describe("consumos recurrentes", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("cae en su período base y en todos los siguientes (sin tope de cuotas)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+
+    // installments=1 pero recurring=true → aparece todos los meses
+    const expense = { expense_date: "2026-03-15", installments: 1, recurring: true };
+
+    const mar = getPeriodForDate(CARD_23_10, d(2026, 3, 15));
+    const may = getPeriodForDate(CARD_23_10, d(2026, 5, 15));
+    const farFuture = getPeriodForDate(CARD_23_10, d(2030, 1, 15));
+
+    expect(expenseFallsInPeriod(expense, mar)).toBe(true);
+    expect(expenseFallsInPeriod(expense, may)).toBe(true);
+    expect(expenseFallsInPeriod(expense, farFuture)).toBe(true);
+  });
+
+  it("NO cae en períodos anteriores a su fecha", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+
+    const expense = { expense_date: "2026-03-15", installments: 1, recurring: true };
+    const feb = getPeriodForDate(CARD_23_10, d(2026, 2, 15));
+
+    expect(expenseFallsInPeriod(expense, feb)).toBe(false);
+  });
+
+  it("el índice equivale a la cantidad de meses desde la compra", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+
+    const expense = { expense_date: "2026-03-15", installments: 1, recurring: true };
+    const may = getPeriodForDate(CARD_23_10, d(2026, 5, 15));
+
+    // marzo=0, abril=1, mayo=2
+    expect(getInstallmentIndexInPeriod(expense, may)).toBe(2);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
 // SUITE 10: Tarjeta con close_day=1 (borde inferior)
 // ─────────────────────────────────────────────────────────────
 

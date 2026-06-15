@@ -7,7 +7,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, ChevronDown, Loader2, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus, Repeat, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import { createExpense } from "@/actions/expenses";
@@ -50,6 +50,8 @@ interface NewExpenseHeroProps {
   feeMode?: boolean;
   /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
   globalRate?: number | null;
+  /** Arranca el form como "consumo fijo mensual" (recurrente) */
+  recurringMode?: boolean;
 }
 
 /** Descripciones rápidas para los gastos propios de la tarjeta */
@@ -71,6 +73,7 @@ export function NewExpenseHero({
   backHref,
   feeMode = false,
   globalRate = null,
+  recurringMode = false,
 }: NewExpenseHeroProps) {
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
@@ -113,6 +116,7 @@ export function NewExpenseHero({
       card_id: initialCard,
       currency: "ARS",
       installments: 1,
+      recurring: recurringMode,
       tags: [],
       expense_date: today,
       description: "",
@@ -122,6 +126,7 @@ export function NewExpenseHero({
 
   const totalAmount = watch("total_amount");
   const installments = watch("installments");
+  const recurring = watch("recurring");
   const discountPct = watch("discount_percentage") ?? 0;
   const discountCap = watch("discount_cap");
   const currency = watch("currency");
@@ -138,6 +143,12 @@ export function NewExpenseHero({
 
   function toggleAmountSign() {
     if (totalAmount) setValue("total_amount", -totalAmount);
+  }
+
+  function toggleRecurring(next: boolean) {
+    setValue("recurring", next);
+    // Un consumo fijo mensual es un cargo único por mes: sin cuotas.
+    if (next) setValue("installments", 1);
   }
 
   const discountCalc =
@@ -228,7 +239,11 @@ export function NewExpenseHero({
             Cancelar
           </Link>
           <h1 className="text-[15px] font-semibold tracking-tight">
-            {feeMode ? "Gasto de tarjeta" : "Nuevo consumo"}
+            {feeMode
+              ? "Gasto de tarjeta"
+              : recurring
+                ? "Consumo fijo mensual"
+                : "Nuevo consumo"}
           </h1>
           <Button
             type="submit"
@@ -377,34 +392,73 @@ export function NewExpenseHero({
             />
           </div>
 
-          {/* Cuotas */}
-          <div className="px-4 py-3">
-            <span className="text-sm font-medium text-foreground">Cuotas</span>
-            <div className="mt-2">
-              <Controller
-                control={control}
-                name="installments"
-                render={({ field }) => (
-                  <InstallmentPresets
-                    value={field.value ?? 1}
-                    onChange={field.onChange}
-                    invalid={!!errors.installments}
-                  />
+          {/* Consumo fijo mensual (recurrente) */}
+          <button
+            type="button"
+            onClick={() => toggleRecurring(!recurring)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <span className="flex items-center gap-2">
+              <Repeat className="h-4 w-4 text-primary" />
+              <span className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  Consumo fijo mensual
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Se repite todos los meses (ej: seguro del auto)
+                </span>
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className={cn(
+                "relative h-6 w-10 shrink-0 rounded-full transition-colors",
+                recurring ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                  recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
                 )}
               />
+            </span>
+          </button>
+
+          {/* Cuotas — ocultas para consumos fijos mensuales */}
+          {!recurring && (
+            <div className="px-4 py-3">
+              <span className="text-sm font-medium text-foreground">Cuotas</span>
+              <div className="mt-2">
+                <Controller
+                  control={control}
+                  name="installments"
+                  render={({ field }) => (
+                    <InstallmentPresets
+                      value={field.value ?? 1}
+                      onChange={field.onChange}
+                      invalid={!!errors.installments}
+                    />
+                  )}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Hint: monto por cuota */}
-        {!!totalAmount && totalAmount !== 0 && installments > 1 && (
+        {/* Hint: monto por cuota / mensual */}
+        {!!totalAmount && totalAmount !== 0 && recurring ? (
+          <p className="-mt-2 text-right text-xs text-muted-foreground">
+            {formatCurrency(totalAmount, currency)} todos los meses
+          </p>
+        ) : !!totalAmount && totalAmount !== 0 && installments > 1 ? (
           <p className="-mt-2 text-right text-xs text-muted-foreground">
             {installments} cuotas de{" "}
             <span className="font-medium text-foreground">
               {formatCurrency((discountActive ? finalPrice : totalAmount) / installments, currency)}
             </span>
           </p>
-        )}
+        ) : null}
 
         {/* Categoría */}
         <div className="space-y-3">

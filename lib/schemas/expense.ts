@@ -21,6 +21,8 @@ export const expenseSchema = z
     installment_amount: z
       .number()
       .refine((v) => v !== 0, "El monto de la cuota no puede ser 0"),
+    // Consumo fijo mensual: se repite todos los meses sin fin (installments = 1).
+    recurring: z.boolean().default(false),
     discount_percentage: z
       .number()
       .min(0, "Mínimo 0%")
@@ -49,6 +51,14 @@ export const expenseSchema = z
         code: z.ZodIssueCode.custom,
         path: ["exchange_rate"],
         message: "Ingresá el tipo de cambio",
+      });
+    }
+    // Un consumo recurrente es un cargo mensual único, no se divide en cuotas.
+    if (data.recurring && data.installments !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["installments"],
+        message: "Un consumo fijo mensual no puede tener cuotas",
       });
     }
   });
