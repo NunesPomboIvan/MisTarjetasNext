@@ -117,7 +117,7 @@ export function CardsSortable({ active, archived }: CardsSortableProps) {
             {active.length}
           </span>
           <span className="text-[13px] font-medium text-foreground">
-            Tarjeta{active.length !== 1 ? "s" : ""}
+            activa{active.length !== 1 ? "s" : ""}
           </span>
         </div>
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>

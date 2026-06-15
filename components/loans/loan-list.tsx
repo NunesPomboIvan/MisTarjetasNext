@@ -112,7 +112,7 @@ export function LoanList({ active, archived }: LoanListProps) {
             {active.length}
           </span>
           <span className="text-[13px] font-medium text-foreground">
-            Préstamo{active.length !== 1 ? "s" : ""}
+            activo{active.length !== 1 ? "s" : ""}
           </span>
         </div>
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
