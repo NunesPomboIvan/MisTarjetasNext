@@ -40,6 +40,8 @@ export interface CardVencimiento {
   amount: number;
   daysUntil: number;
   overdue: boolean;
+  /** Offset del período (en meses) respecto al período actual de la tarjeta. */
+  offset: number;
 }
 
 export interface LoanVencimiento {
@@ -127,6 +129,7 @@ export function computeUpcomingByMonth({
   // período según la fecha de cierre) y lo mapeamos al mes en que vence.
   for (const card of cards) {
     const cardExpenses = expenses.filter((e) => e.card_id === card.id);
+    const currentPeriodKey = getCurrentPeriod(card).key;
     const periodMap = new Map<string, { due: Date; total: number }>();
     for (const exp of cardExpenses) {
       // Recurrente: en vez de iterar las cuotas, proyectamos desde el período
@@ -150,7 +153,7 @@ export function computeUpcomingByMonth({
         periodMap.set(period.key, entry);
       }
     }
-    for (const { due, total } of periodMap.values()) {
+    for (const [periodKey, { due, total }] of periodMap.entries()) {
       if (total <= 0) continue;
       const dueMonthKey = format(due, "yyyy-MM");
       // Las tarjetas no llevan registro de pago por período: los meses ya
@@ -169,6 +172,7 @@ export function computeUpcomingByMonth({
         amount: total,
         daysUntil,
         overdue,
+        offset: monthsBetweenKeys(currentPeriodKey, periodKey),
       });
       g.cardsTotal += total;
       g.total += total;

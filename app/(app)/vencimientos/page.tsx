@@ -222,7 +222,10 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
         ? "text-amber-500"
         : "text-muted-foreground";
 
-  const href = item.kind === "card" ? `/cards/${item.cardId}` : `/prestamos/${item.loanId}`;
+  const href =
+    item.kind === "card"
+      ? `/cards/${item.cardId}${item.offset ? `?offset=${item.offset}` : ""}`
+      : `/prestamos/${item.loanId}`;
 
   return (
     <Link
