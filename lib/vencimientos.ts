@@ -42,6 +42,11 @@ export interface CardVencimiento {
   overdue: boolean;
   /** Offset del período (en meses) respecto al período actual de la tarjeta. */
   offset: number;
+  /**
+   * Monto del mes de vencimiento anterior para esta misma tarjeta (para comparar
+   * mes a mes). null si no hay mes previo con el que comparar (primera carga).
+   */
+  prevAmount: number | null;
 }
 
 export interface LoanVencimiento {
@@ -153,6 +158,15 @@ export function computeUpcomingByMonth({
         periodMap.set(period.key, entry);
       }
     }
+    // Total por mes de vencimiento (incluye meses pasados ya pagados) para
+    // poder comparar el monto de cada vencimiento con el del mes anterior.
+    const dueByMonth = new Map<string, number>();
+    for (const { due, total } of periodMap.values()) {
+      if (total <= 0) continue;
+      const k = format(due, "yyyy-MM");
+      dueByMonth.set(k, (dueByMonth.get(k) ?? 0) + total);
+    }
+
     for (const [periodKey, { due, total }] of periodMap.entries()) {
       if (total <= 0) continue;
       const dueMonthKey = format(due, "yyyy-MM");
@@ -162,6 +176,10 @@ export function computeUpcomingByMonth({
       const g = getMonth(due);
       const daysUntil = differenceInCalendarDays(due, todayStart);
       const overdue = daysUntil < 0;
+      // Mes anterior de vencimiento (calendario): "YYYY-MM" menos un mes.
+      const [py, pm] = dueMonthKey.split("-").map(Number);
+      const prevMonthKey = format(new Date(py, pm - 2, 1), "yyyy-MM");
+      const prevAmount = dueByMonth.get(prevMonthKey) ?? null;
       g.cards.push({
         kind: "card",
         cardId: card.id,
@@ -173,6 +191,7 @@ export function computeUpcomingByMonth({
         daysUntil,
         overdue,
         offset: monthsBetweenKeys(currentPeriodKey, periodKey),
+        prevAmount,
       });
       g.cardsTotal += total;
       g.total += total;

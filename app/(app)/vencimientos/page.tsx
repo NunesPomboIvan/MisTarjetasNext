@@ -212,6 +212,43 @@ function dueText(item: CardVencimiento | LoanVencimiento): { text: string; tone:
   return { text: `Vence el ${formatLongDate(item.due)}`, tone: "muted" };
 }
 
+/** Formatea un monto con signo, sin decimales: "+$15.300" / "-$8.200" / "$0". */
+function formatSignedCurrency(diff: number): string {
+  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+  const abs = new Intl.NumberFormat("es-AR").format(Math.abs(Math.round(diff)));
+  return `${sign}$${abs}`;
+}
+
+/** Formatea un porcentaje con signo y un decimal: "+12,4%" / "-6,1%" / "0,0%". */
+function formatSignedPct(pct: number): string {
+  const sign = pct > 0 ? "+" : pct < 0 ? "-" : "";
+  const abs = new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Math.abs(pct));
+  return `${sign}${abs}%`;
+}
+
+/**
+ * Comparación del monto del vencimiento contra el mismo mes anterior de la
+ * tarjeta. Verde si bajó, rojo si subió, gris si es igual.
+ */
+function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount: number }) {
+  const diff = amount - prevAmount;
+  const pct = (diff / prevAmount) * 100;
+  const toneClass =
+    diff < 0
+      ? "text-emerald-600 dark:text-emerald-400"
+      : diff > 0
+        ? "text-destructive"
+        : "text-muted-foreground";
+  return (
+    <p className={cn("mt-0.5 text-[10.5px] font-semibold tabular-nums", toneClass)}>
+      {formatSignedCurrency(diff)} · {formatSignedPct(pct)}
+    </p>
+  );
+}
+
 function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
   const accent = item.accent || "#6366f1";
   const { text, tone } = dueText(item);
@@ -267,6 +304,9 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
           amount={item.amount}
           className="block text-[14px] font-semibold tabular-nums text-foreground"
         />
+        {item.kind === "card" && item.prevAmount != null && (
+          <MonthOverMonthDiff amount={item.amount} prevAmount={item.prevAmount} />
+        )}
         <p className={cn("mt-0.5 text-[10.5px] font-semibold", toneClass)}>{text}</p>
       </div>
     </Link>

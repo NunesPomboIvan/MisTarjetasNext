@@ -32,11 +32,14 @@ export function CardDetailSwipe({
   const startX = React.useRef<number | null>(null);
   const startY = React.useRef<number | null>(null);
 
+  // Usamos replace (no push) para que el swipe entre tarjetas NO acumule
+  // historial: así el botón "volver" respeta el origen de navegación (Home o
+  // listado) en vez de retroceder a la tarjeta vista por swipe.
   const goPrev = React.useCallback(() => {
-    if (prevId) router.push(`/cards/${prevId}`);
+    if (prevId) router.replace(`/cards/${prevId}`);
   }, [prevId, router]);
   const goNext = React.useCallback(() => {
-    if (nextId) router.push(`/cards/${nextId}`);
+    if (nextId) router.replace(`/cards/${nextId}`);
   }, [nextId, router]);
 
   React.useEffect(() => {

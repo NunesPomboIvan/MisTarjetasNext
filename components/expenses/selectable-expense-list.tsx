@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, ListChecks } from "lucide-react";
@@ -37,6 +37,13 @@ interface SelectableExpenseListProps {
   cardId?: string;
   /** Agrupa los consumos por mes con su subtotal (Movimientos global). */
   groupByMonth?: boolean;
+  /**
+   * Contenido a renderizar entre la toolbar de selección y la lista
+   * (p. ej. el buscador + filtros del detalle de tarjeta).
+   */
+  afterToolbar?: ReactNode;
+  /** Qué mostrar cuando no hay items (tras filtrar). Por defecto no muestra nada. */
+  emptyState?: ReactNode;
 }
 
 /**
@@ -49,6 +56,8 @@ export function SelectableExpenseList({
   items,
   cardId,
   groupByMonth = false,
+  afterToolbar,
+  emptyState,
 }: SelectableExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -159,18 +168,26 @@ export function SelectableExpenseList({
             </div>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => setMode(true)}
-            className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
-          >
-            <ListChecks className="h-4 w-4" />
-            Seleccionar
-          </button>
+          items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setMode(true)}
+              className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
+            >
+              <ListChecks className="h-4 w-4" />
+              Seleccionar
+            </button>
+          )
         )}
       </div>
 
+      {/* Buscador / filtros entre la toolbar y la lista (opcional) */}
+      {afterToolbar}
+
       {/* Lista */}
+      {items.length === 0 ? (
+        emptyState
+      ) : (
       <div className={cn(isPending && "pointer-events-none opacity-50")}>
         {groups ? (
           <div className="space-y-5">
@@ -193,6 +210,7 @@ export function SelectableExpenseList({
           <div className="space-y-2">{items.map(renderRow)}</div>
         )}
       </div>
+      )}
 
       {/* Confirmación de borrado en lote */}
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

@@ -214,37 +214,36 @@ export default async function CardDetailPage({
 
       {/* Lista de movimientos del período */}
       <section className="space-y-3">
-        <div className="flex items-end justify-between">
-          <h2 className="font-display text-[16px] font-semibold text-foreground">
-            Movimientos{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              ({periodExpenses.length})
-            </span>
-          </h2>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/expenses/new?card_id=${id}&recurring=1`}
-              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-            >
-              <Repeat className="h-3.5 w-3.5" />
-              Fijo
-            </Link>
-            <Link
-              href={`/expenses/new?card_id=${id}&fee=1`}
-              className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-            >
-              <Landmark className="h-3.5 w-3.5" />
-              Gastos
-            </Link>
-            <Link
-              href={`/expenses/new?card_id=${id}`}
-              className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Agregar
-            </Link>
-          </div>
+        {/* Acciones arriba, separadas del título para dar aire respecto del
+            resumen superior. */}
+        <div className="flex items-center justify-end gap-2">
+          <Link
+            href={`/expenses/new?card_id=${id}&recurring=1`}
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+          >
+            <Repeat className="h-3.5 w-3.5" />
+            Fijo
+          </Link>
+          <Link
+            href={`/expenses/new?card_id=${id}&fee=1`}
+            className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+          >
+            <Landmark className="h-3.5 w-3.5" />
+            Gastos
+          </Link>
+          <Link
+            href={`/expenses/new?card_id=${id}`}
+            className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Agregar
+          </Link>
         </div>
+
+        {/* Título, ligeramente más bajo para separarlo del bloque de acciones. */}
+        <h2 className="pt-1 font-display text-[16px] font-semibold text-foreground">
+          Movimientos
+        </h2>
 
         {periodExpenses.length === 0 ? (
           <EmptyState
