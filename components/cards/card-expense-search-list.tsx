@@ -10,6 +10,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { SelectableExpenseList } from "@/components/expenses/selectable-expense-list";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
@@ -330,22 +331,22 @@ function FilterSheet({
           {/* Fecha */}
           <FilterGroup label="Fecha">
             <div className="grid grid-cols-2 gap-2">
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Desde</span>
-                <Input
-                  type="date"
+              <div className="min-w-0 space-y-1">
+                <span className="block text-[11px] text-muted-foreground">Desde</span>
+                <DatePickerField
                   value={draft.desde}
-                  onChange={(e) => set("desde", e.target.value)}
+                  onChange={(v) => set("desde", v)}
+                  placeholder="Desde"
                 />
-              </label>
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Hasta</span>
-                <Input
-                  type="date"
+              </div>
+              <div className="min-w-0 space-y-1">
+                <span className="block text-[11px] text-muted-foreground">Hasta</span>
+                <DatePickerField
                   value={draft.hasta}
-                  onChange={(e) => set("hasta", e.target.value)}
+                  onChange={(v) => set("hasta", v)}
+                  placeholder="Hasta"
                 />
-              </label>
+              </div>
             </div>
           </FilterGroup>
 
