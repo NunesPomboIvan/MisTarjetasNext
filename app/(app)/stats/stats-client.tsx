@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
-import { CategoryDonut } from "@/components/stats/category-donut";
 import { SpendBars } from "@/components/stats/spend-bars";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { startOfMonth, subMonths, format, parseISO } from "date-fns";
+import { format, parseISO, subDays, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
@@ -20,9 +19,9 @@ interface StatsClientProps {
 }
 
 export function StatsClient({ expenses, cards }: StatsClientProps) {
-  // Por defecto, últimos 6 meses (para que el gráfico por mes sea útil).
+  // Por defecto, últimos 30 días.
   const [desde, setDesde] = useState(() =>
-    format(startOfMonth(subMonths(new Date(), 5)), "yyyy-MM-dd")
+    format(subDays(new Date(), 29), "yyyy-MM-dd")
   );
   const [hasta, setHasta] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [cardId, setCardId] = useState<string>("all");
@@ -36,40 +35,29 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
     });
   }, [expenses, cardId, desde, hasta]);
 
-  const total = filtered.reduce((s, e) => s + toArs(e, e.installment_amount), 0);
+  // Granularidad del gráfico: por día en rangos cortos (≤ ~3 meses), por mes en
+  // rangos largos. Así con el default de 30 días no queda en una sola barra.
+  const byDay = useMemo(() => {
+    if (!desde || !hasta) return false;
+    return differenceInCalendarDays(parseISO(hasta), parseISO(desde)) <= 92;
+  }, [desde, hasta]);
 
-  const byCategory = useMemo(() => {
-    const map = new Map<string, { name: string; emoji: string; color: string; amount: number }>();
-    for (const e of filtered) {
-      const cat = e.category;
-      const key = cat?.id ?? "none";
-      const existing = map.get(key);
-      const amount = (existing?.amount ?? 0) + toArs(e, e.installment_amount);
-      map.set(key, {
-        name: cat?.name ?? "Sin categoría",
-        emoji: cat?.emoji ?? "❓",
-        color: cat?.color_bg ?? "#94a3b8",
-        amount,
-      });
-    }
-    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
-  }, [filtered]);
-
-  // Gasto agrupado por mes dentro del rango seleccionado.
   const barData = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of filtered) {
-      const key = e.expense_date.slice(0, 7); // yyyy-MM
+      const key = byDay ? e.expense_date : e.expense_date.slice(0, 7);
       map.set(key, (map.get(key) ?? 0) + toArs(e, e.installment_amount));
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, amount]) => ({
         key,
-        label: format(new Date(key + "-01T00:00:00"), "MMM", { locale: es }),
+        label: byDay
+          ? format(parseISO(key), "d/M")
+          : format(new Date(key + "-01T00:00:00"), "MMM", { locale: es }),
         amount,
       }));
-  }, [filtered]);
+  }, [filtered, byDay]);
 
   const rangeLabel =
     desde && hasta
@@ -132,16 +120,12 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         </select>
       </div>
 
-      {/* Donut por categoría */}
-      <section className="rounded-[20px] border border-border bg-card p-5">
-        <p className="text-[14px] font-semibold text-foreground">Consumos por categoría</p>
-        <CategoryDonut categories={byCategory} total={total} />
-      </section>
-
-      {/* Gasto por mes */}
+      {/* Evolución del gasto (por día en rangos cortos, por mes en largos) */}
       <section className="rounded-[20px] border border-border bg-card p-5">
         <div className="mb-1 flex items-center justify-between">
-          <p className="text-[14px] font-semibold text-foreground">Gasto por mes</p>
+          <p className="text-[14px] font-semibold text-foreground">
+            {byDay ? "Gasto por día" : "Gasto por mes"}
+          </p>
           <span className="text-[12px] text-muted-foreground">{rangeLabel}</span>
         </div>
         <SpendBars data={barData} />
