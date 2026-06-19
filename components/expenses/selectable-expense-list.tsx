@@ -44,6 +44,11 @@ interface SelectableExpenseListProps {
   afterToolbar?: ReactNode;
   /** Qué mostrar cuando no hay items (tras filtrar). Por defecto no muestra nada. */
   emptyState?: ReactNode;
+  /**
+   * Botones de acción (p. ej. Fijo / Gastos / Agregar) que se muestran en la
+   * misma fila que "Seleccionar" cuando NO se está en modo selección.
+   */
+  actions?: ReactNode;
 }
 
 /**
@@ -58,6 +63,7 @@ export function SelectableExpenseList({
   groupByMonth = false,
   afterToolbar,
   emptyState,
+  actions,
 }: SelectableExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -135,10 +141,10 @@ export function SelectableExpenseList({
 
   return (
     <div className="space-y-3">
-      {/* Toolbar de selección */}
-      <div className="flex min-h-[28px] items-center justify-between px-0.5">
+      {/* Toolbar: acciones + selección en una sola fila */}
+      <div className="flex min-h-[28px] items-center px-0.5">
         {mode ? (
-          <>
+          <div className="flex w-full items-center justify-between">
             <button
               type="button"
               onClick={exit}
@@ -166,18 +172,21 @@ export function SelectableExpenseList({
                 Eliminar{selected.size > 0 ? ` (${selected.size})` : ""}
               </button>
             </div>
-          </>
+          </div>
         ) : (
-          items.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setMode(true)}
-              className="ml-auto inline-flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
-            >
-              <ListChecks className="h-4 w-4" />
-              Seleccionar
-            </button>
-          )
+          <div className="flex w-full flex-wrap items-center gap-2">
+            {actions}
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setMode(true)}
+                className="inline-flex h-8 items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
+              >
+                <ListChecks className="h-4 w-4" />
+                Seleccionar
+              </button>
+            )}
+          </div>
         )}
       </div>
 

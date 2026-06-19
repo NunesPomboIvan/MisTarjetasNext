@@ -19,6 +19,8 @@ import type { SelectableExpenseItem } from "@/components/expenses/selectable-exp
 interface CardExpenseSearchListProps {
   cardId: string;
   items: SelectableExpenseItem[];
+  /** Acciones (Fijo / Gastos / Agregar) para la fila de la toolbar. */
+  actions?: React.ReactNode;
 }
 
 type Tipo = "todos" | "gastos" | "reintegros";
@@ -72,7 +74,7 @@ function countActive(f: Filters): number {
   return n;
 }
 
-export function CardExpenseSearchList({ cardId, items }: CardExpenseSearchListProps) {
+export function CardExpenseSearchList({ cardId, items, actions }: CardExpenseSearchListProps) {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -212,6 +214,7 @@ export function CardExpenseSearchList({ cardId, items }: CardExpenseSearchListPr
       <SelectableExpenseList
         cardId={cardId}
         items={filtered}
+        actions={actions}
         afterToolbar={searchBar}
         emptyState={emptyState}
       />

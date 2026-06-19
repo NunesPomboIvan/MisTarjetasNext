@@ -98,6 +98,34 @@ export default async function CardDetailPage({
   const disponible = Math.max(0, limite - saldo);
   const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
 
+  // Acciones de movimientos (Fijo / Gastos / Agregar). Se renderizan en la
+  // misma fila que "Seleccionar" dentro de la lista.
+  const movimientoActions = (
+    <>
+      <Link
+        href={`/expenses/new?card_id=${id}&recurring=1`}
+        className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+      >
+        <Repeat className="h-3.5 w-3.5" />
+        Fijo
+      </Link>
+      <Link
+        href={`/expenses/new?card_id=${id}&fee=1`}
+        className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+      >
+        <Landmark className="h-3.5 w-3.5" />
+        Gastos
+      </Link>
+      <Link
+        href={`/expenses/new?card_id=${id}`}
+        className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Agregar
+      </Link>
+    </>
+  );
+
   return (
     <CardDetailSwipe
       prevId={prevId}
@@ -212,52 +240,29 @@ export default async function CardDetailPage({
         </div>
       </section>
 
-      {/* Lista de movimientos del período */}
+      {/* Lista de movimientos del período. Las acciones (Fijo/Gastos/Agregar)
+          van en la misma fila que "Seleccionar", sin título, para ganar
+          espacio vertical. */}
       <section className="space-y-3">
-        {/* Acciones arriba, separadas del título para dar aire respecto del
-            resumen superior. */}
-        <div className="flex items-center justify-end gap-2">
-          <Link
-            href={`/expenses/new?card_id=${id}&recurring=1`}
-            className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-          >
-            <Repeat className="h-3.5 w-3.5" />
-            Fijo
-          </Link>
-          <Link
-            href={`/expenses/new?card_id=${id}&fee=1`}
-            className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-          >
-            <Landmark className="h-3.5 w-3.5" />
-            Gastos
-          </Link>
-          <Link
-            href={`/expenses/new?card_id=${id}`}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Agregar
-          </Link>
-        </div>
-
-        {/* Título, ligeramente más bajo para separarlo del bloque de acciones. */}
-        <h2 className="pt-1 font-display text-[16px] font-semibold text-foreground">
-          Movimientos
-        </h2>
-
         {periodExpenses.length === 0 ? (
-          <EmptyState
-            icon={<span>🧾</span>}
-            title="Sin consumos en este período"
-            description="Agregá un consumo para que aparezca acá"
-            action={{
-              label: "Agregar consumo",
-              href: `/expenses/new?card_id=${id}`,
-            }}
-          />
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              {movimientoActions}
+            </div>
+            <EmptyState
+              icon={<span>🧾</span>}
+              title="Sin consumos en este período"
+              description="Agregá un consumo para que aparezca acá"
+              action={{
+                label: "Agregar consumo",
+                href: `/expenses/new?card_id=${id}`,
+              }}
+            />
+          </>
         ) : (
           <CardExpenseSearchList
             cardId={id}
+            actions={movimientoActions}
             items={periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);
               const p = new URLSearchParams({ card_id: id });
