@@ -175,7 +175,6 @@ export function SelectableExpenseList({
           </div>
         ) : (
           <div className="flex w-full flex-wrap items-center gap-2">
-            {actions}
             {items.length > 0 && (
               <button
                 type="button"
@@ -186,6 +185,7 @@ export function SelectableExpenseList({
                 Seleccionar
               </button>
             )}
+            {actions}
           </div>
         )}
       </div>
