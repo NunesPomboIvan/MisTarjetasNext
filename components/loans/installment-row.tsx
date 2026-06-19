@@ -167,10 +167,10 @@ export function InstallmentRow({
               )}
             >
               {isOverdue
-                ? `Vencida hace ${Math.abs(daysUntil)} día${Math.abs(daysUntil) === 1 ? "" : "s"}`
+                ? `Venció hace ${Math.abs(daysUntil)} día${Math.abs(daysUntil) === 1 ? "" : "s"}`
                 : daysUntil === 0
                   ? "Vence hoy"
-                  : `En ${daysUntil} día${daysUntil === 1 ? "" : "s"}`}
+                  : `Faltan ${daysUntil} día${daysUntil === 1 ? "" : "s"} para vencer`}
             </p>
           )}
         </div>

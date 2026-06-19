@@ -8,7 +8,7 @@ import { UtilizationDonut } from "@/components/shared/utilization-donut";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
-import { SelectableExpenseList } from "@/components/expenses/selectable-expense-list";
+import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -257,7 +257,7 @@ export default async function CardDetailPage({
             }}
           />
         ) : (
-          <SelectableExpenseList
+          <CardExpenseSearchList
             cardId={id}
             items={periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);

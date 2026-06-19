@@ -160,6 +160,33 @@ export async function updateCardPeriod(
 
   if (error) return { success: false, error: error.message };
 
+  // Propagar las mismas fechas a todas las tarjetas adicionales (extensiones).
+  const { data: childCards } = await supabase
+    .from("cards")
+    .select("*")
+    .eq("parent_card_id", id)
+    .eq("user_id", user.id);
+
+  if (childCards && childCards.length > 0) {
+    await Promise.all(
+      childCards.map(async (child) => {
+        const childUpdate = applyPeriodDatesChange(child, closeDate, dueDate);
+        let { error: childErr } = await supabase
+          .from("cards")
+          .update(childUpdate)
+          .eq("id", child.id)
+          .eq("user_id", user.id);
+        if (childErr?.message.includes("date_overrides")) {
+          await supabase
+            .from("cards")
+            .update({ close_date: closeDate, due_date: dueDate })
+            .eq("id", child.id)
+            .eq("user_id", user.id);
+        }
+      })
+    );
+  }
+
   revalidatePath("/", "layout");
   return { success: true };
 }
