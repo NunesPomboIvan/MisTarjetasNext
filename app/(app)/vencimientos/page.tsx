@@ -240,21 +240,13 @@ function formatSignedPct(pct: number, decimals = 1): string {
 
 /**
  * Variación del total del mes contra el mes anterior de la lista. Verde si
- * bajó, rojo si subió. El primer mes no tiene base de comparación. Muestra el
- * porcentaje y el importe de la diferencia (sin "vs <mes>").
+ * bajó, rojo si subió. Muestra el importe de la diferencia y luego el
+ * porcentaje. No muestra nada en el primer mes ni cuando no hay cambios.
  */
 function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number | null }) {
-  if (prevTotal == null) {
-    return (
-      <p className="mt-0.5 text-[11px] text-muted-foreground">
-        — Sin variación (primer período)
-      </p>
-    );
-  }
+  if (prevTotal == null) return null;
   const diff = total - prevTotal;
-  if (diff === 0) {
-    return <p className="mt-0.5 text-[11px] text-muted-foreground">— Sin cambios</p>;
-  }
+  if (diff === 0) return null;
   const down = diff < 0;
   const toneClass = down
     ? "text-emerald-600 dark:text-emerald-400"
@@ -262,8 +254,8 @@ function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number
   const pct = prevTotal !== 0 ? (diff / prevTotal) * 100 : 0;
   return (
     <p className={cn("mt-0.5 text-[11px] font-semibold tabular-nums", toneClass)}>
-      {down ? "↓" : "↑"} {prevTotal !== 0 ? `${formatSignedPct(pct, 2)} · ` : ""}
-      {formatSignedCurrency(diff)}
+      {down ? "↓" : "↑"} {formatSignedCurrency(diff)}
+      {prevTotal !== 0 ? ` · ${formatSignedPct(pct, 2)}` : ""}
     </p>
   );
 }
