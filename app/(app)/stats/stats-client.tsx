@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
-import { SpendBars } from "@/components/stats/spend-bars";
+import { CategoryDonut } from "@/components/stats/category-donut";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { format, parseISO, subDays, differenceInCalendarDays } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
@@ -35,29 +35,35 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
     });
   }, [expenses, cardId, desde, hasta]);
 
-  // Granularidad del gráfico: por día en rangos cortos (≤ ~3 meses), por mes en
-  // rangos largos. Así con el default de 30 días no queda en una sola barra.
-  const byDay = useMemo(() => {
-    if (!desde || !hasta) return false;
-    return differenceInCalendarDays(parseISO(hasta), parseISO(desde)) <= 92;
-  }, [desde, hasta]);
-
-  const barData = useMemo(() => {
-    const map = new Map<string, number>();
+  // Gasto agrupado por categoría (en pesos), ordenado de mayor a menor.
+  const categoryData = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; emoji: string; color: string; amount: number }
+    >();
     for (const e of filtered) {
-      const key = byDay ? e.expense_date : e.expense_date.slice(0, 7);
-      map.set(key, (map.get(key) ?? 0) + toArs(e, e.installment_amount));
+      const cat = e.category;
+      const key = cat?.id ?? "none";
+      const amount = toArs(e, e.installment_amount);
+      const prev = map.get(key);
+      if (prev) {
+        prev.amount += amount;
+      } else {
+        map.set(key, {
+          name: cat?.name ?? "Sin categoría",
+          emoji: cat?.emoji ?? "❓",
+          color: cat?.color_bg ?? "#64748b",
+          amount,
+        });
+      }
     }
-    return Array.from(map.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, amount]) => ({
-        key,
-        label: byDay
-          ? format(parseISO(key), "d/M")
-          : format(new Date(key + "-01T00:00:00"), "MMM", { locale: es }),
-        amount,
-      }));
-  }, [filtered, byDay]);
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
+  }, [filtered]);
+
+  const totalAmount = useMemo(
+    () => categoryData.reduce((s, c) => s + c.amount, 0),
+    [categoryData]
+  );
 
   const rangeLabel =
     desde && hasta
@@ -120,15 +126,15 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
         </select>
       </div>
 
-      {/* Evolución del gasto (por día en rangos cortos, por mes en largos) */}
+      {/* Gasto por categoría */}
       <section className="rounded-[20px] border border-border bg-card p-5">
-        <div className="mb-1 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <p className="text-[14px] font-semibold text-foreground">
-            {byDay ? "Gasto por día" : "Gasto por mes"}
+            Gasto por categoría
           </p>
           <span className="text-[12px] text-muted-foreground">{rangeLabel}</span>
         </div>
-        <SpendBars data={barData} />
+        <CategoryDonut categories={categoryData} total={totalAmount} />
       </section>
     </div>
   );

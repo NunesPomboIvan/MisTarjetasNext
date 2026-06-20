@@ -77,7 +77,12 @@ export default async function DashboardPage() {
     const currentPeriod = getCurrentPeriod(card);
     const currentTotal = cardExpenses.reduce((s, e) => s + getAmountInPeriodArs(e, currentPeriod), 0);
 
-    return { card, period, total, currentPeriod, currentTotal };
+    // Último uso: fecha del consumo más reciente (allExpenses viene ordenado
+    // por expense_date desc, así que el primero es el último usado). Si no tiene
+    // consumos, usamos la fecha de creación para que ordene al final.
+    const lastUsed = cardExpenses[0]?.expense_date ?? card.created_at.slice(0, 10);
+
+    return { card, period, total, currentPeriod, currentTotal, lastUsed };
   });
 
   const cardsSaldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
@@ -185,7 +190,7 @@ export default async function DashboardPage() {
             <HomeCardsCarousel
               maxH={200}
               items={[...cardSummaries]
-                .sort((a, b) => b.currentTotal - a.currentTotal)
+                .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed))
                 .map(({ card, currentTotal, currentPeriod }) => ({
                   card,
                   total: currentTotal,
