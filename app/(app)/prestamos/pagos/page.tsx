@@ -119,7 +119,8 @@ export default async function PrestamosPagosPage() {
           {/* Lista de cuotas próximas */}
           <section className="space-y-2.5">
             {upcoming.map(({ inst, loan, dueDate, daysUntil, totalForLoan, amountArs }) => {
-              const isUrgent = daysUntil <= 3;
+              const isToday = daysUntil <= 0;
+              const isUrgent = daysUntil <= 1;
               const accent = loan.color || "#6366f1";
               return (
                 <Link
@@ -144,27 +145,46 @@ export default async function PrestamosPagosPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[14px] font-semibold text-foreground">
                         {loan.bank || loan.description}
+                        <span className="ml-1.5 text-[12px] font-normal tabular-nums text-muted-foreground">
+                          Cuota {inst.installment_number}/{totalForLoan}
+                        </span>
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Cuota {inst.installment_number}/{totalForLoan} ·{" "}
                         {formatWeekdayLongDate(dueDate)}
                       </p>
+                      <Money
+                        amount={amountArs}
+                        className="mt-1 block text-[13px] font-semibold tabular-nums text-foreground"
+                      />
                     </div>
 
                     <div className="flex-shrink-0 text-right">
-                      <Money
-                        amount={amountArs}
-                        className="block text-[15px] font-semibold tabular-nums text-foreground"
-                      />
-                      <p
-                        className={
-                          "mt-0.5 text-[11px] font-semibold " +
-                          (isUrgent ? "text-destructive" : "text-muted-foreground")
-                        }
-                      >
-                        {daysUntil <= 0
-                          ? "Vence hoy"
-                          : `Vence en ${daysUntil} día${daysUntil === 1 ? "" : "s"}`}
+                      {isToday ? (
+                        <p
+                          className={
+                            "font-display text-[15px] font-bold leading-none " +
+                            (isUrgent ? "text-destructive" : "text-foreground")
+                          }
+                        >
+                          Hoy
+                        </p>
+                      ) : (
+                        <div className="flex items-baseline justify-end gap-1">
+                          <p
+                            className={
+                              "font-display text-[18px] font-bold leading-none tabular-nums " +
+                              (isUrgent ? "text-destructive" : "text-foreground")
+                            }
+                          >
+                            {daysUntil}
+                          </p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {daysUntil === 1 ? "día" : "días"}
+                          </p>
+                        </div>
+                      )}
+                      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        para vencer
                       </p>
                     </div>
                   </div>

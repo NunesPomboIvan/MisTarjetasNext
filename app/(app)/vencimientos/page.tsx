@@ -107,8 +107,12 @@ export default async function VencimientosPage() {
 
           {/* Meses */}
           <div className="space-y-3">
-            {months.map((m) => (
-              <MonthSection key={m.key} month={m} />
+            {months.map((m, i) => (
+              <MonthSection
+                key={m.key}
+                month={m}
+                prevTotal={i > 0 ? months[i - 1].total : null}
+              />
             ))}
           </div>
         </>
@@ -117,7 +121,7 @@ export default async function VencimientosPage() {
   );
 }
 
-function MonthSection({ month }: { month: MonthGroup }) {
+function MonthSection({ month, prevTotal }: { month: MonthGroup; prevTotal: number | null }) {
   const label = capitalize(formatDate(month.date, "MMMM yyyy"));
   // Abrimos por defecto el mes actual y cualquier mes con algo vencido.
   const defaultOpen = month.isCurrent || month.hasOverdue;
@@ -131,21 +135,26 @@ function MonthSection({ month }: { month: MonthGroup }) {
       )}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
-          <span
-            className={cn(
-              "truncate text-[14px] font-bold",
-              month.isCurrent ? "text-primary" : "text-foreground"
-            )}
-          >
-            {label}
-          </span>
-          {month.isCurrent && (
-            <span className="flex-shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-              Este mes
-            </span>
-          )}
+        <div className="flex min-w-0 items-start gap-2">
+          <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  "truncate text-[14px] font-bold",
+                  month.isCurrent ? "text-primary" : "text-foreground"
+                )}
+              >
+                {label}
+              </span>
+              {month.isCurrent && (
+                <span className="flex-shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                  Este mes
+                </span>
+              )}
+            </div>
+            <MonthVariation total={month.total} prevTotal={prevTotal} />
+          </div>
         </div>
         <Money
           amount={month.total}
@@ -219,14 +228,44 @@ function formatSignedCurrency(diff: number): string {
   return `${sign}$${abs}`;
 }
 
-/** Formatea un porcentaje con signo y un decimal: "+12,4%" / "-6,1%" / "0,0%". */
-function formatSignedPct(pct: number): string {
+/** Formatea un porcentaje con signo: "+12,4%" / "-6,1%" / "0,0%". */
+function formatSignedPct(pct: number, decimals = 1): string {
   const sign = pct > 0 ? "+" : pct < 0 ? "-" : "";
   const abs = new Intl.NumberFormat("es-AR", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(Math.abs(pct));
   return `${sign}${abs}%`;
+}
+
+/**
+ * Variación del total del mes contra el mes anterior de la lista. Verde si
+ * bajó, rojo si subió. El primer mes no tiene base de comparación. Muestra el
+ * porcentaje y el importe de la diferencia (sin "vs <mes>").
+ */
+function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number | null }) {
+  if (prevTotal == null) {
+    return (
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        — Sin variación (primer período)
+      </p>
+    );
+  }
+  const diff = total - prevTotal;
+  if (diff === 0) {
+    return <p className="mt-0.5 text-[11px] text-muted-foreground">— Sin cambios</p>;
+  }
+  const down = diff < 0;
+  const toneClass = down
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-destructive";
+  const pct = prevTotal !== 0 ? (diff / prevTotal) * 100 : 0;
+  return (
+    <p className={cn("mt-0.5 text-[11px] font-semibold tabular-nums", toneClass)}>
+      {down ? "↓" : "↑"} {prevTotal !== 0 ? `${formatSignedPct(pct, 2)} · ` : ""}
+      {formatSignedCurrency(diff)}
+    </p>
+  );
 }
 
 /**
