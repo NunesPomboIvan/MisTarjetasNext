@@ -255,7 +255,7 @@ function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number
   return (
     <p className={cn("mt-0.5 text-[11px] font-semibold tabular-nums", toneClass)}>
       {down ? "↓" : "↑"} {formatSignedCurrency(diff)}
-      {prevTotal !== 0 ? ` · ${formatSignedPct(pct, 2)}` : ""}
+      {prevTotal !== 0 ? ` ${formatSignedPct(pct, 2)}` : ""}
     </p>
   );
 }
