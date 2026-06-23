@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, Calendar, CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
+import { Banknote, Calendar, CalendarClock, ChevronRight, CreditCard, Landmark, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -139,6 +139,16 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
+  // Avatares de lo que compone el "Próximo a pagar": una tarjeta por cada
+  // tarjeta con saldo y un banco por cada préstamo con cuota próxima. Se
+  // muestran los primeros 2 y el resto se resume en "+N".
+  const payers: Array<"card" | "loan"> = [
+    ...cardSummaries.filter((c) => c.total > 0).map(() => "card" as const),
+    ...loansUpcoming.map(() => "loan" as const),
+  ];
+  const shownPayers = payers.slice(0, 2);
+  const extraPayers = payers.length - shownPayers.length;
+
   const hour = today.getHours();
   const saludo = greeting(hour);
   const isNight = hour < 6 || hour >= 20;
@@ -200,33 +210,62 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Próximo a vencer (mes en curso) → abre el detalle por mes */}
+          {/* Próximo a pagar (mes en curso) → abre el detalle por mes */}
           <Link
             href="/vencimientos"
             aria-label="Ver próximos vencimientos"
-            className="glass-card block rounded-[20px] px-5 py-2 transition-transform active:scale-[0.99]"
+            className="glass-card block rounded-[20px] px-5 py-3.5 transition-transform active:scale-[0.99]"
           >
-            <div className="flex w-full items-stretch justify-between gap-4">
-              <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <div className="flex w-full items-center justify-between gap-3">
+              {/* Izquierda: etiqueta + monto + acceso */}
+              <div className="flex min-w-0 flex-col">
+                <p className="text-[12px] font-medium text-muted-foreground">
+                  Próximo a pagar
+                </p>
                 <Money
                   amount={saldoTotal}
-                  className="block font-display text-[24px] font-bold leading-none tracking-tight text-foreground"
+                  className="mt-1 block font-display text-[26px] font-bold leading-none tracking-tight text-foreground"
                 />
+                <span className="mt-2 inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
+                  Ver próximos periodos
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
               </div>
 
-              {/* Caja de fecha tipo calendario */}
-              <div className="flex flex-shrink-0 items-center">
-                <div className="flex flex-col items-center rounded-[14px] border border-primary/40 px-4 py-2 text-center">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    {weekdayUpper}
-                  </span>
-                  <span className="mt-0.5 font-display text-[26px] font-bold leading-none tabular-nums text-foreground">
-                    {dayNumber}
-                  </span>
-                  <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {monthYearUpper}
-                  </span>
+              {/* Centro: avatares de lo que se paga */}
+              {payers.length > 0 && (
+                <div className="flex flex-shrink-0 items-center -space-x-2">
+                  {shownPayers.map((type, i) => (
+                    <div
+                      key={i}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-secondary ring-2 ring-card"
+                    >
+                      {type === "card" ? (
+                        <CreditCard className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Landmark className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  ))}
+                  {extraPayers > 0 && (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-secondary text-[12px] font-semibold text-muted-foreground ring-2 ring-card">
+                      +{extraPayers}
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Derecha: fecha tipo calendario */}
+              <div className="flex flex-shrink-0 flex-col items-end text-right">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {weekdayUpper}
+                </span>
+                <span className="mt-0.5 font-display text-[28px] font-bold leading-none tabular-nums text-foreground">
+                  {dayNumber}
+                </span>
+                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {monthYearUpper}
+                </span>
               </div>
             </div>
           </Link>
@@ -237,7 +276,7 @@ export default async function DashboardPage() {
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Tarjetas y préstamos
             </h2>
-            <div className="glass-card space-y-2 rounded-[20px] px-5 py-2">
+            <div className="glass-card space-y-2 rounded-[20px] px-5 py-3.5">
             <Link
               href="/pagos"
               className="group flex w-full items-center gap-3 text-left transition-colors"

@@ -135,8 +135,8 @@ function MonthSection({ month, prevTotal }: { month: MonthGroup; prevTotal: numb
       )}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <div className="flex min-w-0 items-start gap-2">
-          <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+        <div className="flex min-w-0 items-center gap-2">
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span
@@ -221,21 +221,20 @@ function dueText(item: CardVencimiento | LoanVencimiento): { text: string; tone:
   return { text: `Vence el ${formatLongDate(item.due)}`, tone: "muted" };
 }
 
-/** Formatea un monto con signo, sin decimales: "+$15.300" / "-$8.200" / "$0". */
-function formatSignedCurrency(diff: number): string {
-  const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
+/** Formatea un monto sin signo ni decimales: "$15.300" / "$8.200" / "$0".
+ *  El color y la flecha indican si subió o bajó. */
+function formatAbsCurrency(diff: number): string {
   const abs = new Intl.NumberFormat("es-AR").format(Math.abs(Math.round(diff)));
-  return `${sign}$${abs}`;
+  return `$${abs}`;
 }
 
-/** Formatea un porcentaje con signo: "+12,4%" / "-6,1%" / "0,0%". */
-function formatSignedPct(pct: number, decimals = 1): string {
-  const sign = pct > 0 ? "+" : pct < 0 ? "-" : "";
+/** Formatea un porcentaje sin signo: "12,4%" / "6,1%" / "0,0%". */
+function formatAbsPct(pct: number, decimals = 1): string {
   const abs = new Intl.NumberFormat("es-AR", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(Math.abs(pct));
-  return `${sign}${abs}%`;
+  return `${abs}%`;
 }
 
 /**
@@ -254,8 +253,8 @@ function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number
   const pct = prevTotal !== 0 ? (diff / prevTotal) * 100 : 0;
   return (
     <p className={cn("mt-0.5 text-[11px] font-semibold tabular-nums", toneClass)}>
-      {down ? "↓" : "↑"} {formatSignedCurrency(diff)}
-      {prevTotal !== 0 ? ` ${formatSignedPct(pct, 2)}` : ""}
+      {down ? "↓" : "↑"} {formatAbsCurrency(diff)}
+      {prevTotal !== 0 ? ` ${formatAbsPct(pct, 2)}` : ""}
     </p>
   );
 }
@@ -275,7 +274,7 @@ function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount
         : "text-muted-foreground";
   return (
     <p className={cn("mt-0.5 text-[10.5px] font-semibold tabular-nums", toneClass)}>
-      {formatSignedCurrency(diff)} · {formatSignedPct(pct)}
+      {formatAbsCurrency(diff)} · {formatAbsPct(pct)}
     </p>
   );
 }
