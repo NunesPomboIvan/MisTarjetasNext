@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Banknote, Calendar, CalendarClock, ChevronRight, CreditCard, Landmark, Moon, Receipt, Sun } from "lucide-react";
+import { Banknote, Calendar, CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
@@ -139,16 +139,6 @@ export default async function DashboardPage() {
   const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
   const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
-  // Avatares de lo que compone el "Próximo a pagar": una tarjeta por cada
-  // tarjeta con saldo y un banco por cada préstamo con cuota próxima. Se
-  // muestran los primeros 2 y el resto se resume en "+N".
-  const payers: Array<"card" | "loan"> = [
-    ...cardSummaries.filter((c) => c.total > 0).map(() => "card" as const),
-    ...loansUpcoming.map(() => "loan" as const),
-  ];
-  const shownPayers = payers.slice(0, 2);
-  const extraPayers = payers.length - shownPayers.length;
-
   const hour = today.getHours();
   const saludo = greeting(hour);
   const isNight = hour < 6 || hour >= 20;
@@ -231,29 +221,6 @@ export default async function DashboardPage() {
                   <ChevronRight className="h-3.5 w-3.5" />
                 </span>
               </div>
-
-              {/* Centro: avatares de lo que se paga */}
-              {payers.length > 0 && (
-                <div className="flex flex-shrink-0 items-center -space-x-2">
-                  {shownPayers.map((type, i) => (
-                    <div
-                      key={i}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-secondary ring-2 ring-card"
-                    >
-                      {type === "card" ? (
-                        <CreditCard className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Landmark className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                  ))}
-                  {extraPayers > 0 && (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-secondary text-[12px] font-semibold text-muted-foreground ring-2 ring-card">
-                      +{extraPayers}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Derecha: fecha tipo calendario */}
               <div className="flex flex-shrink-0 flex-col items-end text-right">
