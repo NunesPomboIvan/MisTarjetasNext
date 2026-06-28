@@ -135,7 +135,7 @@ export default async function CierresPage() {
                       </div>
                     )}
                     <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      para cerrar
+                      {isToday ? "cierra" : "para cerrar"}
                     </p>
                   </div>
                 </div>
