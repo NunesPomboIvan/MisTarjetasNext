@@ -64,7 +64,7 @@ export default async function VencimientosPage() {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
             Próximos vencimientos
           </h1>
@@ -254,7 +254,12 @@ function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number
   return (
     <p className={cn("mt-0.5 text-[11px] font-semibold tabular-nums", toneClass)}>
       {down ? "↓" : "↑"} {formatAbsCurrency(diff)}
-      {prevTotal !== 0 ? ` ${formatAbsPct(pct, 2)}` : ""}
+      {prevTotal !== 0 && (
+        <>
+          <span className="text-muted-foreground"> · </span>
+          {formatAbsPct(pct, 2)}
+        </>
+      )}
     </p>
   );
 }
@@ -274,7 +279,9 @@ function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount
         : "text-muted-foreground";
   return (
     <p className={cn("mt-0.5 text-[10.5px] font-semibold tabular-nums", toneClass)}>
-      {formatAbsCurrency(diff)} · {formatAbsPct(pct)}
+      {formatAbsCurrency(diff)}
+      <span className="text-muted-foreground"> · </span>
+      {formatAbsPct(pct)}
     </p>
   );
 }
