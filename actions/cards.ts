@@ -78,11 +78,17 @@ export async function updateCard(id: string, formData: CardFormData): Promise<Ac
     return { success: false, error: error.message };
   }
 
-  // Las tarjetas adicionales heredan el color de su titular. Si esta tarjeta es
-  // titular de otras (extensiones), propagamos el color para que sigan iguales.
+  // Las tarjetas adicionales heredan color y fechas de cierre/vencimiento de su
+  // titular (en el formulario esos campos están bloqueados para las adicionales).
+  // Si esta tarjeta es titular de otras (extensiones), propagamos esos valores
+  // para que las imágenes de tarjeta y los períodos sigan iguales en toda la app.
   await supabase
     .from("cards")
-    .update({ color: parsed.data.color })
+    .update({
+      color: parsed.data.color,
+      close_date: parsed.data.close_date,
+      due_date: parsed.data.due_date,
+    })
     .eq("parent_card_id", id)
     .eq("user_id", user.id);
 
