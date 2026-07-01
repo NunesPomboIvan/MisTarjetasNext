@@ -160,6 +160,9 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
           router.push(
             result.id ? `${returnTo}${sep}card_id=${result.id}` : returnTo
           );
+        } else if (card) {
+          // Edición: volvemos al detalle de la tarjeta (no al listado).
+          router.push(`/cards/${card.id}`);
         } else {
           router.push(result.id ? `/cards/${result.id}` : "/cards");
         }

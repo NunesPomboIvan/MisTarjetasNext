@@ -25,7 +25,7 @@ export default async function TipoCambioPage() {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/more" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
             Tipo de cambio
           </h1>

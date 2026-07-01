@@ -45,7 +45,7 @@ export default async function LoanDetailPage({ params }: LoanDetailPageProps) {
       {/* Header con el nombre del préstamo */}
       <StickyPageHeader>
         <div className="flex items-center justify-between gap-3">
-          <BackButton />
+          <BackButton href="/prestamos" />
           <div className="min-w-0 flex-1 text-center">
             <h1 className="truncate text-[15px] font-semibold text-foreground">
               {loan.bank || loan.description}

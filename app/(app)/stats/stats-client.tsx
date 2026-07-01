@@ -75,7 +75,7 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
       <div className="space-y-4">
         <StickyPageHeader>
           <div className="flex items-center justify-between">
-            <BackButton />
+            <BackButton href="/more" />
             <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
             <div className="w-10" />
           </div>
@@ -93,7 +93,7 @@ export function StatsClient({ expenses, cards }: StatsClientProps) {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/more" />
           <h1 className="text-[15px] font-semibold text-foreground">Estadísticas</h1>
           <div className="w-10" />
         </div>

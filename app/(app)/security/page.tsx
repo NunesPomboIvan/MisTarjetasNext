@@ -9,7 +9,7 @@ export default function SecurityPage() {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center gap-3">
-          <BackButton />
+          <BackButton href="/more" />
           <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
             Privacidad y seguridad
           </h1>

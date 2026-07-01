@@ -58,7 +58,7 @@ export default async function CardPagosPage({ params }: PageProps) {
       {/* Header */}
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href={`/cards/${id}`} />
           <h1 className="text-[15px] font-semibold text-foreground">Próximo pago</h1>
           <div className="w-10" />
         </div>

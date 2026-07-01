@@ -146,7 +146,7 @@ export default async function CardDetailPage({
       {/* Header */}
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/cards" />
           <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
           <CardActionsMenu cardId={id} cardName={card.bank || card.name} />
         </div>

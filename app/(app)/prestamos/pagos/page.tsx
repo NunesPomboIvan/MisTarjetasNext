@@ -88,7 +88,7 @@ export default async function PrestamosPagosPage() {
       {/* Header */}
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/prestamos" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
             Préstamos a vencer
           </h1>

@@ -88,7 +88,7 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
     <div className="space-y-4">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href={`/cards/${id}`} />
           <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
           <MovimientosFilters
             basePath={`/cards/${id}/movimientos`}

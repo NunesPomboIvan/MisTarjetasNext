@@ -264,7 +264,7 @@ export default function HelpPage() {
       />
 
       <div className="relative flex items-center gap-3">
-        <BackButton />
+        <BackButton href="/more" />
         <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
           Ayuda
         </h1>

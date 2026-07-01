@@ -29,7 +29,7 @@ export default async function CardSettingsPage({ params }: PageProps) {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href={`/cards/${id}`} />
           <h1 className="text-[15px] font-semibold text-foreground">Ajustes de tarjeta</h1>
           <div className="w-10" />
         </div>

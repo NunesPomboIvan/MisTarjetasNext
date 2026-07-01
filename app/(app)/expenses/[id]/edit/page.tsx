@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { getGlobalExchangeRate } from "@/lib/exchange/server";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { BackButton } from "@/components/shared/back-button";
 
 export const metadata = { title: "Editar consumo" };
 
@@ -69,12 +68,7 @@ export default async function EditExpensePage({
     <div className="space-y-4">
       <StickyPageHeader>
         <div className="flex items-center gap-3">
-          <Link
-            href={backHref}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <BackButton href={backHref} />
           <div>
             <h1 className="text-xl font-bold">
               {isInstallmentEdit

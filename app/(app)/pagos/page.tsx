@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
+import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { getNextPayment } from "@/lib/periods/calculate";
 import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
@@ -52,10 +53,12 @@ export default async function PagosPage() {
     <div className="space-y-5">
       {/* Header */}
       <StickyPageHeader>
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-between">
+          <BackButton href="/" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
             Próximos vencimientos
           </h1>
+          <div className="h-10 w-10" aria-hidden />
         </div>
       </StickyPageHeader>
 

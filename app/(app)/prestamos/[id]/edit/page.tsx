@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { BackButton } from "@/components/shared/back-button";
 import { LoanEditForm } from "@/components/loans/loan-edit-form";
 import type { Loan } from "@/lib/supabase/database.types";
 
@@ -30,12 +29,7 @@ export default async function EditLoanPage({
     <div className="space-y-4">
       <StickyPageHeader>
         <div className="flex items-center gap-3">
-          <Link
-            href={`/prestamos/${id}`}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <BackButton href={`/prestamos/${id}`} />
           <div className="min-w-0">
             <h1 className="text-xl font-bold">Editar préstamo</h1>
             <p className="truncate text-sm text-muted-foreground">

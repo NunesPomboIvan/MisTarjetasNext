@@ -1,9 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { CardForm } from "@/components/cards/card-form";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { BackButton } from "@/components/shared/back-button";
 
 export const metadata = { title: "Nueva tarjeta" };
 
@@ -36,12 +35,7 @@ export default async function NewCardPage({
     <div className="space-y-4">
       <StickyPageHeader>
         <div className="flex items-center gap-3">
-          <Link
-            href={backHref}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <BackButton href={backHref} />
           <div>
             <h1 className="text-xl font-bold">Nueva tarjeta</h1>
             <p className="text-sm text-muted-foreground">Completá los datos de tu tarjeta</p>

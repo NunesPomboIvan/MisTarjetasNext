@@ -304,7 +304,7 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center gap-3">
-          <BackButton />
+          <BackButton href="/more" />
           <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
             Ajustes
           </h1>

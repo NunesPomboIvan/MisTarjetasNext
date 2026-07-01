@@ -95,7 +95,7 @@ export default async function ExpensesPage({
       {/* Header */}
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href="/" />
           <h1 className="text-[15px] font-semibold text-foreground">Movimientos</h1>
           <MovimientosFilters
             basePath="/expenses"

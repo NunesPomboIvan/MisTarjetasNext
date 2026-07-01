@@ -58,7 +58,7 @@ export default async function ExpenseDetailPage({
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between">
-          <BackButton />
+          <BackButton href={backHref} />
           <h1 className="text-[15px] font-semibold text-foreground">
             Detalle del consumo
           </h1>
