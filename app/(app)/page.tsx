@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Banknote, Calendar, CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
+import { CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
+import { VencimientosSelector } from "@/components/home/vencimientos-selector";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs, toArs } from "@/lib/periods/calculate";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
@@ -244,51 +245,9 @@ export default async function DashboardPage() {
               Tarjetas y préstamos
             </h2>
             <div className="glass-card space-y-2 rounded-[20px] px-5 py-3.5">
-            <Link
-              href="/pagos"
-              className="group flex w-full items-center gap-3 text-left transition-colors"
-              aria-label="Ver vencimientos de tarjetas de crédito"
-            >
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                style={{ background: "#6366f120", color: "#6366f1" }}
-              >
-                <Calendar className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Vencimiento de tarjetas
-                </p>
-                <p className="text-[11.5px] text-muted-foreground">
-                  Ver vencimientos de tus tarjetas
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-            </Link>
-
-            <div className="h-px bg-border" />
-
-            <Link
-              href={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
-              className="group flex w-full items-center gap-3 text-left transition-colors"
-              aria-label="Ver vencimientos de préstamos bancarios"
-            >
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                style={{ background: "#6366f120", color: "#6366f1" }}
-              >
-                <Banknote className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Vencimiento de préstamos
-                </p>
-                <p className="text-[11.5px] text-muted-foreground">
-                  Ver cuotas de tus préstamos
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-            </Link>
+            <VencimientosSelector
+              loansHref={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
+            />
 
             <div className="h-px bg-border" />
 
