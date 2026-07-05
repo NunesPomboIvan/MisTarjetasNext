@@ -20,6 +20,7 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { createCategory, updateCategory, deleteCategory } from "@/actions/categories";
 import {
   exportData,
@@ -27,8 +28,10 @@ import {
   exportExpensesCsv,
   importExpensesCsv,
   exportCsvTemplate,
+  type ExportExpensesFilters,
 } from "@/actions/backup";
-import type { Category } from "@/lib/supabase/database.types";
+import type { Category, Card } from "@/lib/supabase/database.types";
+import { cn } from "@/lib/utils";
 
 const THEMES = [
   { value: "light",  label: "Claro",     icon: Sun     },
@@ -118,11 +121,14 @@ function deriveColors(baseHex: string): { bg: string; text: string } {
   };
 }
 
+type ExportCard = Pick<Card, "id" | "name" | "bank" | "last_four" | "is_extension">;
+
 interface SettingsClientProps {
   categories: Category[];
+  cards: ExportCard[];
 }
 
-export function SettingsClient({ categories: initialCategories }: SettingsClientProps) {
+export function SettingsClient({ categories: initialCategories, cards }: SettingsClientProps) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -253,8 +259,25 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
     e.target.value = "";
   }
 
-  async function handleExportCsv() {
-    const result = await exportExpensesCsv();
+  // Sheet de opciones de exportación de consumos
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportCardIds, setExportCardIds] = useState<string[]>([]);
+  const [exportDateFrom, setExportDateFrom] = useState("");
+  const [exportDateTo, setExportDateTo] = useState("");
+
+  function toggleExportCard(id: string) {
+    setExportCardIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  }
+
+  function cardLabel(card: ExportCard) {
+    const bank = card.bank || (card.is_extension ? "Adicional" : card.name);
+    return `${bank} ····${card.last_four}`;
+  }
+
+  async function handleExportCsv(filters?: ExportExpensesFilters) {
+    const result = await exportExpensesCsv(filters);
     if (!result.success) return toast.error(result.error);
     const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -264,6 +287,15 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Consumos exportados");
+  }
+
+  function handleConfirmExport() {
+    setExportOpen(false);
+    void handleExportCsv({
+      cardIds: exportCardIds.length ? exportCardIds : undefined,
+      dateFrom: exportDateFrom || undefined,
+      dateTo: exportDateTo || undefined,
+    });
   }
 
   async function handleDownloadTemplate() {
@@ -488,7 +520,7 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
             <FileDown className="mr-2 h-4 w-4" />
             Descargar plantilla (CSV)
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportCsv}>
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
             <Download className="mr-2 h-4 w-4" />
             Exportar consumos (CSV)
           </Button>
@@ -512,6 +544,88 @@ export function SettingsClient({ categories: initialCategories }: SettingsClient
           <strong>DD/MM/AAAA</strong>.
         </p>
       </section>
+
+      <Sheet open={exportOpen} onOpenChange={setExportOpen}>
+        <SheetContent side="bottom" className="pb-safe">
+          <SheetHeader className="pb-2">
+            <SheetTitle>Exportar consumos</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-4 px-1 pb-2">
+            <div className="space-y-2">
+              <Label>Tarjetas</Label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExportCardIds([])}
+                  className={cn(
+                    "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all",
+                    exportCardIds.length === 0
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  Todas
+                </button>
+                {cards.map((card) => {
+                  const active = exportCardIds.includes(card.id);
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => toggleExportCard(card.id)}
+                      className={cn(
+                        "rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-all",
+                        active
+                          ? "border-primary bg-primary/10 text-primary shadow-sm"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      {cardLabel(card)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Período</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="export-from" className="text-xs font-normal text-muted-foreground">
+                    Desde
+                  </Label>
+                  <input
+                    id="export-from"
+                    type="date"
+                    value={exportDateFrom}
+                    onChange={(e) => setExportDateFrom(e.target.value)}
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="export-to" className="text-xs font-normal text-muted-foreground">
+                    Hasta
+                  </Label>
+                  <input
+                    id="export-to"
+                    type="date"
+                    value={exportDateTo}
+                    onChange={(e) => setExportDateTo(e.target.value)}
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Dejalo vacío para incluir todo el período.</p>
+            </div>
+
+            <Button className="btn-glass-primary w-full" onClick={handleConfirmExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

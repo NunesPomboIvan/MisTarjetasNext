@@ -109,19 +109,33 @@ function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
 }
 
+export interface ExportExpensesFilters {
+  /** IDs de tarjetas a incluir. Vacío o ausente = todas las tarjetas. */
+  cardIds?: string[];
+  /** Fecha desde (YYYY-MM-DD, inclusive). Ausente = sin límite inferior. */
+  dateFrom?: string;
+  /** Fecha hasta (YYYY-MM-DD, inclusive). Ausente = sin límite superior. */
+  dateTo?: string;
+}
+
 /** Exporta los consumos del usuario como CSV (legible/editable en Excel). */
-export async function exportExpensesCsv(): Promise<
-  { success: true; csv: string } | { success: false; error: string }
-> {
+export async function exportExpensesCsv(
+  filters?: ExportExpensesFilters
+): Promise<{ success: true; csv: string } | { success: false; error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "No autenticado" };
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("expenses")
     .select("*, category:categories(name), card:cards(name, bank, last_four)")
-    .eq("user_id", user.id)
-    .order("expense_date", { ascending: false });
+    .eq("user_id", user.id);
+
+  if (filters?.cardIds?.length) query = query.in("card_id", filters.cardIds);
+  if (filters?.dateFrom) query = query.gte("expense_date", filters.dateFrom);
+  if (filters?.dateTo) query = query.lte("expense_date", filters.dateTo);
+
+  const { data, error } = await query.order("expense_date", { ascending: false });
 
   if (error) return { success: false, error: "Error al exportar consumos" };
 

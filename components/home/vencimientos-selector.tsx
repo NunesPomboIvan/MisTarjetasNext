@@ -55,7 +55,12 @@ export function VencimientosSelector({ loansHref }: VencimientosSelectorProps) {
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" showCloseButton={false} className="pb-safe px-0">
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="pb-safe px-0"
+          initialFocus={false}
+        >
           <SheetHeader className="px-5 pb-2">
             <SheetTitle>Vencimientos</SheetTitle>
           </SheetHeader>
