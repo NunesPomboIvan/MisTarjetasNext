@@ -42,6 +42,8 @@ export interface CardVencimiento {
   overdue: boolean;
   /** Offset del período (en meses) respecto al período actual de la tarjeta. */
   offset: number;
+  /** Clave "YYYY-MM" del período (mes de cierre), para marcar el pago. */
+  periodKey: string;
   /**
    * Monto del mes de vencimiento anterior para esta misma tarjeta (para comparar
    * mes a mes). null si no hay mes previo con el que comparar (primera carga).
@@ -94,6 +96,8 @@ interface ComputeParams {
   pendingInstallments: LoanInstallment[];
   /** Cantidad total de cuotas por préstamo (para "Cuota X/N") */
   totalByLoan: Map<string, number>;
+  /** Períodos de tarjeta ya marcados como pagados: set de "cardId:periodKey" */
+  paidCardPeriods: Set<string>;
   now: Date;
 }
 
@@ -103,6 +107,7 @@ export function computeUpcomingByMonth({
   loans,
   pendingInstallments,
   totalByLoan,
+  paidCardPeriods,
   now,
 }: ComputeParams): UpcomingResult {
   const todayStart = startOfDay(now);
@@ -170,9 +175,10 @@ export function computeUpcomingByMonth({
     for (const [periodKey, { due, total }] of periodMap.entries()) {
       if (total <= 0) continue;
       const dueMonthKey = format(due, "yyyy-MM");
-      // Las tarjetas no llevan registro de pago por período: los meses ya
-      // pasados se asumen pagados y no se listan.
+      // Los meses ya pasados se asumen pagados y no se listan. Los períodos
+      // marcados manualmente como pagados tampoco (aunque sean actuales/futuros).
       if (dueMonthKey < currentMonthKey) continue;
+      if (paidCardPeriods.has(`${card.id}:${periodKey}`)) continue;
       const g = getMonth(due);
       const daysUntil = differenceInCalendarDays(due, todayStart);
       const overdue = daysUntil < 0;
@@ -191,6 +197,7 @@ export function computeUpcomingByMonth({
         daysUntil,
         overdue,
         offset: monthsBetweenKeys(currentPeriodKey, periodKey),
+        periodKey,
         prevAmount,
       });
       g.cardsTotal += total;

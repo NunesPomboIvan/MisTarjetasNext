@@ -355,6 +355,46 @@ export interface Database {
         };
         Relationships: [];
       };
+      card_period_payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_id: string;
+          period_key: string; // "YYYY-MM"
+          paid: boolean;
+          paid_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_id: string;
+          period_key: string;
+          paid?: boolean;
+          paid_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          card_id?: string;
+          period_key?: string;
+          paid?: boolean;
+          paid_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "card_period_payments_card_id_fkey";
+            columns: ["card_id"];
+            isOneToOne: false;
+            referencedRelation: "cards";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       budgets: {
         Row: {
           id: string;
@@ -431,6 +471,10 @@ export type LoanInstallmentInsert = TablesInsert<"loan_installments">;
 export type LoanInstallmentUpdate = TablesUpdate<"loan_installments">;
 
 export type ExchangeRateEntry = Tables<"exchange_rate_history">;
+
+export type CardPeriodPayment = Tables<"card_period_payments">;
+export type CardPeriodPaymentInsert = TablesInsert<"card_period_payments">;
+export type CardPeriodPaymentUpdate = TablesUpdate<"card_period_payments">;
 
 export type LoanWithInstallments = Loan & { installments: LoanInstallment[] };
 

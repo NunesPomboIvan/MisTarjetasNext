@@ -10,6 +10,7 @@ import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
+import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -77,6 +78,14 @@ export default async function CardDetailPage({
     .eq("user_id", user!.id)
     .order("expense_date", { ascending: false })
     .order("created_at", { ascending: false });
+
+  const { data: periodPayment } = await supabase
+    .from("card_period_payments")
+    .select("*")
+    .eq("card_id", id)
+    .eq("user_id", user!.id)
+    .eq("period_key", period.key)
+    .maybeSingle();
 
   const allExpenses = (expenses ?? []) as ExpenseWithCategory[];
 
@@ -167,6 +176,13 @@ export default async function CardDetailPage({
         startLabel={formatDate(period.start, "d MMM")}
         endLabel={formatDate(period.end, "d MMM")}
         dueLabel={formatDate(period.due, "d/M")}
+      />
+
+      <CardPeriodPaidToggle
+        cardId={id}
+        periodKey={period.key}
+        paid={periodPayment?.paid ?? false}
+        paidDate={periodPayment?.paid_date ?? null}
       />
 
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento

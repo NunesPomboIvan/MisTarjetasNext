@@ -197,6 +197,35 @@ export async function updateCardPeriod(
   return { success: true };
 }
 
+/** Marca un período de tarjeta como pagado o no pagado */
+export async function toggleCardPeriodPaid(
+  cardId: string,
+  periodKey: string,
+  paid: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase
+    .from("card_period_payments")
+    .upsert(
+      {
+        user_id: user.id,
+        card_id: cardId,
+        period_key: periodKey,
+        paid,
+        paid_date: paid ? new Date().toISOString().slice(0, 10) : null,
+      },
+      { onConflict: "card_id,period_key" }
+    );
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
 /** Elimina una tarjeta y todos sus consumos (cascade) */
 export async function deleteCard(id: string): Promise<ActionResult> {
   const supabase = await createClient();
