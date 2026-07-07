@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Banknote, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { computeUpcomingByMonth } from "@/lib/vencimientos";
-import type { CardVencimiento, LoanVencimiento, MonthGroup } from "@/lib/vencimientos";
+import type { CardVencimiento, MonthGroup } from "@/lib/vencimientos";
+import { LoanVencimientoRow } from "@/components/vencimientos/loan-vencimiento-row";
 import { capitalize, cn, formatDate, formatLongDate, nowInArgentina } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -177,7 +178,7 @@ function MonthSection({ month, prevTotal }: { month: MonthGroup; prevTotal: numb
             label="Préstamos"
             subtotal={month.loansTotal}
             items={month.loans.map((l) => (
-              <VencimientoRow key={l.installmentId} item={l} />
+              <LoanVencimientoRow key={l.installmentId} item={l} />
             ))}
           />
         )}
@@ -211,7 +212,7 @@ function Block({
   );
 }
 
-function dueText(item: CardVencimiento | LoanVencimiento): { text: string; tone: "muted" | "amber" | "red" } {
+function dueText(item: CardVencimiento): { text: string; tone: "muted" | "amber" | "red" } {
   if (item.overdue) {
     const d = Math.abs(item.daysUntil);
     return { text: `Venció hace ${d} día${d === 1 ? "" : "s"}`, tone: "red" };
@@ -286,7 +287,7 @@ function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount
   );
 }
 
-function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
+function VencimientoRow({ item }: { item: CardVencimiento }) {
   const accent = item.accent || "#6366f1";
   const { text, tone } = dueText(item);
   const toneClass =
@@ -296,10 +297,7 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
         ? "text-amber-500"
         : "text-muted-foreground";
 
-  const href =
-    item.kind === "card"
-      ? `/cards/${item.cardId}${item.offset ? `?offset=${item.offset}` : ""}`
-      : `/prestamos/${item.loanId}`;
+  const href = `/cards/${item.cardId}${item.offset ? `?offset=${item.offset}` : ""}`;
 
   return (
     <Link
@@ -313,27 +311,18 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
         style={{ background: `${accent}20`, color: accent }}
       >
-        {item.kind === "card" ? (
-          <Calendar className="h-4 w-4" />
-        ) : (
-          <Banknote className="h-4 w-4" />
-        )}
+        <Calendar className="h-4 w-4" />
       </div>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13.5px] font-semibold text-foreground">
           {item.name}
-          {item.kind === "card" && item.lastFour && (
+          {item.lastFour && (
             <span className="ml-1.5 text-[11.5px] font-normal tabular-nums text-muted-foreground">
               •••• {item.lastFour}
             </span>
           )}
         </p>
-        {item.kind === "loan" && (
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Cuota {item.installmentNumber}/{item.totalInstallments}
-          </p>
-        )}
       </div>
 
       <div className="flex-shrink-0 text-right">
@@ -341,7 +330,7 @@ function VencimientoRow({ item }: { item: CardVencimiento | LoanVencimiento }) {
           amount={item.amount}
           className="block text-[14px] font-semibold tabular-nums text-foreground"
         />
-        {item.kind === "card" && item.prevAmount != null && (
+        {item.prevAmount != null && (
           <MonthOverMonthDiff amount={item.amount} prevAmount={item.prevAmount} />
         )}
         <p className={cn("mt-0.5 text-[10.5px] font-semibold", toneClass)}>{text}</p>
