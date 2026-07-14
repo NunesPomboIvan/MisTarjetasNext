@@ -60,10 +60,18 @@ export default async function LoansPage() {
   return (
     <div className="space-y-5">
       <StickyPageHeader>
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-            Préstamos
-          </h1>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+              Préstamos
+            </h1>
+            <span className="inline-flex h-[22px] min-w-[22px] flex-shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[12px] font-bold tabular-nums text-primary">
+              {active.length}
+            </span>
+            <span className="flex-shrink-0 text-[13px] font-medium text-muted-foreground">
+              activo{active.length !== 1 ? "s" : ""}
+            </span>
+          </div>
           <Link
             href="/prestamos/new"
             className="btn-glass-primary inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold"

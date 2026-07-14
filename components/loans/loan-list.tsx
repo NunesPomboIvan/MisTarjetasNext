@@ -105,16 +105,9 @@ export function LoanList({ active, archived }: LoanListProps) {
 
   return (
     <div className="space-y-5">
-      {/* Selector de orden — se recuerda la última elección */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-primary/15 px-1.5 text-[12px] font-bold tabular-nums text-primary">
-            {active.length}
-          </span>
-          <span className="text-[13px] font-medium text-foreground">
-            activo{active.length !== 1 ? "s" : ""}
-          </span>
-        </div>
+      {/* Selector de orden — se recuerda la última elección. Pegado a la
+          derecha, cerca del botón "Nuevo" del header de arriba. */}
+      <div className="flex items-center justify-end">
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
           <SelectTrigger
             size="sm"
@@ -124,7 +117,10 @@ export function LoanList({ active, archived }: LoanListProps) {
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
-          <SelectContent align="end">
+          {/* w-auto: el ancho del desplegable no debe copiar el del trigger
+              (que varía según la opción elegida), o las opciones más largas
+              quedan recortadas. */}
+          <SelectContent align="end" className="w-auto min-w-[200px]">
             {SORT_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
                 {o.label}
