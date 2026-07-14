@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
@@ -133,7 +135,11 @@ export default async function ExpenseDetailPage({
 
       {/* Detalle */}
       <section className="overflow-hidden rounded-[18px] border border-border bg-card">
-        <DetailRow label="Tarjeta" value={card ? card.name : "—"} />
+        <DetailRow
+          label="Tarjeta"
+          value={card ? `${card.name} •••• ${card.last_four}` : "—"}
+          href={card ? `/cards/${card.id}` : undefined}
+        />
         <DetailRow
           label="Categoría"
           value={cat ? `${cat.emoji ?? ""} ${cat.name}`.trim() : "Sin categoría"}
@@ -184,13 +190,41 @@ export default async function ExpenseDetailPage({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const inner = (
+    <>
+      <span className="text-[13px] text-muted-foreground">{label}</span>
+      <span className="flex max-w-[60%] items-center justify-end gap-1 text-right text-[14px] font-medium text-foreground">
+        {value}
+        {href && (
+          <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+        )}
+      </span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="flex items-start justify-between gap-4 border-b border-border px-4 py-3.5 transition-colors last:border-b-0 active:bg-muted/40"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3.5 last:border-b-0">
-      <span className="text-[13px] text-muted-foreground">{label}</span>
-      <span className="max-w-[60%] text-right text-[14px] font-medium text-foreground">
-        {value}
-      </span>
+      {inner}
     </div>
   );
 }
