@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Money } from "@/components/shared/money";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { VencimientosSelector } from "@/components/home/vencimientos-selector";
@@ -86,8 +85,6 @@ export default async function DashboardPage() {
     return { card, period, total, currentPeriod, currentTotal, lastUsed };
   });
 
-  const cardsSaldoTotal = cardSummaries.reduce((s, c) => s + c.total, 0);
-
   // Pagos próximos: tarjetas con saldo, ordenadas por fecha de vencimiento.
   // `today` se calcula en zona horaria de Argentina para que el SSR no
   // muestre la fecha del servidor (UTC en Vercel) cuando en Argentina aún es otro día.
@@ -135,10 +132,6 @@ export default async function DashboardPage() {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
     .sort((a, b) => a.days - b.days);
-
-  // "Próximo a vencer" = saldo de tarjetas + próxima cuota de cada préstamo.
-  const loansSaldoTotal = loansUpcoming.reduce((s, l) => s + l.amount, 0);
-  const saldoTotal = cardsSaldoTotal + loansSaldoTotal;
 
   const hour = today.getHours();
   const saludo = greeting(hour);
@@ -201,26 +194,30 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Próximo a pagar (mes en curso) → abre el detalle por mes */}
+          {/* Acceso a vencimientos, sin montos: fecha de hoy + acceso al detalle por período */}
           <Link
             href="/vencimientos"
             aria-label="Ver próximos vencimientos"
             className="glass-card block rounded-[20px] px-5 py-3.5 transition-transform active:scale-[0.99]"
           >
             <div className="flex w-full items-center justify-between gap-3">
-              {/* Izquierda: etiqueta + monto + acceso */}
-              <div className="flex min-w-0 flex-col">
-                <p className="text-[12px] font-medium text-muted-foreground">
-                  Próximo a pagar
-                </p>
-                <Money
-                  amount={saldoTotal}
-                  className="mt-1 block font-display text-[26px] font-bold leading-none tracking-tight text-foreground"
-                />
-                <span className="mt-2 inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
-                  Ver próximos periodos
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </span>
+              {/* Izquierda: icono + título + acceso */}
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#6366f120", color: "#6366f1" }}
+                >
+                  <CalendarClock className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-display text-[16px] font-bold leading-tight text-foreground">
+                    Próximos vencimientos
+                  </p>
+                  <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
+                    Ver por período
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
               </div>
 
               {/* Derecha: fecha tipo calendario */}
