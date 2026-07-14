@@ -8,6 +8,7 @@ import { Money } from "@/components/shared/money";
 import { ExpenseDetailActions } from "@/components/expenses/expense-detail-actions";
 import { ExchangeRateOverride } from "@/components/expenses/exchange-rate-override";
 import { getGlobalExchangeRate } from "@/lib/exchange/server";
+import { getCurrentPeriod, getInstallmentPeriod } from "@/lib/periods/calculate";
 import { formatDate, capitalize, formatCurrency } from "@/lib/utils";
 import type { ExpenseWithAll } from "@/lib/supabase/database.types";
 
@@ -55,6 +56,19 @@ export default async function ExpenseDetailPage({
 
   const installmentIdx =
     installment !== undefined ? parseInt(installment, 10) : undefined;
+
+  // Link a la tarjeta apuntando al período de este consumo (no al actual):
+  // calculamos el período de la cuota (o de la compra, si no viene installment)
+  // y lo expresamos como offset de meses respecto al período actual de la tarjeta.
+  let cardHref: string | undefined;
+  if (card) {
+    const expensePeriod = getInstallmentPeriod(card, expense, installmentIdx ?? 0);
+    const currentPeriod = getCurrentPeriod(card);
+    const [expYear, expMonth] = expensePeriod.key.split("-").map(Number);
+    const [curYear, curMonth] = currentPeriod.key.split("-").map(Number);
+    const offset = (expYear - curYear) * 12 + (expMonth - curMonth);
+    cardHref = offset === 0 ? `/cards/${card.id}` : `/cards/${card.id}?offset=${offset}`;
+  }
 
   return (
     <div className="space-y-5">
@@ -138,7 +152,7 @@ export default async function ExpenseDetailPage({
         <DetailRow
           label="Tarjeta"
           value={card ? `${card.name} •••• ${card.last_four}` : "—"}
-          href={card ? `/cards/${card.id}` : undefined}
+          href={cardHref}
         />
         <DetailRow
           label="Categoría"
