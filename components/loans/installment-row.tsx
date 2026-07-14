@@ -2,15 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Lock, LockOpen, X } from "lucide-react";
+import { Check, Loader2, Lock, LockOpen, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
-import { toggleInstallmentPaid } from "@/actions/loans";
+import { toggleInstallmentPaid, updateInstallment } from "@/actions/loans";
 import {
   setInstallmentRateOverride,
   clearInstallmentRateOverride,
 } from "@/actions/exchange";
 import { Money } from "@/components/shared/money";
+import { AmountInput } from "@/components/expenses/amount-input";
 import { Button } from "@/components/ui/button";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -47,6 +49,7 @@ export function InstallmentRow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [rateOpen, setRateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const paid = installment.paid;
 
   const isUsd = currency === "USD";
@@ -118,27 +121,38 @@ export function InstallmentRow({
               ? `Pagada el ${formatDate(parseLocalDate(installment.paid_date), "d/M/yyyy")}`
               : `Vence ${dueLabel}`}
           </p>
-          {/* TC de la cuota (préstamos en USD): candado cerrado = personalizado */}
-          {isUsd && rate != null && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {/* TC de la cuota (préstamos en USD): candado cerrado = personalizado */}
+            {isUsd && rate != null && (
+              <button
+                type="button"
+                onClick={() => setRateOpen(true)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors",
+                  rateCustom
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-500"
+                    : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
+                )}
+                title={rateCustom ? "TC personalizado de esta cuota" : "Sigue el TC general"}
+              >
+                {rateCustom ? (
+                  <Lock className="h-3 w-3" />
+                ) : (
+                  <LockOpen className="h-3 w-3" />
+                )}
+                TC {formatCurrency(rate)}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setRateOpen(true)}
-              className={cn(
-                "mt-1 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors",
-                rateCustom
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-500"
-                  : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
-              )}
-              title={rateCustom ? "TC personalizado de esta cuota" : "Sigue el TC general"}
+              onClick={() => setEditOpen(true)}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              title="Editar monto o vencimiento de esta cuota"
             >
-              {rateCustom ? (
-                <Lock className="h-3 w-3" />
-              ) : (
-                <LockOpen className="h-3 w-3" />
-              )}
-              TC {formatCurrency(rate)}
+              <Pencil className="h-3 w-3" />
+              Editar
             </button>
-          )}
+          </div>
         </div>
 
         <div className="flex-shrink-0 text-right">
@@ -187,7 +201,116 @@ export function InstallmentRow({
           globalRate={globalRate}
         />
       )}
+
+      <InstallmentEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        installment={installment}
+        total={total}
+        currency={currency}
+      />
     </>
+  );
+}
+
+/** Editor de monto y fecha de vencimiento de UNA cuota puntual */
+function InstallmentEditSheet({
+  open,
+  onOpenChange,
+  installment,
+  total,
+  currency,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  installment: LoanInstallment;
+  total: number;
+  currency: Currency;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [amount, setAmount] = useState<number | undefined>(Number(installment.amount));
+  const [dueDate, setDueDate] = useState(installment.due_date);
+
+  const amountPrefix = currency === "USD" ? "US$" : "$";
+
+  function save() {
+    if (!(amount && amount > 0)) {
+      toast.error("Ingresá un monto mayor a 0");
+      return;
+    }
+    if (!dueDate) {
+      toast.error("Elegí una fecha de vencimiento");
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateInstallment(installment.id, {
+        amount,
+        due_date: dueDate,
+      });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Cuota actualizada");
+      onOpenChange(false);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="pb-safe">
+        <SheetHeader className="pb-2">
+          <SheetTitle>
+            Editar cuota {installment.installment_number}/{total}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor={`inst-amount-${installment.id}`}>Monto</Label>
+            <AmountInput
+              id={`inst-amount-${installment.id}`}
+              value={amount}
+              onChange={setAmount}
+              prefix={amountPrefix}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Vencimiento</Label>
+            <DatePickerField value={dueDate} onChange={setDueDate} />
+          </div>
+
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              type="button"
+              className="btn-glass-primary w-full"
+              onClick={save}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Pencil className="mr-1.5 h-4 w-4" />
+              )}
+              Guardar cambios
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              <X className="mr-1.5 h-4 w-4" />
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

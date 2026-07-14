@@ -198,6 +198,64 @@ export async function toggleInstallmentPaid(
   return { success: true };
 }
 
+const installmentUpdateSchema = z.object({
+  amount: z.number().positive("El monto debe ser mayor a 0"),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida (YYYY-MM-DD)"),
+});
+
+export type InstallmentUpdateData = z.infer<typeof installmentUpdateSchema>;
+
+/** Edita el monto y/o la fecha de vencimiento de una cuota puntual */
+export async function updateInstallment(
+  installmentId: string,
+  formData: InstallmentUpdateData
+): Promise<ActionResult> {
+  const parsed = installmentUpdateSchema.safeParse(formData);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Datos inválidos",
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: installment, error: fetchError } = await supabase
+    .from("loan_installments")
+    .select("loan_id")
+    .eq("id", installmentId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !installment) return { success: false, error: "Cuota no encontrada" };
+
+  const { error } = await supabase
+    .from("loan_installments")
+    .update({ amount: parsed.data.amount, due_date: parsed.data.due_date })
+    .eq("id", installmentId)
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  // El total del préstamo es la suma de sus cuotas: lo recalculamos acá porque
+  // no hay trigger de DB que lo mantenga sincronizado.
+  const { data: installments, error: sumError } = await supabase
+    .from("loan_installments")
+    .select("amount")
+    .eq("loan_id", installment.loan_id);
+
+  if (!sumError && installments) {
+    const total = installments.reduce((acc, i) => acc + Number(i.amount), 0);
+    await supabase.from("loans").update({ total_amount: total }).eq("id", installment.loan_id);
+  }
+
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
 /** Elimina un préstamo y sus cuotas (cascade) */
 export async function deleteLoan(id: string): Promise<ActionResult> {
   const supabase = await createClient();
