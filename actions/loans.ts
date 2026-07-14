@@ -29,18 +29,25 @@ export async function createLoan(formData: LoanFormData): Promise<ActionResult> 
 
   // Si el form no trae titular_id explícito, asignamos al titular activo.
   const titularId = parsed.data.titular_id ?? (await getActiveTitularId());
-  const { installments, exchange_rate, ...loanFields } = parsed.data;
+  const { installments, exchange_rate, exchange_rate_custom: wantsCustomRate, ...loanFields } = parsed.data;
 
-  // Préstamo en USD: guardamos el TC usado. Si difiere del global vigente
-  // (o no hay global), queda como custom y los cambios globales no lo pisan.
+  // Préstamo en USD: el usuario elige explícitamente si el TC queda fijo
+  // (wantsCustomRate) o sigue al TC general — igual que en los consumos.
+  // Cuando sigue al general, usamos el valor del server (no el que mandó el
+  // cliente) para evitar que un desfasaje de redondeo lo marque como custom.
   const isUsd = loanFields.currency === "USD";
   let rateFields: { exchange_rate: number; exchange_rate_custom: boolean } | undefined;
   if (isUsd && exchange_rate) {
-    const global = await getGlobalExchangeRate();
-    rateFields = {
-      exchange_rate,
-      exchange_rate_custom: global == null || exchange_rate !== global.rate,
-    };
+    if (wantsCustomRate) {
+      rateFields = { exchange_rate, exchange_rate_custom: true };
+    } else {
+      const global = await getGlobalExchangeRate();
+      rateFields = {
+        exchange_rate: global?.rate ?? exchange_rate,
+        // Sin TC general configurado no hay nada que seguir: queda fijo igual.
+        exchange_rate_custom: global == null,
+      };
+    }
   }
 
   const { data: loanRow, error: loanError } = await supabase

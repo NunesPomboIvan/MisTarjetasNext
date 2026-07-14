@@ -45,14 +45,27 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
   // Moneda + tipo de cambio (USD)
   const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  // true = el TC sigue al general (se actualiza si lo cambiás en Cuenta);
+  // false = TC fijo para este préstamo. Sin TC general configurado no hay
+  // nada que seguir, así que arranca fijo.
+  const [rateFollowsGlobal, setRateFollowsGlobal] = useState(globalRate != null);
   const isUsd = currency === "USD";
   const amountPrefix = isUsd ? "US$" : "$";
 
   function changeCurrency(next: "ARS" | "USD") {
     setCurrency(next);
-    if (next === "ARS") setExchangeRate(null);
-    // Precargar el TC global al pasar a USD (editable)
-    else if (exchangeRate == null && globalRate != null) setExchangeRate(globalRate);
+    if (next === "ARS") {
+      setExchangeRate(null);
+    } else if (exchangeRate == null && globalRate != null) {
+      // Precargar el TC global al pasar a USD (editable si se pasa a "Fijo")
+      setExchangeRate(globalRate);
+      setRateFollowsGlobal(true);
+    }
+  }
+
+  function changeRateMode(follows: boolean) {
+    setRateFollowsGlobal(follows);
+    if (follows && globalRate != null) setExchangeRate(globalRate);
   }
 
   // Simple mode
@@ -132,6 +145,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
       issue_date: issueDate,
       currency,
       exchange_rate: isUsd ? exchangeRate : null,
+      exchange_rate_custom: isUsd ? !rateFollowsGlobal : false,
       installments,
     };
 
@@ -259,6 +273,9 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               value={exchangeRate}
               onChange={setExchangeRate}
               equivalentBase={total}
+              globalRate={globalRate}
+              followsGlobal={rateFollowsGlobal}
+              onFollowsGlobalChange={changeRateMode}
             />
           )}
 
@@ -331,6 +348,9 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               value={exchangeRate}
               onChange={setExchangeRate}
               equivalentBase={manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null}
+              globalRate={globalRate}
+              followsGlobal={rateFollowsGlobal}
+              onFollowsGlobalChange={changeRateMode}
             />
           )}
 
@@ -457,38 +477,96 @@ function CurrencyToggle({
   );
 }
 
-/** Campo de tipo de cambio (sólo USD), con el equivalente en pesos como ayuda */
+/**
+ * Campo de tipo de cambio (sólo USD). Permite elegir si el préstamo sigue
+ * al TC general (se actualiza cuando lo cambiás en Cuenta → Tipo de cambio,
+ * igual que los consumos) o queda fijo con un valor propio.
+ */
 function ExchangeRateField({
   value,
   onChange,
   equivalentBase,
+  globalRate,
+  followsGlobal,
+  onFollowsGlobalChange,
 }: {
   value: number | null;
   onChange: (v: number | null) => void;
   /** Monto en USD para mostrar el equivalente en pesos (null = sin hint) */
   equivalentBase: number | null;
+  /** TC general vigente. null = sin configurar (no hay nada que seguir) */
+  globalRate: number | null;
+  followsGlobal: boolean;
+  onFollowsGlobalChange: (follows: boolean) => void;
 }) {
+  const effectiveRate = followsGlobal ? globalRate : value;
+
   return (
-    <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
-      <Label htmlFor="loan-exchange-rate">Tipo de cambio (ARS por 1 USD)</Label>
-      <AmountInput
-        id="loan-exchange-rate"
-        value={value}
-        onChange={(v) => onChange(v ?? null)}
-        prefix="$"
-        placeholder="1.187,50"
-      />
-      {equivalentBase && value ? (
+    <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor="loan-exchange-rate">Tipo de cambio (ARS por 1 USD)</Label>
+        {globalRate != null && (
+          <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5 text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => onFollowsGlobalChange(true)}
+              className={cn(
+                "rounded-md px-2 py-1 transition-colors",
+                followsGlobal
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Sigue al general
+            </button>
+            <button
+              type="button"
+              onClick={() => onFollowsGlobalChange(false)}
+              className={cn(
+                "rounded-md px-2 py-1 transition-colors",
+                !followsGlobal
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Fijo
+            </button>
+          </div>
+        )}
+      </div>
+
+      {followsGlobal && globalRate != null ? (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5">
+          <span className="text-[14px] font-semibold tabular-nums text-foreground">
+            {formatCurrency(globalRate)}
+          </span>
+          <span className="text-[11px] text-muted-foreground">TC general</span>
+        </div>
+      ) : (
+        <AmountInput
+          id="loan-exchange-rate"
+          value={value}
+          onChange={(v) => onChange(v ?? null)}
+          prefix="$"
+          placeholder="1.187,50"
+        />
+      )}
+
+      {equivalentBase && effectiveRate ? (
         <p className="text-xs text-muted-foreground">
           Equivale a{" "}
           <span className="font-medium text-foreground">
-            {formatCurrency(equivalentBase * value)}
+            {formatCurrency(equivalentBase * effectiveRate)}
           </span>{" "}
           en pesos
         </p>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Se usa para sumar las cuotas en pesos en los totales.
+          {followsGlobal
+            ? "Se actualiza solo cuando cambiés el TC general (Cuenta → Tipo de cambio)."
+            : globalRate == null
+              ? "Configurá el TC general en Cuenta → Tipo de cambio para poder sincronizar este préstamo más adelante."
+              : "Este préstamo queda fijo: los cambios del TC general no lo van a afectar."}
         </p>
       )}
     </div>

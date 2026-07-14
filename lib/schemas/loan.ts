@@ -22,6 +22,8 @@ export const loanSchema = z
       .positive("El tipo de cambio debe ser mayor a 0")
       .nullable()
       .optional(),
+    // true = TC fijo (no se actualiza con el TC general); false = sigue el TC general.
+    exchange_rate_custom: z.boolean().default(false),
     installments: z.array(loanInstallmentSchema).min(1, "Debe haber al menos una cuota"),
   })
   .superRefine((data, ctx) => {
