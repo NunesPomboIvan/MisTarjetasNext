@@ -111,8 +111,10 @@ export function CardsSortable({ active, archived }: CardsSortableProps) {
   return (
     <div className="space-y-5">
       {/* Selector de orden — se recuerda la última elección. Pegado a la
-          derecha, cerca del botón "Nueva" del header de arriba. */}
-      <div className="flex items-center justify-end">
+          derecha, cerca del botón "Nueva" del header de arriba (margen
+          negativo para acercarlo, ya que el gap con el header lo separaba
+          demasiado). */}
+      <div className="-mt-2 flex items-center justify-end">
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
           <SelectTrigger size="sm" aria-label="Ordenar tarjetas">
             {/* Label explícito: si no lo pasamos, hasta que el desplegable
