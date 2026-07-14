@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Archive, ArrowUpDown } from "lucide-react";
+import { Archive } from "lucide-react";
 import { WalletCard } from "./wallet-card";
 import { CardPressWrapper } from "./card-press-wrapper";
 import {
@@ -114,9 +114,13 @@ export function CardsSortable({ active, archived }: CardsSortableProps) {
           derecha, cerca del botón "Nueva" del header de arriba. */}
       <div className="flex items-center justify-end">
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
-          <SelectTrigger size="sm" aria-label="Ordenar tarjetas" className="gap-1.5">
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-            <SelectValue />
+          <SelectTrigger size="sm" aria-label="Ordenar tarjetas">
+            {/* Label explícito: si no lo pasamos, hasta que el desplegable
+                se abre una vez, muestra el value crudo ("monto") en vez
+                de la etiqueta ("Monto (mayor a menor)"). */}
+            <SelectValue>
+              {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}
+            </SelectValue>
           </SelectTrigger>
           {/* w-auto: el ancho del desplegable no debe copiar el del trigger
               (que varía según la opción elegida), o las opciones más largas

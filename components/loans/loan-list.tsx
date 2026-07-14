@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Archive, ArrowUpDown } from "lucide-react";
+import { Archive } from "lucide-react";
 import { LoanSummaryCard } from "@/components/loans/loan-summary-card";
 import {
   Select,
@@ -109,13 +109,13 @@ export function LoanList({ active, archived }: LoanListProps) {
           derecha, cerca del botón "Nuevo" del header de arriba. */}
       <div className="flex items-center justify-end">
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
-          <SelectTrigger
-            size="sm"
-            aria-label="Ordenar préstamos"
-            className="gap-1.5"
-          >
-            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-            <SelectValue />
+          <SelectTrigger size="sm" aria-label="Ordenar préstamos">
+            {/* Label explícito: si no lo pasamos, hasta que el desplegable
+                se abre una vez, muestra el value crudo en vez de la
+                etiqueta ("Nombre (A-Z)", etc). */}
+            <SelectValue>
+              {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}
+            </SelectValue>
           </SelectTrigger>
           {/* w-auto: el ancho del desplegable no debe copiar el del trigger
               (que varía según la opción elegida), o las opciones más largas
