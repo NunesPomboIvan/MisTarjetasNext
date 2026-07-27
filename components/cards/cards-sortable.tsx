@@ -114,7 +114,7 @@ export function CardsSortable({ active, archived }: CardsSortableProps) {
           derecha, cerca del botón "Nueva" del header de arriba (margen
           negativo para acercarlo, ya que el gap con el header lo separaba
           demasiado). */}
-      <div className="-mt-2 flex items-center justify-end">
+      <div className="-mt-4 flex items-center justify-end">
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
           <SelectTrigger size="sm" aria-label="Ordenar tarjetas">
             {/* Label explícito: si no lo pasamos, hasta que el desplegable

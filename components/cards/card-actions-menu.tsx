@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { MoreHorizontal, Receipt, Calendar, BarChart3, Bell, Lock, Pencil, Trash2, Loader2 } from "lucide-react";
+import { MoreHorizontal, Receipt, Calendar, BarChart3, Bell, Lock, Pencil, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,14 +26,41 @@ import { deleteCard } from "@/actions/cards";
 interface CardActionsMenuProps {
   cardId: string;
   cardName?: string;
+  /** Clave "YYYY-MM" del período que se está viendo, para el resumen descargable. */
+  periodKey?: string;
 }
 
-export function CardActionsMenu({ cardId, cardName }: CardActionsMenuProps) {
+export function CardActionsMenu({ cardId, cardName, periodKey }: CardActionsMenuProps) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
 
   const go = (href: string) => () => router.push(href);
+
+  async function handleDownloadSummary() {
+    try {
+      const params = new URLSearchParams({ cardId });
+      if (periodKey) params.set("period", periodKey);
+      const res = await fetch(`/api/export/period-summary?${params}`);
+      if (!res.ok) {
+        toast.error("No se pudo generar el resumen");
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? "Resumen_Periodo.xlsx";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Resumen descargado");
+    } catch {
+      toast.error("No se pudo generar el resumen");
+    }
+  }
 
   function handleDelete() {
     startTransition(async () => {
@@ -72,6 +99,10 @@ export function CardActionsMenu({ cardId, cardName }: CardActionsMenuProps) {
           <DropdownMenuItem onClick={go(`/cards/${cardId}/settings`)}>
             <Bell className="mr-2 h-4 w-4" />
             Ajustes y notificaciones
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDownloadSummary}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Descargar resumen del período
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={go(`/cards/${cardId}/edit`)}>

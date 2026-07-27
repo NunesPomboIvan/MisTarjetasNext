@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Moon, Sun, Monitor, Download, Upload,
-  Plus, Trash2, Pencil, Check, X, FileDown,
+  Plus, Trash2, Pencil, Check, X, FileDown, FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -298,6 +298,29 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
     });
   }
 
+  async function handleDownloadPeriodSummary() {
+    try {
+      const res = await fetch("/api/export/period-summary");
+      if (!res.ok) {
+        toast.error("No se pudo generar el resumen");
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? "Resumen_General.xlsx";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Resumen descargado");
+    } catch {
+      toast.error("No se pudo generar el resumen");
+    }
+  }
+
   async function handleDownloadTemplate() {
     const result = await exportCsvTemplate();
     const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
@@ -505,6 +528,10 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
             </div>
             <input type="file" accept=".json" className="hidden" onChange={handleImport} />
           </label>
+          <Button variant="outline" size="sm" onClick={handleDownloadPeriodSummary}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            Descargar resumen del período (Excel)
+          </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           El backup incluye tarjetas, consumos y categorías. La importación no elimina datos existentes.

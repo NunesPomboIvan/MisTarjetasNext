@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import { format, subMonths } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
@@ -117,15 +118,28 @@ export default async function VencimientosPage() {
           </section>
 
           {/* Meses */}
-          <div className="space-y-3">
-            {months.map((m, i) => (
-              <MonthSection
-                key={m.key}
-                month={m}
-                prevTotal={i > 0 ? months[i - 1].total : null}
-              />
-            ))}
-          </div>
+          {(() => {
+            // Comparamos cada mes contra el mes CALENDARIO anterior (por
+            // clave), no contra la posición anterior del array: un mes sin
+            // vencimientos pendientes (todo pagado) no aparece en `months`,
+            // así que comparar por posición desplaza qué mes queda como
+            // "anterior" y produce una variación espuria en el mes siguiente
+            // cuando se marca algo como pagado.
+            const totalByKey = new Map(months.map((m) => [m.key, m.total]));
+            return (
+              <div className="space-y-3">
+                {months.map((m, i) => {
+                  const prevKey = format(subMonths(m.date, 1), "yyyy-MM");
+                  // El primer mes mostrado es siempre el actual: no hay mes
+                  // anterior con el que comparar. Para el resto, si el mes
+                  // calendario anterior no aparece en `months` es porque su
+                  // saldo pendiente es $0 (todo pagado), no que no exista.
+                  const prevTotal = i === 0 ? null : (totalByKey.get(prevKey) ?? 0);
+                  return <MonthSection key={m.key} month={m} prevTotal={prevTotal} />;
+                })}
+              </div>
+            );
+          })()}
         </>
       )}
     </div>

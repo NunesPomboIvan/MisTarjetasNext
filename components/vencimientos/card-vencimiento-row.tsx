@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +60,7 @@ function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount
 export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [justPaid, setJustPaid] = useState(false);
   const accent = item.accent || "#6366f1";
   const { text, tone } = dueText(item);
   const toneClass =
@@ -72,9 +73,11 @@ export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
   const href = `/cards/${item.cardId}${item.offset ? `?offset=${item.offset}` : ""}`;
 
   function markPaid() {
+    setJustPaid(true);
     startTransition(async () => {
       const res = await toggleCardPeriodPaid(item.cardId, item.periodKey, true);
       if (!res.success) {
+        setJustPaid(false);
         toast.error(res.error);
         return;
       }
@@ -86,28 +89,11 @@ export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-[14px] border bg-background/40 px-3 py-2.5",
+        "rounded-[14px] border bg-background/40 px-3 py-2.5",
         item.overdue ? "border-destructive/40" : "border-border"
       )}
     >
-      <button
-        type="button"
-        onClick={markPaid}
-        disabled={isPending}
-        aria-label="Marcar período como pagado"
-        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 border-border bg-transparent text-transparent transition-all hover:border-foreground/40 active:scale-90"
-      >
-        {isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin text-foreground" />
-        ) : (
-          <Check className="h-4 w-4" />
-        )}
-      </button>
-
-      <Link
-        href={href}
-        className="flex min-w-0 flex-1 items-center gap-3 active:opacity-70"
-      >
+      <Link href={href} className="flex items-center gap-3 active:opacity-70">
         <div
           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
           style={{ background: `${accent}20`, color: accent }}
@@ -137,6 +123,26 @@ export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
           <p className={cn("mt-0.5 text-[10.5px] font-semibold", toneClass)}>{text}</p>
         </div>
       </Link>
+
+      <button
+        type="button"
+        onClick={markPaid}
+        disabled={isPending || justPaid}
+        aria-label="Marcar período como pagado"
+        className={cn(
+          "mt-2 ml-12 inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold transition-colors active:scale-95",
+          justPaid
+            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            : "border-border bg-transparent text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+        )}
+      >
+        {isPending ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Check className="h-3.5 w-3.5" />
+        )}
+        Pago
+      </button>
     </div>
   );
 }
