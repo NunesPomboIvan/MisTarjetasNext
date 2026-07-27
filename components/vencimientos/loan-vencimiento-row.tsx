@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { toggleInstallmentPaid } from "@/actions/loans";
 import { Money } from "@/components/shared/money";
 import { cn, formatLongDate } from "@/lib/utils";
+import { parseLocalDate } from "@/lib/periods/calculate";
 import type { LoanVencimiento } from "@/lib/vencimientos";
 
 function dueText(item: LoanVencimiento): { text: string; tone: "muted" | "amber" | "red" } {
@@ -17,7 +18,7 @@ function dueText(item: LoanVencimiento): { text: string; tone: "muted" | "amber"
   }
   if (item.daysUntil === 0) return { text: "Vence hoy", tone: "amber" };
   if (item.daysUntil <= 3) return { text: `Vence en ${item.daysUntil} días`, tone: "amber" };
-  return { text: `Vence el ${formatLongDate(item.due)}`, tone: "muted" };
+  return { text: `Vence el ${formatLongDate(parseLocalDate(item.dueDateKey))}`, tone: "muted" };
 }
 
 /** Fila de préstamo en /vencimientos: incluye checkbox para marcar la cuota

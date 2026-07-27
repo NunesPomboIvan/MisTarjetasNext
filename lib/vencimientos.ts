@@ -11,6 +11,7 @@ import {
   getInstallmentPeriod,
   getInstallmentAmountForIndex,
   getCurrentPeriod,
+  getNextDuePeriod,
   toArs,
   parseLocalDate,
 } from "@/lib/periods/calculate";
@@ -37,6 +38,13 @@ export interface CardVencimiento {
   lastFour: string;
   accent: string;
   due: Date;
+  /**
+   * Fecha de vencimiento como "YYYY-MM-DD". Se usa en los Client Components
+   * para formatear en vez de `due`: un Date cruzando el borde server→client
+   * queda anclado a la TZ del proceso que lo construyó (UTC en producción) y
+   * se corre un día al leerlo con getters locales del navegador (Argentina).
+   */
+  dueDateKey: string;
   amount: number;
   daysUntil: number;
   overdue: boolean;
@@ -60,6 +68,8 @@ export interface LoanVencimiento {
   installmentNumber: number;
   totalInstallments: number;
   due: Date;
+  /** Fecha de vencimiento como "YYYY-MM-DD" (ver comentario en CardVencimiento.dueDateKey). */
+  dueDateKey: string;
   amount: number;
   daysUntil: number;
   overdue: boolean;
@@ -149,11 +159,18 @@ export function computeUpcomingByMonth({
       let endI = exp.installments;
       if (exp.recurring) {
         const baseKey = getInstallmentPeriod(card, exp, 0).key;
-        const currentKey = getCurrentPeriod(card).key;
-        startI = Math.max(0, monthsBetweenKeys(baseKey, currentKey));
+        // Anclamos al período con vencimiento más próximo aún no vencido, NO al
+        // período "actual" por fecha de cierre: si hoy cae entre el cierre y el
+        // vencimiento de un período (ej. cerró hace unos días pero vence en unos
+        // días más), getCurrentPeriod ya avanzó al siguiente y ese período
+        // quedaría afuera de la proyección, aunque su vencimiento no haya
+        // pasado — el consumo recurrente desaparecería de ese vencimiento.
+        const nextDueKey = getNextDuePeriod(card).key;
+        startI = Math.max(0, monthsBetweenKeys(baseKey, nextDueKey));
         endI = startI + RECURRING_HORIZON_MONTHS;
       }
       for (let i = startI; i < endI; i++) {
+        if (exp.excluded_installments?.includes(i)) continue;
         // Cada cuota queda anclada a "período de la compra + i meses": un
         // cambio de fechas del período no re-asigna cuotas ya cargadas.
         const period = getInstallmentPeriod(card, exp, i);
@@ -193,6 +210,7 @@ export function computeUpcomingByMonth({
         lastFour: card.last_four,
         accent: card.color || "#6366f1",
         due,
+        dueDateKey: format(due, "yyyy-MM-dd"),
         amount: total,
         daysUntil,
         overdue,
@@ -229,6 +247,7 @@ export function computeUpcomingByMonth({
       installmentNumber: inst.installment_number,
       totalInstallments: totalByLoan.get(loan.id) ?? inst.installment_number,
       due,
+      dueDateKey: inst.due_date,
       amount,
       daysUntil,
       overdue,
