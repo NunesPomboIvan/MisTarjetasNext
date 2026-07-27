@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Money } from "@/components/shared/money";
-import { deleteExpense, cloneExpense } from "@/actions/expenses";
+import { deleteExpense, excludeExpenseInstallment, cloneExpense } from "@/actions/expenses";
 import { getInstallmentAmountForIndex } from "@/lib/periods/calculate";
 import { formatDate, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
@@ -148,12 +148,35 @@ export function ExpenseItem({
     });
   }
 
-  function handleDelete() {
+  // Eliminar un consumo recurrente desde el contexto de un mes puntual ofrece
+  // elegir el alcance; el resto de los casos elimina el registro completo.
+  const canChooseDeleteScope =
+    expense.recurring && installmentIndex !== undefined && installmentIndex >= 0;
+
+  function handleDeleteAll() {
     startTransition(async () => {
       const result = await deleteExpense(expense.id, expense.card_id);
       if (!result.success) toast.error(result.error);
       else {
-        toast.success("Consumo eliminado");
+        toast.success(canChooseDeleteScope ? "Consumo eliminado por completo" : "Consumo eliminado");
+        router.refresh();
+      }
+      setDeleteOpen(false);
+      setMenuOpen(false);
+    });
+  }
+
+  function handleDeleteOnlyThis() {
+    if (installmentIndex === undefined) return;
+    startTransition(async () => {
+      const result = await excludeExpenseInstallment(
+        expense.id,
+        installmentIndex,
+        expense.card_id
+      );
+      if (!result.success) toast.error(result.error);
+      else {
+        toast.success("Este mes fue eliminado");
         router.refresh();
       }
       setDeleteOpen(false);
@@ -355,19 +378,51 @@ export function ExpenseItem({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se
-              puede deshacer.
+              {canChooseDeleteScope ? (
+                <>
+                  &quot;{expense.description}&quot; es un consumo fijo mensual. Elegí si
+                  eliminás solo este mes o el consumo completo (todos los meses, pasados y
+                  futuros). Esta acción no se puede deshacer.
+                </>
+              ) : (
+                <>
+                  Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se
+                  puede deshacer.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {canChooseDeleteScope ? (
+            <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+              <AlertDialogAction
+                onClick={handleDeleteOnlyThis}
+                disabled={isPending}
+                className="w-full bg-destructive text-white hover:bg-destructive/90"
+              >
+                Eliminar solo este mes
+              </AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleDeleteAll}
+                disabled={isPending}
+                className="w-full bg-destructive text-white hover:bg-destructive/90"
+              >
+                Eliminar todos los meses
+              </AlertDialogAction>
+              <AlertDialogCancel className="w-full" disabled={isPending}>
+                Cancelar
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          ) : (
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAll}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>

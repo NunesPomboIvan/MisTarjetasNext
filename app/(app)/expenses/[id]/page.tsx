@@ -199,6 +199,8 @@ export default async function ExpenseDetailPage({
         editHref={editHref}
         backHref={backHref}
         description={expense.description}
+        recurring={expense.recurring}
+        installmentIndex={installmentIdx}
       />
     </div>
   );

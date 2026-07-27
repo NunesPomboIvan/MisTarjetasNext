@@ -159,6 +159,8 @@ export interface Database {
           exchange_rate_custom: boolean;
           notes: string | null;
           tags: string[];
+          /** Índices 0-based excluidos del cálculo (ver installment_amounts). Se usa para "eliminar solo este período" en recurrentes. */
+          excluded_installments: number[];
           created_at: string;
           updated_at: string;
         };
@@ -182,6 +184,7 @@ export interface Database {
           exchange_rate_custom?: boolean;
           notes?: string | null;
           tags?: string[];
+          excluded_installments?: number[];
           created_at?: string;
           updated_at?: string;
         };
@@ -205,6 +208,7 @@ export interface Database {
           exchange_rate_custom?: boolean;
           notes?: string | null;
           tags?: string[];
+          excluded_installments?: number[];
           updated_at?: string;
         };
         Relationships: [

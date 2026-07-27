@@ -453,6 +453,26 @@ describe("consumos recurrentes", () => {
     // marzo=0, abril=1, mayo=2
     expect(getInstallmentIndexInPeriod(expense, may)).toBe(2);
   });
+
+  it("excluded_installments saca solo el período marcado, el resto sigue cayendo normal", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+
+    const expense = {
+      expense_date: "2026-03-15",
+      installments: 1,
+      recurring: true,
+      excluded_installments: [2], // mayo (índice 2) excluido
+    };
+    const abr = getPeriodForDate(CARD_23_10, d(2026, 4, 15));
+    const may = getPeriodForDate(CARD_23_10, d(2026, 5, 15));
+    const jun = getPeriodForDate(CARD_23_10, d(2026, 6, 15));
+
+    expect(expenseFallsInPeriod(expense, abr)).toBe(true);
+    expect(expenseFallsInPeriod(expense, may)).toBe(false);
+    expect(expenseFallsInPeriod(expense, jun)).toBe(true);
+    expect(getInstallmentIndexInPeriod(expense, may)).toBe(-1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────

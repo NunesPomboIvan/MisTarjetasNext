@@ -60,9 +60,11 @@ export default async function EditExpensePage({
   const backHref = card_id ? `/cards/${card_id}` : "/expenses";
   const globalRate = await getGlobalExchangeRate();
 
-  // Estamos editando una cuota específica
+  // Estamos editando un período específico: una cuota puntual, o un mes de un
+  // consumo recurrente (installments siempre es 1 para estos, pero igual se
+  // edita un período puntual cuando viene con contexto de mes).
   const isInstallmentEdit =
-    installmentIndex !== undefined && expense.installments > 1;
+    installmentIndex !== undefined && (expense.installments > 1 || expense.recurring);
 
   return (
     <div className="space-y-4">
@@ -72,7 +74,9 @@ export default async function EditExpensePage({
           <div>
             <h1 className="text-xl font-bold">
               {isInstallmentEdit
-                ? `Editar cuota ${installmentIndex! + 1}/${expense.installments}`
+                ? expense.recurring
+                  ? "Editar este mes"
+                  : `Editar cuota ${installmentIndex! + 1}/${expense.installments}`
                 : "Editar consumo"}
             </h1>
             <p className="text-sm text-muted-foreground truncate max-w-[220px]">
@@ -82,15 +86,21 @@ export default async function EditExpensePage({
         </div>
       </StickyPageHeader>
 
-      {/* Aviso visible cuando se edita una cuota específica */}
+      {/* Aviso visible cuando se edita un período específico */}
       {isInstallmentEdit && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
-          Estás editando la cuota{" "}
-          <strong>
-            {installmentIndex! + 1}/{expense.installments}
-          </strong>{" "}
-          de este consumo. Al guardar podrás elegir si el cambio de importe aplica
-          solo a esta cuota o a todas.
+          {expense.recurring ? (
+            "Estás editando un mes puntual de este consumo fijo mensual. Al guardar podrás elegir si el cambio de importe aplica solo a este mes o a todos."
+          ) : (
+            <>
+              Estás editando la cuota{" "}
+              <strong>
+                {installmentIndex! + 1}/{expense.installments}
+              </strong>{" "}
+              de este consumo. Al guardar podrás elegir si el cambio de importe aplica
+              solo a esta cuota o a todas.
+            </>
+          )}
         </div>
       )}
 

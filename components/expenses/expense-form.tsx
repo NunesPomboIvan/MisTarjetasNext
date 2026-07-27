@@ -79,12 +79,15 @@ export function ExpenseForm({
 
   const today = format(new Date(), "yyyy-MM-dd");
 
-  // ¿Estamos editando el importe de UNA cuota puntual? (vino con contexto de
-  // cuota y el consumo tiene más de una cuota). En ese caso el form se enfoca
-  // en el importe de esa cuota, no en el total del consumo.
+  // ¿Estamos editando el importe de UN período puntual? (vino con contexto de
+  // cuota/mes). Para cuotas normales requiere que haya más de una cuota; para
+  // consumos recurrentes (installments siempre es 1, pero se proyectan
+  // indefinidamente) alcanza con que venga el contexto de período. En ese
+  // caso el form se enfoca en el importe de ese período, no en el total.
   const installmentsCount = expense?.installments ?? 1;
+  const isRecurringExpense = !!expense?.recurring;
   const editingSingleInstallment =
-    installmentIndex !== undefined && installmentsCount > 1;
+    installmentIndex !== undefined && (installmentsCount > 1 || isRecurringExpense);
   // Monto actual de la cuota que se está editando: override puntual si existe,
   // si no, el monto base por cuota.
   const currentCuotaAmount =
@@ -253,7 +256,11 @@ export function ExpenseForm({
         expense.card_id
       );
       if (result.success) {
-        toast.success(`Cuota ${installmentIndex + 1}/${expense.installments} actualizada`);
+        toast.success(
+          isRecurringExpense
+            ? "Importe de este mes actualizado"
+            : `Cuota ${installmentIndex + 1}/${expense.installments} actualizada`
+        );
         router.push(
           installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses"
         );
@@ -274,7 +281,9 @@ export function ExpenseForm({
         expense.card_id
       );
       if (result.success) {
-        toast.success("Todas las cuotas actualizadas");
+        toast.success(
+          isRecurringExpense ? "Todos los meses actualizados" : "Todas las cuotas actualizadas"
+        );
         router.push(
           installmentChoiceData.card_id ? `/cards/${installmentChoiceData.card_id}` : "/expenses"
         );
@@ -361,11 +370,13 @@ export function ExpenseForm({
           )}
         </div>
 
-        {/* Editar el importe de UNA cuota puntual */}
+        {/* Editar el importe de UN período puntual (cuota o mes recurrente) */}
         {editingSingleInstallment && (
           <div className="space-y-1.5">
             <Label htmlFor="installment_amount">
-              Importe de la cuota {installmentIndex! + 1}/{installmentsCount}
+              {isRecurringExpense
+                ? "Importe de este mes"
+                : `Importe de la cuota ${installmentIndex! + 1}/${installmentsCount}`}
             </Label>
             <Controller
               control={control}
@@ -383,8 +394,9 @@ export function ExpenseForm({
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Al guardar vas a poder elegir si el nuevo importe aplica solo a esta
-              cuota o a todas.
+              {isRecurringExpense
+                ? "Al guardar vas a poder elegir si el nuevo importe aplica solo a este mes o a todos los meses."
+                : "Al guardar vas a poder elegir si el nuevo importe aplica solo a esta cuota o a todas."}
             </p>
           </div>
         )}
@@ -746,7 +758,9 @@ export function ExpenseForm({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿A qué cuotas aplicás el cambio?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isRecurringExpense ? "¿A qué meses aplicás el cambio?" : "¿A qué cuotas aplicás el cambio?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               <div className="space-y-3">
                 <div className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm">
@@ -761,8 +775,18 @@ export function ExpenseForm({
                   </p>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Este consumo tiene <strong>{expense?.installments} cuotas</strong>. Elegí si el
-                  nuevo importe aplica solo a la cuota que estás viendo o a todas.
+                  {isRecurringExpense ? (
+                    <>
+                      Este consumo es <strong>fijo mensual</strong>. Elegí si el nuevo importe
+                      aplica solo a este mes o a todos los meses (pasados y futuros que no tengan
+                      ya un importe propio).
+                    </>
+                  ) : (
+                    <>
+                      Este consumo tiene <strong>{expense?.installments} cuotas</strong>. Elegí si
+                      el nuevo importe aplica solo a la cuota que estás viendo o a todas.
+                    </>
+                  )}
                 </p>
               </div>
             </AlertDialogDescription>
@@ -771,9 +795,11 @@ export function ExpenseForm({
             <Button onClick={handleOnlyThisInstallment} disabled={isPending} className="w-full">
               {isPending
                 ? "Guardando..."
-                : `Solo cuota ${
-                    installmentIndex !== undefined ? installmentIndex + 1 : "—"
-                  }/${expense?.installments}`}
+                : isRecurringExpense
+                  ? "Solo este mes"
+                  : `Solo cuota ${
+                      installmentIndex !== undefined ? installmentIndex + 1 : "—"
+                    }/${expense?.installments}`}
             </Button>
             <Button
               variant="outline"
@@ -781,7 +807,11 @@ export function ExpenseForm({
               disabled={isPending}
               className="w-full"
             >
-              {isPending ? "Guardando..." : `Todas las cuotas (${expense?.installments})`}
+              {isPending
+                ? "Guardando..."
+                : isRecurringExpense
+                  ? "Todos los meses"
+                  : `Todas las cuotas (${expense?.installments})`}
             </Button>
             <AlertDialogCancel className="w-full" disabled={isPending}>
               Cancelar

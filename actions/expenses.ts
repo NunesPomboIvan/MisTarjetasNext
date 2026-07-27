@@ -199,7 +199,7 @@ export async function updateInstallmentAmount(
   // Obtener el estado actual: overrides + monto base + cantidad de cuotas
   const { data: expense, error: fetchError } = await supabase
     .from("expenses")
-    .select("installment_amounts, installment_amount, installments")
+    .select("installment_amounts, installment_amount, installments, recurring")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -209,6 +209,24 @@ export async function updateInstallmentAmount(
   const current: Record<string, number> =
     (expense.installment_amounts as Record<string, number>) ?? {};
   const updated = { ...current, [String(installmentIndex)]: amount };
+
+  // Los consumos recurrentes no tienen un total acotado (se proyectan
+  // indefinidamente con installments = 1): solo actualizamos el override de
+  // ESE período, sin recalcular total_amount.
+  if (expense.recurring) {
+    const { error: recurringError } = await supabase
+      .from("expenses")
+      .update({ installment_amounts: updated })
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (recurringError) return { success: false, error: recurringError.message };
+
+    revalidatePath(`/cards/${cardId}`);
+    revalidatePath("/expenses");
+    revalidatePath("/", "layout");
+    return { success: true };
+  }
 
   // Recalcular el total = suma de cada cuota (override si existe, si no la base)
   const base = Number(expense.installment_amount);
@@ -222,6 +240,48 @@ export async function updateInstallmentAmount(
   const { error } = await supabase
     .from("expenses")
     .update({ installment_amounts: updated, total_amount: total })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath(`/cards/${cardId}`);
+  revalidatePath("/expenses");
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
+/**
+ * Excluye UN período puntual (índice 0-based) de un consumo recurrente, sin
+ * borrar el registro completo. Se usa cuando el usuario elige "Eliminar solo
+ * este período" para un consumo fijo mensual.
+ */
+export async function excludeExpenseInstallment(
+  id: string,
+  installmentIndex: number,
+  cardId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: expense, error: fetchError } = await supabase
+    .from("expenses")
+    .select("excluded_installments")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !expense) return { success: false, error: "Gasto no encontrado" };
+
+  const current = (expense.excluded_installments as number[] | null) ?? [];
+  const updated = current.includes(installmentIndex)
+    ? current
+    : [...current, installmentIndex];
+
+  const { error } = await supabase
+    .from("expenses")
+    .update({ excluded_installments: updated })
     .eq("id", id)
     .eq("user_id", user.id);
 

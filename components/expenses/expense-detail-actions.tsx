@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteExpense } from "@/actions/expenses";
+import { deleteExpense, excludeExpenseInstallment } from "@/actions/expenses";
 
 interface ExpenseDetailActionsProps {
   expenseId: string;
@@ -25,6 +25,10 @@ interface ExpenseDetailActionsProps {
   editHref: string;
   backHref: string;
   description: string;
+  /** true = consumo fijo mensual: permite elegir el alcance al eliminar */
+  recurring?: boolean;
+  /** Índice 0-based del período (mes) que se está viendo, si viene con ese contexto */
+  installmentIndex?: number;
 }
 
 export function ExpenseDetailActions({
@@ -33,19 +37,39 @@ export function ExpenseDetailActions({
   editHref,
   backHref,
   description,
+  recurring = false,
+  installmentIndex,
 }: ExpenseDetailActionsProps) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
 
-  function handleDelete() {
+  const canChooseDeleteScope =
+    recurring && installmentIndex !== undefined && installmentIndex >= 0;
+
+  function handleDeleteAll() {
     startTransition(async () => {
       const result = await deleteExpense(expenseId, cardId);
       if (!result.success) {
         toast.error(result.error);
         return;
       }
-      toast.success("Consumo eliminado");
+      toast.success(canChooseDeleteScope ? "Consumo eliminado por completo" : "Consumo eliminado");
+      setOpen(false);
+      router.push(backHref);
+      router.refresh();
+    });
+  }
+
+  function handleDeleteOnlyThis() {
+    if (installmentIndex === undefined) return;
+    startTransition(async () => {
+      const result = await excludeExpenseInstallment(expenseId, installmentIndex, cardId);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Este mes fue eliminado");
       setOpen(false);
       router.push(backHref);
       router.refresh();
@@ -78,20 +102,52 @@ export function ExpenseDetailActions({
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vas a eliminar &quot;{description}&quot;. Esta acción no se puede
-              deshacer.
+              {canChooseDeleteScope ? (
+                <>
+                  &quot;{description}&quot; es un consumo fijo mensual. Elegí si eliminás
+                  solo este mes o el consumo completo (todos los meses, pasados y
+                  futuros). Esta acción no se puede deshacer.
+                </>
+              ) : (
+                <>
+                  Vas a eliminar &quot;{description}&quot;. Esta acción no se puede
+                  deshacer.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isPending}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {isPending ? "Eliminando..." : "Eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {canChooseDeleteScope ? (
+            <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+              <AlertDialogAction
+                onClick={handleDeleteOnlyThis}
+                disabled={isPending}
+                className="w-full bg-destructive text-white hover:bg-destructive/90"
+              >
+                {isPending ? "Eliminando..." : "Eliminar solo este mes"}
+              </AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleDeleteAll}
+                disabled={isPending}
+                className="w-full bg-destructive text-white hover:bg-destructive/90"
+              >
+                {isPending ? "Eliminando..." : "Eliminar todos los meses"}
+              </AlertDialogAction>
+              <AlertDialogCancel className="w-full" disabled={isPending}>
+                Cancelar
+              </AlertDialogCancel>
+            </AlertDialogFooter>
+          ) : (
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAll}
+                disabled={isPending}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                {isPending ? "Eliminando..." : "Eliminar"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>

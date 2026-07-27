@@ -97,6 +97,8 @@ export interface ExpenseForPeriod {
    * en adelante, ignorando `installments`. El monto mensual es installment_amount.
    */
   recurring?: boolean | null;
+  /** Índices 0-based excluidos (ver getInstallmentIndexInPeriod). "Eliminar solo este período" en recurrentes. */
+  excluded_installments?: number[] | null;
 }
 
 export type PeriodStatus = "past" | "current" | "future";
@@ -456,6 +458,7 @@ export function getInstallmentIndexInPeriod(
   const baseKey = getExpenseBaseKey(period.card, expense);
   const idx = monthsBetweenKeys(baseKey, period.key);
   if (idx < 0) return -1;
+  if (expense.excluded_installments?.includes(idx)) return -1;
   // Recurrente: aparece en todos los períodos desde su fecha en adelante,
   // sin tope de cuotas. El índice = cantidad de meses desde la compra, lo que
   // permite además overrides de monto por mes vía installment_amounts.
