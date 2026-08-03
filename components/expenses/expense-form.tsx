@@ -8,6 +8,10 @@ import { toast } from "sonner";
 import { ChevronDown, Loader2, Repeat, Save } from "lucide-react";
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import {
+  calculateInstallmentBreakdown,
+  type DiscountDistribution,
+} from "@/lib/expenses/installments";
+import {
   createExpense,
   updateExpense,
   updateInstallmentAmount,
@@ -68,6 +72,8 @@ export function ExpenseForm({
   const [discountActive, setDiscountActive] = useState<boolean>(
     !!expense?.discount_percentage
   );
+  const [discountDistribution, setDiscountDistribution] =
+    useState<DiscountDistribution>("prorated");
   const [showAdvanced, setShowAdvanced] = useState<boolean>(!!expense);
   const [installmentChoiceData, setInstallmentChoiceData] =
     useState<ExpenseFormData | null>(null);
@@ -122,6 +128,7 @@ export function ExpenseForm({
           installment_amount: editingSingleInstallment
             ? currentCuotaAmount
             : expense.installment_amount,
+          installment_amounts: expense.installment_amounts,
           recurring: expense.recurring ?? false,
           discount_percentage: expense.discount_percentage ?? undefined,
           discount_cap: expense.discount_cap ?? undefined,
@@ -166,18 +173,44 @@ export function ExpenseForm({
   useEffect(() => {
     if (editingSingleInstallment) return;
     const base = discountActive ? precioFinal : totalAmount;
-    if (base && installments && installments >= 1) {
+    if (!base || !installments || installments < 1) return;
+
+    if (discountActive && installments > 1) {
+      // Con descuento y más de una cuota: la distribución elegida define
+      // cómo se reparte (primera cuota vs. prorrateado).
+      const breakdown = calculateInstallmentBreakdown(
+        totalAmount,
+        installments,
+        discountCalculado,
+        discountDistribution
+      );
+      setValue("installment_amount", breakdown.installmentAmount);
+      setValue("installment_amounts", breakdown.installmentAmounts);
+    } else {
       const cuota = parseFloat((base / installments).toFixed(2));
       setValue("installment_amount", cuota);
+      // Con descuento activo en una sola cuota no hay distinción posible:
+      // se aplica directo, sin overrides por cuota.
+      if (discountActive) setValue("installment_amounts", null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalAmount, installments, discountActive, discountPct, discountCap, setValue, installmentIndex]);
+  }, [
+    totalAmount,
+    installments,
+    discountActive,
+    discountPct,
+    discountCap,
+    discountDistribution,
+    setValue,
+    installmentIndex,
+  ]);
 
   function toggleDiscount(active: boolean) {
     setDiscountActive(active);
     if (!active) {
       setValue("discount_percentage", undefined);
       setValue("discount_cap", undefined);
+      setValue("installment_amounts", null);
     }
   }
 
@@ -514,11 +547,11 @@ export function ExpenseForm({
                   />
                 )}
               />
-              {!!totalAmount && totalAmount !== 0 && installments > 1 && (
+              {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
                 <p className="text-xs text-muted-foreground">
                   {installments} cuotas de{" "}
                   <span className="font-medium text-foreground">
-                    {formatCurrency((discountActive ? precioFinal : totalAmount) / installments, currency)}
+                    {formatCurrency(totalAmount / installments, currency)}
                   </span>
                 </p>
               )}
@@ -604,6 +637,85 @@ export function ExpenseForm({
                     <span>Precio final</span>
                     <span>{formatCurrency(precioFinal, currency)}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Distribución del descuento entre cuotas — solo tiene sentido
+                  con más de una cuota; con una sola, se aplica directo. */}
+              {installments > 1 && (
+                <div className="space-y-1.5">
+                  <Label>Cómo aplicar el descuento</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDiscountDistribution("first")}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                        discountDistribution === "first"
+                          ? "border-primary bg-primary/10 text-primary shadow-sm"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      Aplicar en la primera cuota
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountDistribution("prorated")}
+                      className={cn(
+                        "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                        discountDistribution === "prorated"
+                          ? "border-primary bg-primary/10 text-primary shadow-sm"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      Distribuir en todas las cuotas
+                    </button>
+                  </div>
+
+                  {totalAmount > 0 && (() => {
+                    const breakdown = calculateInstallmentBreakdown(
+                      totalAmount,
+                      installments,
+                      discountCalculado,
+                      discountDistribution
+                    );
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        {discountDistribution === "first" ? (
+                          <>
+                            Cuota 1:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(breakdown.amounts[0], currency)}
+                            </span>{" "}
+                            · Cuotas 2 a {installments}:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(breakdown.amounts[1], currency)}
+                            </span>{" "}
+                            c/u
+                          </>
+                        ) : breakdown.installmentAmounts ? (
+                          <>
+                            Cuotas 1 a {installments - 1}:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(breakdown.amounts[0], currency)}
+                            </span>{" "}
+                            · Cuota {installments}:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(breakdown.amounts[installments - 1], currency)}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {installments} cuotas de{" "}
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(breakdown.amounts[0], currency)}
+                            </span>{" "}
+                            c/u
+                          </>
+                        )}
+                      </p>
+                    );
+                  })()}
                 </div>
               )}
             </div>

@@ -21,6 +21,10 @@ export const expenseSchema = z
     installment_amount: z
       .number()
       .refine((v) => v !== 0, "El monto de la cuota no puede ser 0"),
+    // Overrides por índice de cuota (0-based). Se usa tanto para editar el
+    // importe de una cuota puntual como para la distribución del descuento
+    // ("aplicar en la primera cuota" deja distinto el índice 0).
+    installment_amounts: z.record(z.string(), z.number()).nullable().optional(),
     // Consumo fijo mensual: se repite todos los meses sin fin (installments = 1).
     recurring: z.boolean().default(false),
     discount_percentage: z

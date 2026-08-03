@@ -147,18 +147,18 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-2.5">
+    <div className="flex flex-1 flex-col space-y-6">
       <LockScroll />
-      {/* Saludo + selector de titular en la misma fila (sin sumar alto).
+      {/* Saludo + selector de titular en la misma fila, altura acotada.
           El icono cambia según sea de día (sol) o de noche (luna). */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex min-h-[52px] items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {isNight ? (
-            <Moon className="h-[18px] w-[18px] flex-shrink-0 text-indigo-300" />
+            <Moon className="h-4 w-4 flex-shrink-0 text-indigo-300" />
           ) : (
-            <Sun className="h-[18px] w-[18px] flex-shrink-0 text-amber-400" />
+            <Sun className="h-4 w-4 flex-shrink-0 text-amber-400" />
           )}
-          <p className="truncate font-display text-[18px] font-bold tracking-tight text-foreground">
+          <p className="truncate font-display text-[15px] font-bold tracking-tight text-foreground">
             {saludo}
             {displayName ? `, ${displayName}` : ""}
           </p>
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
           <Link
             href="/vencimientos"
             aria-label="Ver próximos vencimientos"
-            className="glass-card block rounded-[20px] px-5 py-3.5 transition-transform active:scale-[0.99]"
+            className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
           >
             <div className="flex w-full items-center justify-between gap-3">
               {/* Izquierda: icono + título + acceso */}
@@ -241,12 +241,12 @@ export default async function DashboardPage() {
             <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Tarjetas y préstamos
             </h2>
-            <div className="glass-card space-y-2 rounded-[20px] px-5 py-3.5">
+            <div className="glass-card space-y-3 rounded-[20px] px-5 py-4">
             <VencimientosSelector
               loansHref={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
             />
 
-            <div className="h-px bg-border" />
+            <div className="h-px bg-border dark:bg-white/[0.16]" />
 
             <Link
               href="/cierres"
@@ -270,7 +270,7 @@ export default async function DashboardPage() {
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
             </Link>
 
-            <div className="h-px bg-border" />
+            <div className="h-px bg-border dark:bg-white/[0.16]" />
 
             <Link
               href="/expenses"

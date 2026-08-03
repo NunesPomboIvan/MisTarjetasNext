@@ -73,6 +73,9 @@ export function WalletCard({
 
   const fg = isLight ? "rgba(18,10,4,0.93)" : "rgba(255,252,245,0.95)";
   const fgMuted = isLight ? "rgba(18,10,4,0.52)" : "rgba(255,252,245,0.58)";
+  // Elementos secundarios (marca/nombre, número de tarjeta): opacidad reducida
+  // (~65%) para reforzar el contraste con el monto principal.
+  const fgSecondary = isLight ? "rgba(18,10,4,0.65)" : "rgba(255,252,245,0.65)";
 
   /* Gradiente 3 paradas — profundidad real */
   const g0 = tint(base, 0.28);
@@ -188,7 +191,7 @@ export function WalletCard({
                 {bank && (
                   <div
                     className="mb-0.5 text-[clamp(12px,4cqw,16px)] font-bold uppercase"
-                    style={{ color: fg, letterSpacing: "0.14em" }}
+                    style={{ color: fgSecondary, letterSpacing: "0.14em" }}
                   >
                     {bank}
                   </div>
@@ -196,7 +199,7 @@ export function WalletCard({
                 {(!bank || !sameAsBank) && name && (
                   <div
                     className="text-[clamp(12px,4cqw,16px)] font-bold uppercase"
-                    style={{ color: fg, letterSpacing: "0.14em" }}
+                    style={{ color: fgSecondary, letterSpacing: "0.14em" }}
                   >
                     {name}
                   </div>
@@ -305,12 +308,12 @@ export function WalletCard({
                 amount={total}
                 currency={currency}
                 hide={hideBalance}
-                className="font-display text-[clamp(22px,7.5cqw,32px)] font-bold tabular-nums leading-none"
+                className="font-display text-[clamp(26px,8.8cqw,38px)] font-extrabold tabular-nums leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               />
             ) : (
               <span
-                className="font-display text-[clamp(22px,7.5cqw,32px)] font-bold leading-none"
+                className="font-display text-[clamp(26px,8.8cqw,38px)] font-extrabold leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               >
                 ·····
@@ -319,7 +322,7 @@ export function WalletCard({
           </div>
           <div
             className="mb-0.5 text-[clamp(11px,3.6cqw,14px)] tabular-nums"
-            style={{ color: fgMuted, letterSpacing: "0.14em" }}
+            style={{ color: fgSecondary, letterSpacing: "0.14em" }}
           >
             •••• {card.last_four}
           </div>
