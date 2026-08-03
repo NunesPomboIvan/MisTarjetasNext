@@ -10,6 +10,10 @@ import { format } from "date-fns";
 import { Check, ChevronDown, Loader2, Plus, Repeat, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
+import {
+  calculateInstallmentBreakdown,
+  type DiscountDistribution,
+} from "@/lib/expenses/installments";
 import { createExpense } from "@/actions/expenses";
 import { createCategory } from "@/actions/categories";
 import { useLastCard } from "@/lib/hooks/use-last-card";
@@ -80,6 +84,8 @@ export function NewExpenseHero({
   const [isPending, startTransition] = React.useTransition();
   const [showAdvanced, setShowAdvanced] = React.useState(false);
   const [discountActive, setDiscountActive] = React.useState(false);
+  const [discountDistribution, setDiscountDistribution] =
+    React.useState<DiscountDistribution>("prorated");
 
   // Categoría "Gastos de tarjeta" para preseleccionar en feeMode
   const feeCategoryId = React.useMemo(
@@ -162,18 +168,35 @@ export function NewExpenseHero({
   // Auto-cálculo del monto por cuota
   React.useEffect(() => {
     const base = discountActive ? finalPrice : totalAmount;
-    if (base && installments && installments >= 1) {
+    if (!base || !installments || installments < 1) return;
+
+    if (discountActive && installments > 1) {
+      // Con descuento y más de una cuota: la distribución elegida define
+      // cómo se reparte (primera cuota vs. prorrateado).
+      const breakdown = calculateInstallmentBreakdown(
+        totalAmount,
+        installments,
+        discountCalc,
+        discountDistribution
+      );
+      setValue("installment_amount", breakdown.installmentAmount);
+      setValue("installment_amounts", breakdown.installmentAmounts);
+    } else {
       const cuota = parseFloat((base / installments).toFixed(2));
       setValue("installment_amount", cuota);
+      // Con descuento activo en una sola cuota no hay distinción posible:
+      // se aplica directo, sin overrides por cuota.
+      if (discountActive) setValue("installment_amounts", null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalAmount, installments, discountActive, discountPct, discountCap]);
+  }, [totalAmount, installments, discountActive, discountPct, discountCap, discountDistribution]);
 
   function toggleDiscount(active: boolean) {
     setDiscountActive(active);
     if (!active) {
       setValue("discount_percentage", undefined);
       setValue("discount_cap", undefined);
+      setValue("installment_amounts", null);
     }
   }
 
@@ -446,16 +469,17 @@ export function NewExpenseHero({
           )}
         </div>
 
-        {/* Hint: monto por cuota / mensual */}
+        {/* Hint: monto por cuota / mensual (con descuento activo el detalle
+            por cuota se muestra en el bloque de distribución, más abajo) */}
         {!!totalAmount && totalAmount !== 0 && recurring ? (
           <p className="-mt-2 text-right text-xs text-muted-foreground">
             {formatCurrency(totalAmount, currency)} todos los meses
           </p>
-        ) : !!totalAmount && totalAmount !== 0 && installments > 1 ? (
+        ) : !discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 ? (
           <p className="-mt-2 text-right text-xs text-muted-foreground">
             {installments} cuotas de{" "}
             <span className="font-medium text-foreground">
-              {formatCurrency((discountActive ? finalPrice : totalAmount) / installments, currency)}
+              {formatCurrency(totalAmount / installments, currency)}
             </span>
           </p>
         ) : null}
@@ -536,7 +560,6 @@ export function NewExpenseHero({
                       inputMode="decimal"
                       placeholder="10"
                       {...register("discount_percentage", {
-                        valueAsNumber: true,
                         setValueAs: (v) =>
                           v === "" || isNaN(v) ? undefined : Number(v),
                       })}
@@ -554,7 +577,6 @@ export function NewExpenseHero({
                       inputMode="decimal"
                       placeholder="Sin tope"
                       {...register("discount_cap", {
-                        valueAsNumber: true,
                         setValueAs: (v) =>
                           v === "" || isNaN(v) ? undefined : Number(v),
                       })}
@@ -564,6 +586,85 @@ export function NewExpenseHero({
                     <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
                       <span className="text-muted-foreground">Precio final</span>
                       <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
+                    </div>
+                  )}
+
+                  {/* Distribución del descuento entre cuotas — solo con más
+                      de una cuota; con una sola, se aplica directo. */}
+                  {installments > 1 && (
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-xs">Cómo aplicar el descuento</Label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDiscountDistribution("first")}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                            discountDistribution === "first"
+                              ? "border-primary bg-primary/10 text-primary shadow-sm"
+                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                          )}
+                        >
+                          Aplicar en la primera cuota
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiscountDistribution("prorated")}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                            discountDistribution === "prorated"
+                              ? "border-primary bg-primary/10 text-primary shadow-sm"
+                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                          )}
+                        >
+                          Distribuir en todas las cuotas
+                        </button>
+                      </div>
+
+                      {totalAmount > 0 && (() => {
+                        const breakdown = calculateInstallmentBreakdown(
+                          totalAmount,
+                          installments,
+                          discountCalc,
+                          discountDistribution
+                        );
+                        return (
+                          <p className="text-xs text-muted-foreground">
+                            {discountDistribution === "first" ? (
+                              <>
+                                Cuota 1:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                · Cuotas 2 a {installments}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[1], currency)}
+                                </span>{" "}
+                                c/u
+                              </>
+                            ) : breakdown.installmentAmounts ? (
+                              <>
+                                Cuotas 1 a {installments - 1}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                · Cuota {installments}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[installments - 1], currency)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {installments} cuotas de{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                c/u
+                              </>
+                            )}
+                          </p>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-const SESSION_KEY = "mt_splash_v1";
-const HOLD_MS = 1500;
+const SESSION_KEY = "mt_splash_v2";
+const HOLD_MS = 1400;
 const FADE_MS = 450;
 
 /**
@@ -41,52 +41,75 @@ export function SplashScreen() {
     <div
       aria-hidden
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center bg-background transition-opacity",
+        "fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background transition-opacity",
         fadingOut ? "pointer-events-none opacity-0" : "opacity-100"
       )}
       style={{ transitionDuration: `${FADE_MS}ms` }}
     >
-      {/* Glow radial de fondo */}
+      {/* Resplandor de fondo — presente pero quieto, sin pulso */}
       <div
-        className="splash-bg pointer-events-none absolute"
+        aria-hidden
+        className="pointer-events-none absolute"
         style={{
-          width: 520,
-          height: 520,
+          width: 640,
+          height: 640,
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(99,102,241,0.35) 0%, rgba(99,102,241,0.10) 45%, transparent 70%)",
-          filter: "blur(40px)",
+            "radial-gradient(circle, color-mix(in srgb, var(--primary) 16%, transparent) 0%, color-mix(in srgb, var(--primary) 5%, transparent) 45%, transparent 70%)",
+        }}
+      />
+
+      {/* Textura sutil: grilla de puntos, casi imperceptible */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, var(--foreground) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
         }}
       />
 
       {/* Contenido centrado */}
-      <div className="relative flex flex-col items-center gap-7">
-        {/* Icono con halo expansivo */}
-        <div className="relative">
-          <span
-            aria-hidden
-            className="splash-halo absolute inset-0 rounded-[28px]"
-          />
-          <div
-            className="splash-icon relative flex h-24 w-24 items-center justify-center rounded-[28px] gradient-primary text-[44px] leading-none text-white"
-            style={{
-              boxShadow:
-                "0 24px 50px -12px rgba(99,102,241,0.55), inset 0 1px 0 rgba(255,255,255,0.18)",
-            }}
-          >
-            💳
-          </div>
+      <div className="relative flex flex-col items-center gap-6">
+        {/* Marca: dos formas superpuestas (cuentas en general — tarjetas Y
+            préstamos — no un ícono literal de tarjeta de crédito), trazo en
+            degradé, sobre una superficie quieta con borde fino. */}
+        <div
+          className="splash-mark relative flex h-16 w-16 items-center justify-center rounded-[18px]"
+          style={{
+            background: "var(--card)",
+            border: "1px solid var(--border)",
+            boxShadow: "0 24px 48px -20px color-mix(in srgb, var(--primary) 45%, transparent)",
+          }}
+        >
+          <svg width="34" height="26" viewBox="0 0 34 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="splash-mark-grad" x1="0" y1="26" x2="34" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stopColor="var(--primary)" />
+                <stop offset="1" stopColor="#38bdf8" />
+              </linearGradient>
+            </defs>
+            <rect
+              x="9" y="1" width="24" height="16" rx="4"
+              stroke="url(#splash-mark-grad)"
+              strokeWidth="1.6"
+              opacity="0.55"
+            />
+            <rect
+              x="1" y="9" width="24" height="16" rx="4"
+              fill="var(--card)"
+              stroke="url(#splash-mark-grad)"
+              strokeWidth="1.6"
+            />
+          </svg>
         </div>
 
-        {/* Nombre + tagline */}
-        <div className="text-center">
-          <h1 className="splash-text font-display text-[30px] font-bold tracking-tight text-foreground">
-            Mis Tarjetas
-          </h1>
-          <p className="splash-tagline mt-1.5 text-[13px] text-muted-foreground">
-            Tus tarjetas y préstamos en un solo lugar
-          </p>
-        </div>
+        {/* Un solo mensaje, sin nombre de marca: la app cubre tarjetas Y
+            préstamos, no solo tarjetas. */}
+        <p className="splash-text font-display text-[16px] font-semibold text-foreground">
+          Tarjetas y préstamos, en un solo lugar
+        </p>
       </div>
     </div>
   );
