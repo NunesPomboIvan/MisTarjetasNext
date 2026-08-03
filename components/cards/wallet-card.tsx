@@ -308,12 +308,12 @@ export function WalletCard({
                 amount={total}
                 currency={currency}
                 hide={hideBalance}
-                className="font-display text-[clamp(26px,8.8cqw,38px)] font-extrabold tabular-nums leading-none"
+                className="font-display text-[clamp(24px,8cqw,34px)] font-extrabold tabular-nums leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               />
             ) : (
               <span
-                className="font-display text-[clamp(26px,8.8cqw,38px)] font-extrabold leading-none"
+                className="font-display text-[clamp(24px,8cqw,34px)] font-extrabold leading-none"
                 style={{ letterSpacing: "-0.025em", color: fg }}
               >
                 ·····

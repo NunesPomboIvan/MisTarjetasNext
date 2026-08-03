@@ -590,7 +590,6 @@ export function ExpenseForm({
                     inputMode="decimal"
                     className={cn(errors.discount_percentage && "border-destructive")}
                     {...register("discount_percentage", {
-                      valueAsNumber: true,
                       setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
                     })}
                   />
@@ -614,7 +613,6 @@ export function ExpenseForm({
                     inputMode="decimal"
                     className={cn(errors.discount_cap && "border-destructive")}
                     {...register("discount_cap", {
-                      valueAsNumber: true,
                       setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
                     })}
                   />
