@@ -41,6 +41,7 @@ import {
 
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { InstallmentPresets } from "./installment-presets";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
@@ -82,7 +83,6 @@ export function NewExpenseHero({
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
   const [isPending, startTransition] = React.useTransition();
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
   const [discountActive, setDiscountActive] = React.useState(false);
   const [discountDistribution, setDiscountDistribution] =
     React.useState<DiscountDistribution>("prorated");
@@ -484,6 +484,182 @@ export function NewExpenseHero({
           </p>
         ) : null}
 
+        {/* Más opciones */}
+        <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
+          <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
+            Más opciones
+          </span>
+
+          {/* Fecha */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ne-date">Fecha del consumo</Label>
+            <Controller
+              control={control}
+              name="expense_date"
+              render={({ field }) => (
+                <DatePickerField value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            {errors.expense_date && (
+              <p className="text-xs text-destructive">{errors.expense_date.message}</p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Descuento */}
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={discountActive}
+                onChange={(e) => toggleDiscount(e.target.checked)}
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
+            </label>
+
+            {discountActive && (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="ne-disc-pct" className="text-xs">
+                    % descuento
+                  </Label>
+                  <Input
+                    id="ne-disc-pct"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    inputMode="decimal"
+                    placeholder="10"
+                    {...register("discount_percentage", {
+                      setValueAs: (v) =>
+                        v === "" || isNaN(v) ? undefined : Number(v),
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ne-disc-cap" className="text-xs">
+                    Tope (opcional)
+                  </Label>
+                  <Input
+                    id="ne-disc-cap"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    placeholder="Sin tope"
+                    {...register("discount_cap", {
+                      setValueAs: (v) =>
+                        v === "" || isNaN(v) ? undefined : Number(v),
+                    })}
+                  />
+                </div>
+                {totalAmount > 0 && (
+                  <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
+                    <span className="text-muted-foreground">Precio final</span>
+                    <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
+                  </div>
+                )}
+
+                {/* Distribución del descuento entre cuotas — solo con más
+                    de una cuota; con una sola, se aplica directo. */}
+                {installments > 1 && (
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs">Cómo aplicar el descuento</Label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setDiscountDistribution("first")}
+                        className={cn(
+                          "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                          discountDistribution === "first"
+                            ? "border-primary bg-primary/10 text-primary shadow-sm"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                        )}
+                      >
+                        Aplicar en la primera cuota
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDiscountDistribution("prorated")}
+                        className={cn(
+                          "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                          discountDistribution === "prorated"
+                            ? "border-primary bg-primary/10 text-primary shadow-sm"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                        )}
+                      >
+                        Distribuir en todas las cuotas
+                      </button>
+                    </div>
+
+                    {totalAmount > 0 && (() => {
+                      const breakdown = calculateInstallmentBreakdown(
+                        totalAmount,
+                        installments,
+                        discountCalc,
+                        discountDistribution
+                      );
+                      return (
+                        <p className="text-xs text-muted-foreground">
+                          {discountDistribution === "first" ? (
+                            <>
+                              Cuota 1:{" "}
+                              <span className="font-medium text-foreground">
+                                {formatCurrency(breakdown.amounts[0], currency)}
+                              </span>{" "}
+                              · Cuotas 2 a {installments}:{" "}
+                              <span className="font-medium text-foreground">
+                                {formatCurrency(breakdown.amounts[1], currency)}
+                              </span>{" "}
+                              c/u
+                            </>
+                          ) : breakdown.installmentAmounts ? (
+                            <>
+                              Cuotas 1 a {installments - 1}:{" "}
+                              <span className="font-medium text-foreground">
+                                {formatCurrency(breakdown.amounts[0], currency)}
+                              </span>{" "}
+                              · Cuota {installments}:{" "}
+                              <span className="font-medium text-foreground">
+                                {formatCurrency(breakdown.amounts[installments - 1], currency)}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              {installments} cuotas de{" "}
+                              <span className="font-medium text-foreground">
+                                {formatCurrency(breakdown.amounts[0], currency)}
+                              </span>{" "}
+                              c/u
+                            </>
+                          )}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Notas */}
+          <div className="space-y-1.5">
+            <Label htmlFor="ne-notes" className="text-xs">
+              Notas
+            </Label>
+            <Input
+              id="ne-notes"
+              placeholder="Detalle adicional…"
+              {...register("notes")}
+            />
+          </div>
+        </div>
+
         {/* Categoría */}
         <div className="space-y-3">
           <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
@@ -505,208 +681,6 @@ export function NewExpenseHero({
             )}
           />
         </div>
-
-        {/* Más opciones */}
-        <button
-          type="button"
-          onClick={() => setShowAdvanced((s) => !s)}
-          className="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <span>Más opciones (fecha, descuento, notas)</span>
-          <ChevronDown
-            className={cn("h-4 w-4 transition-transform", showAdvanced && "rotate-180")}
-          />
-        </button>
-
-        {showAdvanced && (
-          <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
-            {/* Fecha */}
-            <div className="space-y-1.5">
-              <Label htmlFor="ne-date">Fecha del consumo</Label>
-              <Input
-                id="ne-date"
-                type="date"
-                {...register("expense_date")}
-                className={cn(errors.expense_date && "border-destructive")}
-              />
-            </div>
-
-            <Separator />
-
-            {/* Descuento */}
-            <div className="space-y-2">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={discountActive}
-                  onChange={(e) => toggleDiscount(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-primary"
-                />
-                <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
-              </label>
-
-              {discountActive && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="ne-disc-pct" className="text-xs">
-                      % descuento
-                    </Label>
-                    <Input
-                      id="ne-disc-pct"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      inputMode="decimal"
-                      placeholder="10"
-                      {...register("discount_percentage", {
-                        setValueAs: (v) =>
-                          v === "" || isNaN(v) ? undefined : Number(v),
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ne-disc-cap" className="text-xs">
-                      Tope (opcional)
-                    </Label>
-                    <Input
-                      id="ne-disc-cap"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      inputMode="decimal"
-                      placeholder="Sin tope"
-                      {...register("discount_cap", {
-                        setValueAs: (v) =>
-                          v === "" || isNaN(v) ? undefined : Number(v),
-                      })}
-                    />
-                  </div>
-                  {totalAmount > 0 && (
-                    <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
-                      <span className="text-muted-foreground">Precio final</span>
-                      <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
-                    </div>
-                  )}
-
-                  {/* Distribución del descuento entre cuotas — solo con más
-                      de una cuota; con una sola, se aplica directo. */}
-                  {installments > 1 && (
-                    <div className="col-span-2 space-y-1.5">
-                      <Label className="text-xs">Cómo aplicar el descuento</Label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setDiscountDistribution("first")}
-                          className={cn(
-                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                            discountDistribution === "first"
-                              ? "border-primary bg-primary/10 text-primary shadow-sm"
-                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                          )}
-                        >
-                          Aplicar en la primera cuota
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDiscountDistribution("prorated")}
-                          className={cn(
-                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                            discountDistribution === "prorated"
-                              ? "border-primary bg-primary/10 text-primary shadow-sm"
-                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                          )}
-                        >
-                          Distribuir en todas las cuotas
-                        </button>
-                      </div>
-
-                      {totalAmount > 0 && (() => {
-                        const breakdown = calculateInstallmentBreakdown(
-                          totalAmount,
-                          installments,
-                          discountCalc,
-                          discountDistribution
-                        );
-                        return (
-                          <p className="text-xs text-muted-foreground">
-                            {discountDistribution === "first" ? (
-                              <>
-                                Cuota 1:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                · Cuotas 2 a {installments}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[1], currency)}
-                                </span>{" "}
-                                c/u
-                              </>
-                            ) : breakdown.installmentAmounts ? (
-                              <>
-                                Cuotas 1 a {installments - 1}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                · Cuota {installments}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[installments - 1], currency)}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                {installments} cuotas de{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                c/u
-                              </>
-                            )}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Notas */}
-            <div className="space-y-1.5">
-              <Label htmlFor="ne-notes" className="text-xs">
-                Notas
-              </Label>
-              <Input
-                id="ne-notes"
-                placeholder="Detalle adicional…"
-                {...register("notes")}
-              />
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-1.5">
-              <Label htmlFor="ne-tags" className="text-xs">
-                Tags{" "}
-                <span className="font-normal text-muted-foreground">
-                  (separados por coma)
-                </span>
-              </Label>
-              <Input
-                id="ne-tags"
-                placeholder="viaje, trabajo"
-                onChange={(e) => {
-                  const tags = e.target.value
-                    .split(",")
-                    .map((t) => t.trim())
-                    .filter(Boolean);
-                  setValue("tags", tags);
-                }}
-              />
-            </div>
-          </div>
-        )}
       </form>
 
       {/* Diálogo: posible duplicado */}
