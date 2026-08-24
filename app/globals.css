@@ -314,4 +314,20 @@
       -apple-system, "SF Pro Display", system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
+
+  /* Anillo de foco para elementos interactivos custom (tarjetas, filas de
+     consumo) sobre fondos de color arbitrario (color propio de cada tarjeta).
+     Doble contorno blanco + negro: para cualquier color de fondo, al menos
+     uno de los dos aros cumple el contraste mínimo 3:1 (WCAG 1.4.11) — nunca
+     hay un color intermedio contra el que fallen los dos a la vez. Solo se
+     activa con :focus-visible (teclado), nunca con click de mouse. */
+  .focus-ring {
+    outline: none;
+  }
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 4px #000;
+  }
 }

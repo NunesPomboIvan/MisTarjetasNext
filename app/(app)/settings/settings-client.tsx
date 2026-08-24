@@ -201,12 +201,21 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
           {cat.emoji}
         </span>
         <span className="flex-1 text-sm font-medium">{cat.name}</span>
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(cat)}>
-          <Pencil className="h-3.5 w-3.5" />
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => startEdit(cat)}
+          aria-label={`Editar categoría ${cat.name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
         <AlertDialog>
-          <AlertDialogTrigger className="flex h-7 w-7 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
-            <Trash2 className="h-3.5 w-3.5" />
+          <AlertDialogTrigger
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+            aria-label={`Eliminar categoría ${cat.name}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>

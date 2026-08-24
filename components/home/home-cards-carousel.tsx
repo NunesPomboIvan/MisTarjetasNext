@@ -69,8 +69,9 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
           >
             <CardPressWrapper
               href={`/cards/${card.id}`}
-              cardId={card.id}
-              cardName={card.bank || card.name}
+              bank={card.bank || card.name}
+              lastFour={card.last_four}
+              total={total}
               className="block transition-transform duration-150 active:scale-[0.985]"
             >
               <WalletCard

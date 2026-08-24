@@ -1,199 +1,43 @@
-"use client";
-
-import * as React from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Pencil, Trash2, Loader2 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { deleteCard } from "@/actions/cards";
+import Link from "next/link";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface CardPressWrapperProps {
-  /** Página de detalle (tap corto) */
+  /** Página de detalle de la tarjeta */
   href: string;
-  cardId: string;
-  cardName: string;
+  bank: string;
+  lastFour: string;
+  /** Saldo del período actual. Si no se pasa, se omite del aria-label. */
+  total?: number;
+  currency?: "ARS" | "USD";
   children: React.ReactNode;
   className?: string;
 }
 
-const LONG_PRESS_MS = 450;
-const MOVE_THRESHOLD = 10;
-
 /**
- * Envuelve una tarjeta: tap corto navega al detalle; mantenerla apretada
- * abre opciones para editar o eliminar.
+ * Envuelve una tarjeta en un link real: navega al detalle con click/tap y
+ * permite el long-press nativo del sistema (vista previa, abrir en nueva
+ * pestaña). El feedback de "press" es puramente CSS (active:*) para no
+ * interceptar el gesto con JS.
  */
 export function CardPressWrapper({
   href,
-  cardId,
-  cardName,
+  bank,
+  lastFour,
+  total,
+  currency = "ARS",
   children,
   className,
 }: CardPressWrapperProps) {
-  const router = useRouter();
-  const [menuOpen, setMenuOpen] = React.useState(false);
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [isPending, startTransition] = React.useTransition();
-
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startRef = React.useRef<{ x: number; y: number } | null>(null);
-  const longPressedRef = React.useRef(false);
-  const movedRef = React.useRef(false);
-
-  const clearTimer = React.useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
-
-  function onPointerDown(e: React.PointerEvent) {
-    if (e.button === 2) return;
-    startRef.current = { x: e.clientX, y: e.clientY };
-    longPressedRef.current = false;
-    movedRef.current = false;
-    clearTimer();
-    timerRef.current = setTimeout(() => {
-      longPressedRef.current = true;
-      setMenuOpen(true);
-    }, LONG_PRESS_MS);
-  }
-
-  function onPointerMove(e: React.PointerEvent) {
-    if (!startRef.current) return;
-    const dx = Math.abs(e.clientX - startRef.current.x);
-    const dy = Math.abs(e.clientY - startRef.current.y);
-    if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
-      movedRef.current = true;
-      clearTimer();
-    }
-  }
-
-  function onPointerUp() {
-    clearTimer();
-    if (!longPressedRef.current && !movedRef.current) {
-      router.push(href);
-    }
-    startRef.current = null;
-  }
-
-  function onPointerCancel() {
-    clearTimer();
-    startRef.current = null;
-  }
-
-  function handleDelete() {
-    startTransition(async () => {
-      const result = await deleteCard(cardId);
-      // deleteCard redirige en éxito; si vuelve, hubo error
-      if (result && !result.success) {
-        toast.error(result.error ?? "No se pudo eliminar la tarjeta");
-        return;
-      }
-      setConfirmOpen(false);
-      setMenuOpen(false);
-    });
-  }
+  const saldoLabel =
+    total != null ? `, saldo ${formatCurrency(total, currency)}` : "";
 
   return (
-    <>
-      <div
-        role="button"
-        tabIndex={0}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-        onContextMenu={(e) => e.preventDefault()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            router.push(href);
-          }
-        }}
-        className={className}
-        style={{
-          WebkitTouchCallout: "none",
-          WebkitUserSelect: "none",
-          userSelect: "none",
-          cursor: "pointer",
-        }}
-      >
-        {children}
-      </div>
-
-      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" showCloseButton={false} className="pb-safe px-0">
-          <SheetHeader className="px-5 pb-1">
-            <SheetTitle className="truncate">{cardName}</SheetTitle>
-          </SheetHeader>
-          <div className="divide-y divide-border/50">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                router.push(`/cards/${cardId}/edit`);
-              }}
-              className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-foreground transition-colors active:bg-muted/60"
-            >
-              <Pencil className="h-5 w-5 text-muted-foreground" />
-              Editar tarjeta
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmOpen(true)}
-              className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-destructive transition-colors active:bg-muted/60"
-            >
-              <Trash2 className="h-5 w-5" />
-              Eliminar tarjeta
-            </button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {cardName}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se eliminará la tarjeta y todos sus consumos. Esta acción no se
-              puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleDelete();
-              }}
-              disabled={isPending}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Eliminar"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <Link
+      href={href}
+      aria-label={`Tarjeta ${bank}, terminada en ${lastFour}${saldoLabel}`}
+      className={cn("focus-ring rounded-[24px]", className)}
+    >
+      {children}
+    </Link>
   );
 }

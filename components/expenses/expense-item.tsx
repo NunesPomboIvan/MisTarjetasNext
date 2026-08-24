@@ -25,7 +25,7 @@ import {
 import { Money } from "@/components/shared/money";
 import { deleteExpense, excludeExpenseInstallment, cloneExpense } from "@/actions/expenses";
 import { getInstallmentAmountForIndex } from "@/lib/periods/calculate";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, formatCurrency, cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
 interface ExpenseItemProps {
@@ -194,6 +194,8 @@ export function ExpenseItem({
       ? getInstallmentAmountForIndex(expense, installmentIndex)
       : expense.installment_amount;
 
+  const amountLabel = formatCurrency(displayAmount, expense.currency);
+
   return (
     <>
       <div
@@ -207,11 +209,12 @@ export function ExpenseItem({
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            router.push(detailHref);
+            if (selectionMode) onSelectToggle?.(expense.id);
+            else router.push(detailHref);
           }
         }}
         className={cn(
-          "group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all active:scale-[0.99]",
+          "focus-ring group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all active:scale-[0.99]",
           selectionMode && selected
             ? "border-primary ring-1 ring-primary/40"
             : "border-border",
@@ -346,26 +349,29 @@ export function ExpenseItem({
               <button
                 type="button"
                 onClick={handleEdit}
+                aria-label={`Editar consumo ${expense.description}, ${amountLabel}`}
                 className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-foreground transition-colors active:bg-muted/60"
               >
-                <Pencil className="h-5 w-5 text-muted-foreground" />
+                <Pencil className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 Editar consumo
               </button>
             )}
             <button
               type="button"
               onClick={handleClone}
+              aria-label={`Repetir hoy el consumo ${expense.description}, ${amountLabel}`}
               className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-foreground transition-colors active:bg-muted/60"
             >
-              <Copy className="h-5 w-5 text-muted-foreground" />
+              <Copy className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               Repetir hoy
             </button>
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
+              aria-label={`Eliminar consumo ${expense.description}, ${amountLabel}`}
               className="flex w-full items-center gap-3.5 px-5 py-4 text-left text-[15px] font-medium text-destructive transition-colors active:bg-muted/60"
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-5 w-5" aria-hidden="true" />
               Eliminar consumo
             </button>
           </div>

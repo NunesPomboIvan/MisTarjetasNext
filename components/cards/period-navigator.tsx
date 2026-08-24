@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getPeriodByOffset, getCurrentPeriod } from "@/lib/periods/calculate";
+import { getPeriodByOffset } from "@/lib/periods/calculate";
 import { formatDate } from "@/lib/utils";
 import type { CardForPeriod, Period } from "@/lib/periods/calculate";
 
@@ -41,6 +41,8 @@ export function PeriodNavigator({ card, currentPeriod, startLabel, endLabel, due
   }
 
   const isCurrentMonth = currentPeriod.status === "current" && offset === 0;
+  const previousPeriod = getPeriodByOffset(card, offset - 1);
+  const nextPeriod = getPeriodByOffset(card, offset + 1);
 
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
@@ -49,8 +51,9 @@ export function PeriodNavigator({ card, currentPeriod, startLabel, endLabel, due
         size="icon"
         className="h-9 w-9 rounded-xl"
         onClick={() => navigate(offset - 1)}
+        aria-label={`Ir a ${previousPeriod.label}`}
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
       </Button>
 
       <div className="flex flex-col items-center gap-1">
@@ -85,8 +88,9 @@ export function PeriodNavigator({ card, currentPeriod, startLabel, endLabel, due
         size="icon"
         className="h-9 w-9 rounded-xl"
         onClick={() => navigate(offset + 1)}
+        aria-label={`Ir a ${nextPeriod.label}`}
       >
-        <ChevronRight className="h-5 w-5" />
+        <ChevronRight className="h-5 w-5" aria-hidden="true" />
       </Button>
     </div>
   );
