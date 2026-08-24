@@ -374,15 +374,19 @@ export function NewExpenseHero({
 
         {/* Comercio — campo prominente, primero a completar */}
         <div className="space-y-2">
-          <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
+          <Label
+            htmlFor="ne-description"
+            className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary"
+          >
             Comercio
-          </span>
+          </Label>
           <div className="[&_input]:h-12 [&_input]:rounded-2xl [&_input]:text-base [&_input]:font-medium">
             <Controller
               control={control}
               name="description"
               render={({ field }) => (
                 <DescriptionAutocomplete
+                  id="ne-description"
                   value={field.value ?? ""}
                   onChange={field.onChange}
                   placeholder="¿Dónde compraste?"

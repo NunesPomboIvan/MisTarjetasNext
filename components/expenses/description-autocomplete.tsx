@@ -33,6 +33,9 @@ export function DescriptionAutocomplete({
   const [highlight, setHighlight] = React.useState(-1);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const userTypingRef = React.useRef(false);
+  const listboxId = React.useId();
+  const activeOptionId =
+    open && highlight >= 0 ? `${listboxId}-option-${highlight}` : undefined;
 
   // Sync sincrónico (setState during render) para limpiar sugerencias cuando el
   // texto baja del umbral. Evita renders en cascada de useEffect.
@@ -89,6 +92,7 @@ export function DescriptionAutocomplete({
       pick(suggestions[highlight]);
     } else if (e.key === "Escape") {
       setOpen(false);
+      setHighlight(-1);
     }
   }
 
@@ -108,15 +112,22 @@ export function DescriptionAutocomplete({
         onKeyDown={handleKeyDown}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         className={cn(invalid && "border-destructive")}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-autocomplete="list"
+        aria-activedescendant={activeOptionId}
       />
       {open && suggestions.length > 0 && (
         <ul
+          id={listboxId}
           role="listbox"
           className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-lg"
         >
           {suggestions.map((s, i) => (
             <li
               key={s}
+              id={`${listboxId}-option-${i}`}
               role="option"
               aria-selected={i === highlight}
               onMouseDown={(e) => {

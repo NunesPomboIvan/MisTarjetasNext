@@ -100,7 +100,7 @@ export default async function CardMovimientosPage({ params, searchParams }: Page
         </div>
       </StickyPageHeader>
 
-      <LiveSearch basePath={`/cards/${id}/movimientos`} placeholder="Buscar consumo" />
+      <LiveSearch basePath={`/cards/${id}/movimientos`} label="Buscar consumo" />
 
       {all.length === 0 ? (
         <EmptyState

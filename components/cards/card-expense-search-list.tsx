@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import {
   Sheet,
@@ -77,6 +77,7 @@ function countActive(f: Filters): number {
 
 export function CardExpenseSearchList({ cardId, items, actions }: CardExpenseSearchListProps) {
   const [query, setQuery] = useState("");
+  const searchInputId = useId();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
@@ -154,10 +155,17 @@ export function CardExpenseSearchList({ cardId, items, actions }: CardExpenseSea
   const searchBar = (
     <div className="flex items-center gap-2">
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <label htmlFor={searchInputId} className="sr-only">
+          Buscar consumos
+        </label>
+        <Search
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
         <input
+          id={searchInputId}
           type="search"
-          placeholder="Buscar consumos…"
+          placeholder="Ej: supermercado, Netflix..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={cn(

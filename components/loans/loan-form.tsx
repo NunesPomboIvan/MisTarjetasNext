@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const COLOR_PRESETS = [
@@ -227,25 +228,15 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
 
         <div className="space-y-2">
           <Label>Color</Label>
-          <div className="flex flex-wrap gap-2">
-            {COLOR_PRESETS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={cn(
-                  "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
-                  color === c ? "border-foreground scale-110" : "border-transparent"
-                )}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <ColorSwatchPicker colors={COLOR_PRESETS} value={color} onChange={setColor} />
             <input
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
               className="h-8 w-8 cursor-pointer rounded-full border-0 bg-transparent p-0"
               title="Color personalizado"
+              aria-label="Elegir color personalizado"
             />
           </div>
         </div>

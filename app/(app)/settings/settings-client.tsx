@@ -449,6 +449,7 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
                   <button
                     key={pair.bg}
                     type="button"
+                    aria-pressed={catColors.bg === pair.bg}
                     onClick={() => setCatColors({ bg: pair.bg, text: pair.text })}
                     className={`rounded-lg px-2 py-1 text-xs font-medium transition-all ${
                       catColors.bg === pair.bg ? "ring-2 ring-primary scale-105" : ""

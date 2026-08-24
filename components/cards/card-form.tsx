@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { cn, formatCurrency } from "@/lib/utils";
 import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
 import { format } from "date-fns";
@@ -436,20 +437,13 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
       {/* Color */}
       <div className="space-y-2">
         <Label>Color</Label>
-        <div className="flex flex-wrap gap-2">
-          {COLOR_PRESETS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              disabled={isExtension}
-              className={cn(
-                "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 disabled:opacity-50",
-                selectedColor === color ? "border-foreground scale-110" : "border-transparent"
-              )}
-              style={{ backgroundColor: color }}
-              onClick={() => setValue("color", color)}
-            />
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <ColorSwatchPicker
+            colors={COLOR_PRESETS}
+            value={selectedColor}
+            onChange={(color) => setValue("color", color)}
+            disabled={isExtension}
+          />
           <input
             type="color"
             value={selectedColor ?? "#f97316"}
@@ -457,6 +451,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
             onChange={(e) => setValue("color", e.target.value)}
             className="h-8 w-8 cursor-pointer rounded-full border-0 bg-transparent p-0 disabled:opacity-50"
             title="Color personalizado"
+            aria-label="Elegir color personalizado"
           />
         </div>
       </div>

@@ -7,13 +7,22 @@ import { cn } from "@/lib/utils";
 
 interface LiveSearchProps {
   basePath: string;
+  /** Nombre accesible del campo (label visualmente oculto). No depende del placeholder. */
+  label?: string;
+  /** Texto de ejemplo/ayuda, solo visual — desaparece al escribir. */
   placeholder?: string;
   className?: string;
 }
 
-export function LiveSearch({ basePath, placeholder = "Buscar...", className }: LiveSearchProps) {
+export function LiveSearch({
+  basePath,
+  label = "Buscar",
+  placeholder = "Ej: supermercado, Netflix...",
+  className,
+}: LiveSearchProps) {
   const router = useRouter();
   const sp = useSearchParams();
+  const inputId = React.useId();
 
   const spQ = sp.get("q") ?? "";
   const [value, setValue] = React.useState(spQ);
@@ -40,8 +49,15 @@ export function LiveSearch({ basePath, placeholder = "Buscar...", className }: L
 
   return (
     <div className={cn("relative", className)}>
-      <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <label htmlFor={inputId} className="sr-only">
+        {label}
+      </label>
+      <Search
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+      />
       <input
+        id={inputId}
         type="search"
         value={value}
         onChange={handleChange}

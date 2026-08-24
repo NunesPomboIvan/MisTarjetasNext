@@ -111,7 +111,7 @@ export default async function ExpensesPage({
         </div>
       </StickyPageHeader>
 
-      <LiveSearch basePath="/expenses" placeholder="Buscar consumo" />
+      <LiveSearch basePath="/expenses" label="Buscar consumo" />
 
       {expenses.length === 0 ? (
         <EmptyState
