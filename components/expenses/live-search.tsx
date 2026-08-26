@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LiveSearchProps {
@@ -23,6 +23,7 @@ export function LiveSearch({
   const router = useRouter();
   const sp = useSearchParams();
   const inputId = React.useId();
+  const [isPending, startTransition] = React.useTransition();
 
   const spQ = sp.get("q") ?? "";
   const [value, setValue] = React.useState(spQ);
@@ -34,6 +35,10 @@ export function LiveSearch({
 
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // "Buscando": desde que se tipea (durante el debounce) hasta que la URL
+  // refleja el nuevo término y llega el contenido nuevo del servidor.
+  const searching = value !== spQ || isPending;
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.value;
     setValue(next);
@@ -43,7 +48,9 @@ export function LiveSearch({
       if (next) params.set("q", next);
       else params.delete("q");
       const qs = params.toString();
-      router.push(qs ? `${basePath}?${qs}` : basePath);
+      startTransition(() => {
+        router.push(qs ? `${basePath}?${qs}` : basePath);
+      });
     }, 300);
   }
 
@@ -62,8 +69,17 @@ export function LiveSearch({
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
-        className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-4 text-[14px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        className="h-11 w-full rounded-full border border-border bg-card pl-10 pr-10 text-[14px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
       />
+      {searching && (
+        <Loader2
+          aria-hidden="true"
+          className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
+        />
+      )}
+      <span role="status" aria-live="polite" className="sr-only">
+        {searching ? "Buscando…" : ""}
+      </span>
     </div>
   );
 }
