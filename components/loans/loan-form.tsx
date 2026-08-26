@@ -15,6 +15,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
@@ -297,7 +298,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Descripción</Label>
+          <Label htmlFor="description" required>Descripción</Label>
           <Input
             id="description"
             placeholder="Ej: Préstamo personal auto"
@@ -314,7 +315,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label>Fecha de emisión</Label>
+          <Label required>Fecha de emisión</Label>
           <DatePickerField value={issueDate} onChange={setIssueDate} />
         </div>
 
@@ -339,7 +340,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
         <div className="space-y-4 rounded-[16px] border border-border bg-muted/30 p-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="total">Importe total del préstamo</Label>
+              <Label htmlFor="total" required>Importe total del préstamo</Label>
               <CurrencyToggle value={currency} onChange={changeCurrency} />
             </div>
             <AmountInput
@@ -370,13 +371,14 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               globalRate={globalRate}
               followsGlobal={rateFollowsGlobal}
               onFollowsGlobalChange={changeRateMode}
+              required
               invalid={!!errors.exchange_rate}
               errorMessage={errors.exchange_rate}
             />
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="count">Cantidad de cuotas</Label>
+            <Label htmlFor="count" required>Cantidad de cuotas</Label>
             <Input
               id="count"
               type="number"
@@ -396,7 +398,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Vencimiento primera cuota</Label>
+            <Label required>Vencimiento primera cuota</Label>
             <DatePickerField
               value={firstDue}
               onChange={(v) => {
@@ -467,6 +469,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               globalRate={globalRate}
               followsGlobal={rateFollowsGlobal}
               onFollowsGlobalChange={changeRateMode}
+              required
               invalid={!!errors.exchange_rate}
               errorMessage={errors.exchange_rate}
             />
@@ -518,7 +521,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-[11px]">Monto</Label>
+                    <Label required className="text-[11px]">Monto</Label>
                     <AmountInput
                       value={m.amount}
                       onChange={(v) => {
@@ -537,7 +540,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[11px]">Vencimiento</Label>
+                    <Label required className="text-[11px]">Vencimiento</Label>
                     <DatePickerField
                       value={m.due_date}
                       onChange={(v) => {
@@ -560,6 +563,8 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
           </div>
         </div>
       )}
+
+      <RequiredFieldsNote />
 
       {/* Submit */}
       <Button

@@ -42,6 +42,7 @@ import { CategoryPicker } from "./category-picker";
 import { AmountInput } from "./amount-input";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { InstallmentPresets } from "./installment-presets";
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { useLastCard } from "@/lib/hooks/use-last-card";
@@ -360,7 +361,7 @@ export function ExpenseForm({
 
         {/* Tarjeta */}
         <div className="space-y-1.5">
-          <Label>Tarjeta</Label>
+          <Label required>Tarjeta</Label>
           <Controller
             control={control}
             name="card_id"
@@ -393,7 +394,7 @@ export function ExpenseForm({
 
         {/* Descripción */}
         <div className="space-y-1.5">
-          <Label htmlFor="description">Descripción</Label>
+          <Label htmlFor="description" required>Descripción</Label>
           <Controller
             control={control}
             name="description"
@@ -416,7 +417,7 @@ export function ExpenseForm({
         {/* Editar el importe de UN período puntual (cuota o mes recurrente) */}
         {editingSingleInstallment && (
           <div className="space-y-1.5">
-            <Label htmlFor="installment_amount">
+            <Label htmlFor="installment_amount" required>
               {isRecurringExpense
                 ? "Importe de este mes"
                 : `Importe de la cuota ${installmentIndex! + 1}/${installmentsCount}`}
@@ -449,7 +450,7 @@ export function ExpenseForm({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="total_amount">
+              <Label htmlFor="total_amount" required>
                 {recurring ? "Monto mensual" : "Monto total"}
               </Label>
               <CurrencyToggle value={currency} onChange={changeCurrency} />
@@ -485,6 +486,7 @@ export function ExpenseForm({
                   value={field.value ?? null}
                   onChange={(v) => field.onChange(v ?? undefined)}
                   equivalentBase={totalAmount || null}
+                  required
                   invalid={!!errors.exchange_rate}
                   errorMessage={errors.exchange_rate?.message}
                 />
@@ -571,7 +573,7 @@ export function ExpenseForm({
             <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="discount_percentage">% de descuento</Label>
+                  <Label htmlFor="discount_percentage" required>% de descuento</Label>
                   <Controller
                     control={control}
                     name="discount_percentage"
@@ -734,7 +736,7 @@ export function ExpenseForm({
           <div className="space-y-5 rounded-xl border border-border bg-muted/20 p-4">
             {/* Fecha */}
             <div className="space-y-1.5">
-              <Label htmlFor="expense_date">Fecha del consumo</Label>
+              <Label htmlFor="expense_date" required>Fecha del consumo</Label>
               <Input
                 id="expense_date"
                 type="date"
@@ -833,6 +835,8 @@ export function ExpenseForm({
             </div>
           </div>
         )}
+
+        <RequiredFieldsNote />
 
         {/* Submit */}
         <Button

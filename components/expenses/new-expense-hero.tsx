@@ -44,6 +44,7 @@ import { InstallmentPresets } from "./installment-presets";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { GuardedLink } from "@/components/shared/guarded-link";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
@@ -295,6 +296,7 @@ export function NewExpenseHero({
           <div className="flex items-center justify-center gap-2">
             <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
               Monto
+              <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
             </span>
             <CurrencyToggle value={currency} onChange={changeCurrency} />
           </div>
@@ -340,6 +342,7 @@ export function NewExpenseHero({
                     value={field.value ?? null}
                     onChange={(v) => field.onChange(v ?? undefined)}
                     equivalentBase={totalAmount || null}
+                    required
                     invalid={!!errors.exchange_rate}
                     errorMessage={errors.exchange_rate?.message}
                   />
@@ -369,6 +372,7 @@ export function NewExpenseHero({
         <div className="space-y-2">
           <Label
             htmlFor="ne-description"
+            required
             className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary"
           >
             Comercio
@@ -397,7 +401,10 @@ export function NewExpenseHero({
         <div className="rounded-2xl border border-border bg-card divide-y divide-border/70 shadow-sm">
           {/* Tarjeta */}
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm font-medium text-foreground">Tarjeta</span>
+            <span className="text-sm font-medium text-foreground">
+              Tarjeta
+              <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
+            </span>
             <Controller
               control={control}
               name="card_id"
@@ -489,7 +496,7 @@ export function NewExpenseHero({
 
           {/* Fecha */}
           <div className="space-y-1.5">
-            <Label htmlFor="ne-date">Fecha del consumo</Label>
+            <Label htmlFor="ne-date" required>Fecha del consumo</Label>
             <Controller
               control={control}
               name="expense_date"
@@ -519,7 +526,7 @@ export function NewExpenseHero({
             {discountActive && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="ne-disc-pct" className="text-xs">
+                  <Label htmlFor="ne-disc-pct" required className="text-xs">
                     % descuento
                   </Label>
                   <Controller
@@ -679,6 +686,8 @@ export function NewExpenseHero({
             )}
           />
         </div>
+
+        <RequiredFieldsNote />
       </form>
 
       {/* Diálogo: posible duplicado */}

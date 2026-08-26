@@ -6,6 +6,7 @@ import { Fingerprint, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import {
   hasPinSet,
   hasBiometricSet,
@@ -246,7 +247,7 @@ function PinDialog({
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           {needsCurrent && (
             <div className="space-y-1.5">
-              <Label htmlFor="cur-pin">PIN actual</Label>
+              <Label htmlFor="cur-pin" required>PIN actual</Label>
               <Input
                 id="cur-pin"
                 type="password"
@@ -264,7 +265,7 @@ function PinDialog({
           {needsNew && (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="new-pin">PIN nuevo (4 a 6 dígitos)</Label>
+                <Label htmlFor="new-pin" required>PIN nuevo (4 a 6 dígitos)</Label>
                 <Input
                   id="new-pin"
                   type="password"
@@ -277,7 +278,7 @@ function PinDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="confirm-pin">Repetí el PIN</Label>
+                <Label htmlFor="confirm-pin" required>Repetí el PIN</Label>
                 <Input
                   id="confirm-pin"
                   type="password"
@@ -293,6 +294,7 @@ function PinDialog({
             </>
           )}
           {error && <p className="text-xs text-destructive">{error}</p>}
+          <RequiredFieldsNote />
           <div className="flex gap-2 pt-1">
             <Button
               type="button"

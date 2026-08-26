@@ -32,6 +32,7 @@ import { CategoryPicker } from "./category-picker";
 import { AmountInput } from "./amount-input";
 import { InstallmentPresets } from "./installment-presets";
 import { DescriptionAutocomplete } from "./description-autocomplete";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
@@ -261,7 +262,7 @@ export function QuickExpenseSheet({
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-4 pb-4">
             {/* Tarjeta — chips horizontal */}
             <div className="space-y-1.5">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              <Label required className="text-xs uppercase tracking-wide text-muted-foreground">
                 Tarjeta
               </Label>
               <Controller
@@ -306,7 +307,7 @@ export function QuickExpenseSheet({
 
             {/* Descripción */}
             <div className="space-y-1.5">
-              <Label htmlFor="qe-description">Descripción</Label>
+              <Label htmlFor="qe-description" required>Descripción</Label>
               <Controller
                 control={control}
                 name="description"
@@ -329,7 +330,7 @@ export function QuickExpenseSheet({
             {/* Monto + Cuotas */}
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="qe-amount">Monto total</Label>
+                <Label htmlFor="qe-amount" required>Monto total</Label>
                 <Controller
                   control={control}
                   name="total_amount"
@@ -388,7 +389,7 @@ export function QuickExpenseSheet({
               <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-3">
                 {/* Fecha */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="qe-date">Fecha</Label>
+                  <Label htmlFor="qe-date" required>Fecha</Label>
                   <Input
                     id="qe-date"
                     type="date"
@@ -432,7 +433,7 @@ export function QuickExpenseSheet({
                   {discountActive && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label htmlFor="qe-disc-pct" className="text-xs">
+                        <Label htmlFor="qe-disc-pct" required className="text-xs">
                           % descuento
                         </Label>
                         <Controller
@@ -511,6 +512,8 @@ export function QuickExpenseSheet({
                 </div>
               </div>
             )}
+
+            <RequiredFieldsNote />
 
             {/* Submit sticky */}
             <div className="sticky bottom-0 -mx-4 border-t border-border bg-popover/95 p-4 pb-0 backdrop-blur supports-backdrop-filter:bg-popover/70">

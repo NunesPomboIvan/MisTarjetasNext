@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { cn, formatCurrency } from "@/lib/utils";
 import { getCurrentPeriod, parseLocalDate } from "@/lib/periods/calculate";
 import { format } from "date-fns";
@@ -215,7 +216,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
 
           {isExtension && (
             <div className="space-y-1.5">
-              <Label>Tarjeta titular</Label>
+              <Label required>Tarjeta titular</Label>
               <Select
                 value={parentCardId ?? undefined}
                 onValueChange={(v) => setValue("parent_card_id", v)}
@@ -299,7 +300,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
       {/* Banco / Entidad — también se usa como nombre de la tarjeta */}
       {!isExtension && (
       <div className="space-y-1.5">
-        <Label htmlFor="bank">Banco o entidad</Label>
+        <Label htmlFor="bank" required>Banco o entidad</Label>
         <Input
           id="bank"
           placeholder="Ej: Galicia, Santander, BBVA…"
@@ -324,7 +325,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
       {/* Tipo */}
       {!isExtension && (
       <div className="space-y-1.5">
-        <Label>Tipo de tarjeta</Label>
+        <Label required>Tipo de tarjeta</Label>
         <Select
           value={watch("type") ?? undefined}
           onValueChange={(v) => setValue("type", v as CardFormData["type"])}
@@ -347,7 +348,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
 
       {/* Últimos 4 dígitos */}
       <div className="space-y-1.5">
-        <Label htmlFor="last_four">Últimos 4 dígitos</Label>
+        <Label htmlFor="last_four" required>Últimos 4 dígitos</Label>
         <Input
           id="last_four"
           placeholder="1234"
@@ -402,7 +403,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
       {/* Fechas — bloqueadas en adicionales */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Fecha de cierre</Label>
+          <Label required>Fecha de cierre</Label>
           <DatePickerField
             value={closeDate ?? ""}
             onChange={(v) => setValue("close_date", v, { shouldDirty: true, shouldValidate: true })}
@@ -415,7 +416,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
           )}
         </div>
         <div className="space-y-1.5">
-          <Label>Fecha de vencimiento</Label>
+          <Label required>Fecha de vencimiento</Label>
           <DatePickerField
             value={dueDate ?? ""}
             onChange={(v) => setValue("due_date", v, { shouldDirty: true, shouldValidate: true })}
@@ -457,6 +458,8 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
       </div>
       </>
       )}
+
+      <RequiredFieldsNote />
 
       {/* Submit */}
       <Button

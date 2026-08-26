@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -408,12 +409,16 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
         {/* Form nueva/editar */}
         {(showNewCat || editingId) && (
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
-            <Input
-              placeholder="Nombre de la categoría"
-              value={catName}
-              onChange={(e) => setCatName(e.target.value)}
-              autoFocus
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-name" required>Nombre</Label>
+              <Input
+                id="cat-name"
+                placeholder="Nombre de la categoría"
+                value={catName}
+                onChange={(e) => setCatName(e.target.value)}
+                autoFocus
+              />
+            </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1.5">Emoji</p>
               <div className="flex items-center gap-2">
@@ -498,6 +503,7 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
                 </span>
               </div>
             </div>
+            <RequiredFieldsNote />
             <div className="flex gap-2">
               <Button size="sm" className="btn-glass-primary" onClick={saveCategory} disabled={isPending}>
                 <Check className="mr-1 h-4 w-4" /> Guardar

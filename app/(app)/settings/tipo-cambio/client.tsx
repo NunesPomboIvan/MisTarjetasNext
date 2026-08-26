@@ -8,6 +8,7 @@ import { updateGlobalExchangeRate } from "@/actions/exchange";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ExchangeRateEntry } from "@/lib/supabase/database.types";
 
@@ -96,7 +97,7 @@ export function ExchangeRateClient({ history }: ExchangeRateClientProps) {
           </div>
         ) : (
           <div className="mt-3 space-y-2">
-            <Label htmlFor="global-rate">Nuevo tipo de cambio</Label>
+            <Label htmlFor="global-rate" required>Nuevo tipo de cambio</Label>
             <AmountInput
               id="global-rate"
               value={draft}
@@ -108,6 +109,8 @@ export function ExchangeRateClient({ history }: ExchangeRateClientProps) {
               Al guardar se recalculan en pesos todos los consumos en USD y las
               cuotas de préstamos en USD que NO tengan un TC personalizado.
             </p>
+            <RequiredFieldsNote />
+
             <div className="flex gap-2 pt-1">
               <Button
                 type="button"

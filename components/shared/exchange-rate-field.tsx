@@ -14,6 +14,8 @@ interface ExchangeRateFieldProps {
   equivalentBase?: number | null;
   /** Marca el campo en rojo */
   invalid?: boolean;
+  /** Marca el label como obligatorio (asterisco) */
+  required?: boolean;
   /** Mensaje de error mostrado bajo el campo (reemplaza el hint) */
   errorMessage?: string;
   /** Texto de ayuda cuando no hay equivalencia ni error */
@@ -41,6 +43,7 @@ export function ExchangeRateField({
   id = "exchange-rate",
   equivalentBase = null,
   invalid,
+  required,
   errorMessage,
   hint,
   globalRate = null,
@@ -61,7 +64,7 @@ export function ExchangeRateField({
   return (
     <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={id}>Tipo de cambio (ARS por 1 USD)</Label>
+        <Label htmlFor={id} required={required}>Tipo de cambio (ARS por 1 USD)</Label>
         {showToggle && globalRate != null && (
           <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5 text-[11px] font-semibold">
             <button

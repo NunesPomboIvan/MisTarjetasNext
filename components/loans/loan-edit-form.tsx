@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { AmountInput } from "@/components/expenses/amount-input";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
+import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,7 +128,7 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Descripción</Label>
+          <Label htmlFor="description" required>Descripción</Label>
           <Input
             id="description"
             placeholder="Ej: Préstamo personal auto"
@@ -144,14 +145,14 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label>Fecha de emisión</Label>
+          <Label required>Fecha de emisión</Label>
           <DatePickerField value={issueDate} onChange={setIssueDate} />
         </div>
 
         {/* Tipo de cambio — sólo préstamos en USD */}
         {isUsd && (
           <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
-            <Label htmlFor="exchange_rate">Tipo de cambio (ARS por 1 USD)</Label>
+            <Label htmlFor="exchange_rate" required>Tipo de cambio (ARS por 1 USD)</Label>
             <AmountInput
               id="exchange_rate"
               value={exchangeRate}
@@ -195,6 +196,8 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
         Para cambiar el monto o las cuotas, eliminá el préstamo y cargalo de nuevo
         (así no se pierde el estado de las cuotas ya pagadas).
       </p>
+
+      <RequiredFieldsNote />
 
       <Button
         type="submit"
