@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CategoryPicker } from "./category-picker";
 import { AmountInput } from "./amount-input";
+import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { InstallmentPresets } from "./installment-presets";
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { useLastCard } from "@/lib/hooks/use-last-card";
@@ -466,38 +467,20 @@ export function ExpenseForm({
 
           {/* Tipo de cambio (sólo en USD) */}
           {isUsd && (
-            <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
-              <Label htmlFor="exchange_rate">Tipo de cambio (ARS por 1 USD)</Label>
-              <Input
-                id="exchange_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                placeholder="Ej: 1200"
-                className={cn(errors.exchange_rate && "border-destructive")}
-                {...register("exchange_rate", {
-                  setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                })}
-              />
-              {errors.exchange_rate ? (
-                <p className="text-xs text-destructive">{errors.exchange_rate.message}</p>
-              ) : (
-                totalAmount && exchangeRate ? (
-                  <p className="text-xs text-muted-foreground">
-                    Equivale a{" "}
-                    <span className="font-medium text-foreground">
-                      {formatCurrency(totalAmount * exchangeRate)}
-                    </span>{" "}
-                    en pesos
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Se usa para sumar el consumo en pesos en los totales.
-                  </p>
-                )
+            <Controller
+              control={control}
+              name="exchange_rate"
+              render={({ field }) => (
+                <ExchangeRateField
+                  id="exchange_rate"
+                  value={field.value ?? null}
+                  onChange={(v) => field.onChange(v ?? undefined)}
+                  equivalentBase={totalAmount || null}
+                  invalid={!!errors.exchange_rate}
+                  errorMessage={errors.exchange_rate?.message}
+                />
               )}
-            </div>
+            />
           )}
 
           {/* Consumo fijo mensual (recurrente) */}
@@ -580,18 +563,20 @@ export function ExpenseForm({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="discount_percentage">% de descuento</Label>
-                  <Input
-                    id="discount_percentage"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    placeholder="10"
-                    inputMode="decimal"
-                    className={cn(errors.discount_percentage && "border-destructive")}
-                    {...register("discount_percentage", {
-                      setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                    })}
+                  <Controller
+                    control={control}
+                    name="discount_percentage"
+                    render={({ field }) => (
+                      <AmountInput
+                        id="discount_percentage"
+                        value={field.value ?? null}
+                        onChange={(v) => field.onChange(v ?? undefined)}
+                        prefix={null}
+                        suffix="%"
+                        placeholder="10"
+                        invalid={!!errors.discount_percentage}
+                      />
+                    )}
                   />
                   {errors.discount_percentage && (
                     <p className="text-xs text-destructive">
@@ -604,17 +589,18 @@ export function ExpenseForm({
                     Tope reintegro{" "}
                     <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
                   </Label>
-                  <Input
-                    id="discount_cap"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Sin tope"
-                    inputMode="decimal"
-                    className={cn(errors.discount_cap && "border-destructive")}
-                    {...register("discount_cap", {
-                      setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                    })}
+                  <Controller
+                    control={control}
+                    name="discount_cap"
+                    render={({ field }) => (
+                      <AmountInput
+                        id="discount_cap"
+                        value={field.value ?? null}
+                        onChange={(v) => field.onChange(v ?? undefined)}
+                        placeholder="Sin tope"
+                        invalid={!!errors.discount_cap}
+                      />
+                    )}
                   />
                 </div>
               </div>

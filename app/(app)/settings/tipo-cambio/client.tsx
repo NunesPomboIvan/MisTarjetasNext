@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { Check, DollarSign, Loader2, Pencil, X } from "lucide-react";
 import { updateGlobalExchangeRate } from "@/actions/exchange";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AmountInput } from "@/components/expenses/amount-input";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ExchangeRateEntry } from "@/lib/supabase/database.types";
 
@@ -97,19 +97,12 @@ export function ExchangeRateClient({ history }: ExchangeRateClientProps) {
         ) : (
           <div className="mt-3 space-y-2">
             <Label htmlFor="global-rate">Nuevo tipo de cambio</Label>
-            <Input
+            <AmountInput
               id="global-rate"
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              placeholder="Ej: 1200"
+              value={draft}
+              onChange={(v) => setDraft(v ?? null)}
               autoFocus
-              value={draft ?? ""}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                setDraft(e.target.value === "" || isNaN(n) ? null : n);
-              }}
+              placeholder="1.187,50"
             />
             <p className="text-xs text-muted-foreground">
               Al guardar se recalculan en pesos todos los consumos en USD y las

@@ -10,6 +10,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from "@/components/expenses/amount-input";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { SelectableExpenseList } from "@/components/expenses/selectable-expense-list";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -32,8 +33,8 @@ interface Filters {
   tipo: Tipo;
   desde: string;
   hasta: string;
-  min: string;
-  max: string;
+  min: number | undefined;
+  max: number | undefined;
   cuotas: Cuotas;
   comercio: string;
   soloFijos: boolean;
@@ -44,8 +45,8 @@ const EMPTY_FILTERS: Filters = {
   tipo: "todos",
   desde: "",
   hasta: "",
-  min: "",
-  max: "",
+  min: undefined,
+  max: undefined,
   cuotas: "todas",
   comercio: "",
   soloFijos: false,
@@ -67,8 +68,8 @@ function countActive(f: Filters): number {
   if (f.tipo !== "todos") n++;
   if (f.desde) n++;
   if (f.hasta) n++;
-  if (f.min) n++;
-  if (f.max) n++;
+  if (f.min != null) n++;
+  if (f.max != null) n++;
   if (f.cuotas !== "todas") n++;
   if (f.comercio.trim()) n++;
   if (f.soloFijos) n++;
@@ -97,8 +98,8 @@ export function CardExpenseSearchList({ cardId, items, actions }: CardExpenseSea
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const comercio = filters.comercio.trim().toLowerCase();
-    const min = filters.min ? Number(filters.min) : null;
-    const max = filters.max ? Number(filters.max) : null;
+    const min = filters.min ?? null;
+    const max = filters.max ?? null;
 
     return items.filter((it) => {
       const desc = it.expense.description?.toLowerCase() ?? "";
@@ -363,22 +364,18 @@ function FilterSheet({
             <div className="grid grid-cols-2 gap-2">
               <label className="space-y-1">
                 <span className="text-[11px] text-muted-foreground">Mínimo</span>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="0"
+                <AmountInput
                   value={draft.min}
-                  onChange={(e) => set("min", e.target.value)}
+                  onChange={(v) => set("min", v)}
+                  placeholder="0"
                 />
               </label>
               <label className="space-y-1">
                 <span className="text-[11px] text-muted-foreground">Máximo</span>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="Sin límite"
+                <AmountInput
                   value={draft.max}
-                  onChange={(e) => set("max", e.target.value)}
+                  onChange={(v) => set("max", v)}
+                  placeholder="Sin límite"
                 />
               </label>
             </div>

@@ -13,8 +13,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AmountInput } from "./amount-input";
 
 interface InstallmentAmountEditorProps {
   expenseId: string;
@@ -38,16 +38,16 @@ export function InstallmentAmountEditor({
   description,
 }: InstallmentAmountEditorProps) {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState(String(currentAmount));
+  const [amount, setAmount] = useState<number | undefined>(currentAmount);
   const [step, setStep] = useState<"input" | "choice">("input");
   const [isPending, startTransition] = useTransition();
 
-  const newAmount = parseFloat(amount);
+  const newAmount = amount ?? NaN;
   const amountChanged = !isNaN(newAmount) && newAmount !== currentAmount && newAmount > 0;
 
   function handleOpenChange(next: boolean) {
     if (!next) {
-      setAmount(String(currentAmount));
+      setAmount(currentAmount);
       setStep("input");
     }
     setOpen(next);
@@ -120,16 +120,13 @@ export function InstallmentAmountEditor({
                 <Label htmlFor="cuota-amount">
                   Importe{totalInstallments > 1 ? " de la cuota" : ""}
                 </Label>
-                <Input
+                <AmountInput
                   id="cuota-amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
                   autoFocus
                 />
-                {!amountChanged && parseFloat(amount) > 0 && (
+                {!amountChanged && (amount ?? 0) > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Actual: {formatCurrency(currentAmount)}
                   </p>

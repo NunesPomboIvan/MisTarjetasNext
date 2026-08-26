@@ -414,34 +414,36 @@ export function QuickExpenseSheet({
                         <Label htmlFor="qe-disc-pct" className="text-xs">
                           % descuento
                         </Label>
-                        <Input
-                          id="qe-disc-pct"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          inputMode="decimal"
-                          {...register("discount_percentage", {
-                            valueAsNumber: true,
-                            setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                          })}
+                        <Controller
+                          control={control}
+                          name="discount_percentage"
+                          render={({ field }) => (
+                            <AmountInput
+                              id="qe-disc-pct"
+                              value={field.value ?? null}
+                              onChange={(v) => field.onChange(v ?? undefined)}
+                              prefix={null}
+                              suffix="%"
+                              placeholder="10"
+                            />
+                          )}
                         />
                       </div>
                       <div>
                         <Label htmlFor="qe-disc-cap" className="text-xs">
                           Tope (opcional)
                         </Label>
-                        <Input
-                          id="qe-disc-cap"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          inputMode="decimal"
-                          placeholder="Sin tope"
-                          {...register("discount_cap", {
-                            valueAsNumber: true,
-                            setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                          })}
+                        <Controller
+                          control={control}
+                          name="discount_cap"
+                          render={({ field }) => (
+                            <AmountInput
+                              id="qe-disc-cap"
+                              value={field.value ?? null}
+                              onChange={(v) => field.onChange(v ?? undefined)}
+                              placeholder="Sin tope"
+                            />
+                          )}
                         />
                       </div>
                       {totalAmount > 0 && (

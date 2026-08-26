@@ -9,8 +9,10 @@ interface AmountInputProps {
   value: number | undefined | null;
   /** Llamado con el número parseado (no con el string formateado) */
   onChange: (value: number | undefined) => void;
-  /** Símbolo de moneda mostrado a la izquierda. Default: "$" */
-  prefix?: string;
+  /** Símbolo de moneda mostrado a la izquierda. Default: "$". `null` = sin prefijo. */
+  prefix?: string | null;
+  /** Texto fijo mostrado a la derecha (ej: "%"). No interactivo. */
+  suffix?: string;
   placeholder?: string;
   invalid?: boolean;
   id?: string;
@@ -27,11 +29,15 @@ interface AmountInputProps {
  * - Muestra "$ 1.500,00" mientras el usuario tipea
  * - Comunica el valor numérico parseado al padre
  * - Permite vacío (undefined) sin romper el formulario
+ *
+ * Reutilizable para cualquier campo numérico (tipo de cambio, % de descuento,
+ * tope, importe de cuota…) para que toda la app acepte la coma decimal igual.
  */
 export function AmountInput({
   value,
   onChange,
   prefix = "$",
+  suffix,
   placeholder = "0,00",
   invalid,
   id,
@@ -66,10 +72,13 @@ export function AmountInput({
 
   const isNegative = (value ?? 0) < 0;
 
+  const hasPrefix = prefix != null && prefix !== "";
+
   // El prefijo ("$", "US$"…) se posiciona absoluto sobre el input; el padding
   // izquierdo se calcula según su ancho para que el valor nunca se le superponga.
   const charWidth = size === "lg" ? 10 : 8;
-  const paddingLeft = 12 + prefix.length * charWidth + 6;
+  const paddingLeft = hasPrefix ? 12 + prefix!.length * charWidth + 6 : undefined;
+  const paddingRight = suffix ? 12 + suffix.length * charWidth + 6 : undefined;
 
   function toggleSign() {
     // Alterna el signo del valor actual. Con campo vacío, prepara un "-".
@@ -82,14 +91,16 @@ export function AmountInput({
 
   return (
     <div className={cn("relative", className)}>
-      <span
-        className={cn(
-          "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground",
-          size === "lg" ? "text-lg font-semibold" : "text-sm"
-        )}
-      >
-        {prefix}
-      </span>
+      {hasPrefix && (
+        <span
+          className={cn(
+            "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground",
+            size === "lg" ? "text-lg font-semibold" : "text-sm"
+          )}
+        >
+          {prefix}
+        </span>
+      )}
       <Input
         id={id}
         type="text"
@@ -99,7 +110,7 @@ export function AmountInput({
         placeholder={placeholder}
         value={display}
         onChange={handleChange}
-        style={{ paddingLeft }}
+        style={{ paddingLeft, paddingRight }}
         className={cn(
           "tabular-nums",
           signToggle && "pr-12",
@@ -107,6 +118,16 @@ export function AmountInput({
           invalid && "border-destructive"
         )}
       />
+      {suffix && (
+        <span
+          className={cn(
+            "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none text-muted-foreground",
+            size === "lg" ? "text-lg font-semibold" : "text-sm"
+          )}
+        >
+          {suffix}
+        </span>
+      )}
       {signToggle && (
         <button
           type="button"

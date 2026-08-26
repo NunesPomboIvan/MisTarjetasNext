@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
-import { cn, formatCurrency } from "@/lib/utils";
+import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
+import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
   "#6366f1", "#f97316", "#ef4444", "#eab308",
@@ -261,6 +262,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
 
           {isUsd && (
             <ExchangeRateField
+              id="loan-exchange-rate"
               value={exchangeRate}
               onChange={setExchangeRate}
               equivalentBase={total}
@@ -336,6 +338,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
 
           {isUsd && (
             <ExchangeRateField
+              id="loan-exchange-rate"
               value={exchangeRate}
               onChange={setExchangeRate}
               equivalentBase={manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null}
@@ -468,98 +471,3 @@ function CurrencyToggle({
   );
 }
 
-/**
- * Campo de tipo de cambio (sólo USD). Permite elegir si el préstamo sigue
- * al TC general (se actualiza cuando lo cambiás en Cuenta → Tipo de cambio,
- * igual que los consumos) o queda fijo con un valor propio.
- */
-function ExchangeRateField({
-  value,
-  onChange,
-  equivalentBase,
-  globalRate,
-  followsGlobal,
-  onFollowsGlobalChange,
-}: {
-  value: number | null;
-  onChange: (v: number | null) => void;
-  /** Monto en USD para mostrar el equivalente en pesos (null = sin hint) */
-  equivalentBase: number | null;
-  /** TC general vigente. null = sin configurar (no hay nada que seguir) */
-  globalRate: number | null;
-  followsGlobal: boolean;
-  onFollowsGlobalChange: (follows: boolean) => void;
-}) {
-  const effectiveRate = followsGlobal ? globalRate : value;
-
-  return (
-    <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <Label htmlFor="loan-exchange-rate">Tipo de cambio (ARS por 1 USD)</Label>
-        {globalRate != null && (
-          <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5 text-[11px] font-semibold">
-            <button
-              type="button"
-              onClick={() => onFollowsGlobalChange(true)}
-              className={cn(
-                "rounded-md px-2 py-1 transition-colors",
-                followsGlobal
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Sigue al general
-            </button>
-            <button
-              type="button"
-              onClick={() => onFollowsGlobalChange(false)}
-              className={cn(
-                "rounded-md px-2 py-1 transition-colors",
-                !followsGlobal
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Fijo
-            </button>
-          </div>
-        )}
-      </div>
-
-      {followsGlobal && globalRate != null ? (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5">
-          <span className="text-[14px] font-semibold tabular-nums text-foreground">
-            {formatCurrency(globalRate)}
-          </span>
-          <span className="text-[11px] text-muted-foreground">TC general</span>
-        </div>
-      ) : (
-        <AmountInput
-          id="loan-exchange-rate"
-          value={value}
-          onChange={(v) => onChange(v ?? null)}
-          prefix="$"
-          placeholder="1.187,50"
-        />
-      )}
-
-      {equivalentBase && effectiveRate ? (
-        <p className="text-xs text-muted-foreground">
-          Equivale a{" "}
-          <span className="font-medium text-foreground">
-            {formatCurrency(equivalentBase * effectiveRate)}
-          </span>{" "}
-          en pesos
-        </p>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {followsGlobal
-            ? "Se actualiza solo cuando cambiés el TC general (Cuenta → Tipo de cambio)."
-            : globalRate == null
-              ? "Configurá el TC general en Cuenta → Tipo de cambio para poder sincronizar este préstamo más adelante."
-              : "Este préstamo queda fijo: los cambios del TC general no lo van a afectar."}
-        </p>
-      )}
-    </div>
-  );
-}

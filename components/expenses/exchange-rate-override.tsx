@@ -9,8 +9,8 @@ import {
   clearExpenseRateOverride,
 } from "@/actions/exchange";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AmountInput } from "./amount-input";
 import { formatCurrency } from "@/lib/utils";
 
 interface ExchangeRateOverrideProps {
@@ -107,18 +107,12 @@ export function ExchangeRateOverride({
       {editing ? (
         <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
           <Label htmlFor="override-rate">Tipo de cambio para este consumo</Label>
-          <Input
+          <AmountInput
             id="override-rate"
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
+            value={draft}
+            onChange={(v) => setDraft(v ?? null)}
             autoFocus
-            value={draft ?? ""}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              setDraft(e.target.value === "" || isNaN(n) ? null : n);
-            }}
+            placeholder="1.187,50"
           />
           <div className="flex gap-2 pt-1">
             <Button

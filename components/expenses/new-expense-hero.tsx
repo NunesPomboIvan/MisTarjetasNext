@@ -40,7 +40,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { DescriptionAutocomplete } from "./description-autocomplete";
+import { AmountInput } from "./amount-input";
 import { InstallmentPresets } from "./installment-presets";
+import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
@@ -321,37 +323,21 @@ export function NewExpenseHero({
 
           {/* Tipo de cambio (sólo USD) */}
           {isUsd && (
-            <div className="mx-auto mt-3 max-w-xs space-y-1.5 rounded-xl border border-border bg-card/70 p-3 text-left">
-              <Label htmlFor="ne-rate" className="text-xs">
-                Tipo de cambio (ARS por 1 USD)
-              </Label>
-              <Input
-                id="ne-rate"
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                placeholder="Ej: 1200"
-                className={cn(errors.exchange_rate && "border-destructive")}
-                {...register("exchange_rate", {
-                  setValueAs: (v) => (v === "" || isNaN(v) ? undefined : Number(v)),
-                })}
+            <div className="mx-auto mt-3 max-w-xs text-left">
+              <Controller
+                control={control}
+                name="exchange_rate"
+                render={({ field }) => (
+                  <ExchangeRateField
+                    id="ne-rate"
+                    value={field.value ?? null}
+                    onChange={(v) => field.onChange(v ?? undefined)}
+                    equivalentBase={totalAmount || null}
+                    invalid={!!errors.exchange_rate}
+                    errorMessage={errors.exchange_rate?.message}
+                  />
+                )}
               />
-              {errors.exchange_rate ? (
-                <p className="text-xs text-destructive">{errors.exchange_rate.message}</p>
-              ) : totalAmount && exchangeRate ? (
-                <p className="text-xs text-muted-foreground">
-                  ≈{" "}
-                  <span className="font-medium text-foreground">
-                    {formatCurrency(totalAmount * exchangeRate)}
-                  </span>{" "}
-                  en pesos
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Se suma en pesos en los totales.
-                </p>
-              )}
             </div>
           )}
         </div>
@@ -529,35 +515,36 @@ export function NewExpenseHero({
                   <Label htmlFor="ne-disc-pct" className="text-xs">
                     % descuento
                   </Label>
-                  <Input
-                    id="ne-disc-pct"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    inputMode="decimal"
-                    placeholder="10"
-                    {...register("discount_percentage", {
-                      setValueAs: (v) =>
-                        v === "" || isNaN(v) ? undefined : Number(v),
-                    })}
+                  <Controller
+                    control={control}
+                    name="discount_percentage"
+                    render={({ field }) => (
+                      <AmountInput
+                        id="ne-disc-pct"
+                        value={field.value ?? null}
+                        onChange={(v) => field.onChange(v ?? undefined)}
+                        prefix={null}
+                        suffix="%"
+                        placeholder="10"
+                      />
+                    )}
                   />
                 </div>
                 <div>
                   <Label htmlFor="ne-disc-cap" className="text-xs">
                     Tope (opcional)
                   </Label>
-                  <Input
-                    id="ne-disc-cap"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    inputMode="decimal"
-                    placeholder="Sin tope"
-                    {...register("discount_cap", {
-                      setValueAs: (v) =>
-                        v === "" || isNaN(v) ? undefined : Number(v),
-                    })}
+                  <Controller
+                    control={control}
+                    name="discount_cap"
+                    render={({ field }) => (
+                      <AmountInput
+                        id="ne-disc-cap"
+                        value={field.value ?? null}
+                        onChange={(v) => field.onChange(v ?? undefined)}
+                        placeholder="Sin tope"
+                      />
+                    )}
                   />
                 </div>
                 {totalAmount > 0 && (

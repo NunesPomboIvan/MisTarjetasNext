@@ -13,7 +13,6 @@ import { Money } from "@/components/shared/money";
 import { AmountInput } from "@/components/expenses/amount-input";
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -393,17 +392,11 @@ function InstallmentRateSheet({
             <Label htmlFor={`inst-rate-${installment.id}`}>
               Tipo de cambio (ARS por 1 USD)
             </Label>
-            <Input
+            <AmountInput
               id={`inst-rate-${installment.id}`}
-              type="number"
-              step="0.01"
-              min="0"
-              inputMode="decimal"
-              value={draft ?? ""}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                setDraft(e.target.value === "" || isNaN(n) ? null : n);
-              }}
+              value={draft}
+              onChange={(v) => setDraft(v ?? null)}
+              placeholder="1.187,50"
             />
             {draft ? (
               <p className="text-xs text-muted-foreground">
