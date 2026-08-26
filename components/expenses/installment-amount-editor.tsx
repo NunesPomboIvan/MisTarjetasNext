@@ -46,6 +46,11 @@ export function InstallmentAmountEditor({
   const amountChanged = !isNaN(newAmount) && newAmount !== currentAmount && newAmount > 0;
 
   function handleOpenChange(next: boolean) {
+    if (!next && amountChanged) {
+      if (!window.confirm("Cambiaste el importe y no lo guardaste. ¿Querés cerrar igual?")) {
+        return;
+      }
+    }
     if (!next) {
       setAmount(currentAmount);
       setStep("input");

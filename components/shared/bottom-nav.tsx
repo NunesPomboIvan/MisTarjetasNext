@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, CreditCard, Banknote, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GuardedLink } from "./guarded-link";
 
 const NAV_ITEMS = [
   { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") },
@@ -31,7 +31,7 @@ export function BottomNav() {
       <div className="pointer-events-auto relative mx-auto w-full max-w-lg px-3 pb-3 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}
-          <Link
+          <GuardedLink
             href="/expenses/new"
             aria-label="Nuevo consumo"
             className="tap-target absolute left-1/2 top-0 z-20 flex h-[60px] w-[60px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[16px] text-white backdrop-blur-xl transition-transform active:scale-95"
@@ -46,7 +46,7 @@ export function BottomNav() {
             }}
           >
             <Plus className="h-5 w-5" strokeWidth={2.6} />
-          </Link>
+          </GuardedLink>
 
           {/* Barra flotante OPACA con halo violeta exterior. Nada de
               transparencia: el contenido nunca se lee a través de la barra
@@ -101,7 +101,7 @@ function NavLink({
   const isActive = item.match(pathname);
   const Icon = item.icon;
   return (
-    <Link
+    <GuardedLink
       href={item.href}
       className={cn(
         "tap-target flex flex-1 flex-col items-center justify-center gap-1 px-1 py-1 transition-colors duration-200",
@@ -124,6 +124,6 @@ function NavLink({
       >
         {item.label}
       </span>
-    </Link>
+    </GuardedLink>
   );
 }

@@ -1,5 +1,6 @@
 import { BottomNav } from "@/components/shared/bottom-nav";
 import { AuthGate } from "@/components/shared/auth-gate";
+import { NavigationBlockerProvider } from "@/components/shared/navigation-blocker";
 
 // El cliente de Supabase usa un user_id fijo (sin cookies), así que Next no
 // detecta APIs dinámicas y prerenderizaría estas páginas en build time. Eso
@@ -15,13 +16,15 @@ export default function AppLayout({
 }) {
   return (
     <AuthGate>
-      <div className="flex min-h-full flex-col bg-background">
-        <main className="flex flex-1 flex-col pb-[calc(7rem+env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-6 pb-2">{children}</div>
-        </main>
+      <NavigationBlockerProvider>
+        <div className="flex min-h-full flex-col bg-background">
+          <main className="flex flex-1 flex-col pb-[calc(7rem+env(safe-area-inset-bottom))]">
+            <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-6 pb-2">{children}</div>
+          </main>
 
-        <BottomNav />
-      </div>
+          <BottomNav />
+        </div>
+      </NavigationBlockerProvider>
     </AuthGate>
   );
 }

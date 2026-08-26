@@ -86,7 +86,7 @@ export function QuickExpenseSheet({
     watch,
     setValue,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ExpenseFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(expenseSchema) as any,
@@ -99,6 +99,10 @@ export function QuickExpenseSheet({
       description: "",
     },
   });
+
+  // Salteamos la confirmación de "cambios sin guardar" cuando el sheet se cierra
+  // por un guardado exitoso (no por acción del usuario).
+  const skipCloseGuard = React.useRef(false);
 
   // Re-inicializar al abrir
   React.useEffect(() => {
@@ -114,9 +118,25 @@ export function QuickExpenseSheet({
       setShowAdvanced(false);
       setDiscountActive(false);
       setDuplicate(null);
+      skipCloseGuard.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, resolvedDefaultCard]);
+
+  /** Cierre con confirmación si hay cambios sin guardar. */
+  function handleSheetOpenChange(next: boolean) {
+    if (
+      !next &&
+      !skipCloseGuard.current &&
+      isDirty &&
+      !window.confirm(
+        "Tenés cambios sin guardar en este consumo. ¿Querés cerrar igual?"
+      )
+    ) {
+      return;
+    }
+    onOpenChange(next);
+  }
 
   const totalAmount = watch("total_amount");
   const installments = watch("installments");
@@ -165,6 +185,7 @@ export function QuickExpenseSheet({
 
       if (result.success) {
         setLastCardId(payload.card_id);
+        skipCloseGuard.current = true;
         toast.success("Consumo registrado");
         onOpenChange(false);
         router.refresh();
@@ -214,7 +235,7 @@ export function QuickExpenseSheet({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
+      <Sheet open={open} onOpenChange={handleSheetOpenChange}>
         <SheetContent
           side="bottom"
           showCloseButton={false}
@@ -228,7 +249,7 @@ export function QuickExpenseSheet({
               <SheetTitle className="text-lg">Nuevo consumo</SheetTitle>
               <button
                 type="button"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleSheetOpenChange(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="Cerrar"
               >

@@ -41,6 +41,7 @@ import {
 import { CategoryPicker } from "./category-picker";
 import { AmountInput } from "./amount-input";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
+import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { InstallmentPresets } from "./installment-presets";
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { useLastCard } from "@/lib/hooks/use-last-card";
@@ -83,6 +84,9 @@ export function ExpenseForm({
     total_amount: number;
     payload: ExpenseFormData;
   } | null>(null);
+  // Se pone en true justo antes de navegar tras un guardado exitoso, para que
+  // el guard de "cambios sin guardar" no dispare en la redirección.
+  const [savedOk, setSavedOk] = useState(false);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -115,7 +119,7 @@ export function ExpenseForm({
     control,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ExpenseFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(expenseSchema) as any,
@@ -158,6 +162,8 @@ export function ExpenseForm({
   const exchangeRate = watch("exchange_rate");
   const isUsd = currency === "USD";
   const amountPrefix = isUsd ? "US$" : "$";
+
+  useUnsavedChangesGuard(isDirty && !savedOk);
 
   // Descuento calculado: min(monto * %, tope)
   const discountCalculado =
@@ -258,6 +264,7 @@ export function ExpenseForm({
 
       if (result.success) {
         if (!expense) setLastCardId(payload.card_id);
+        setSavedOk(true);
         toast.success(expense ? "Consumo actualizado" : "Consumo registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
@@ -290,6 +297,7 @@ export function ExpenseForm({
         expense.card_id
       );
       if (result.success) {
+        setSavedOk(true);
         toast.success(
           isRecurringExpense
             ? "Importe de este mes actualizado"
@@ -315,6 +323,7 @@ export function ExpenseForm({
         expense.card_id
       );
       if (result.success) {
+        setSavedOk(true);
         toast.success(
           isRecurringExpense ? "Todos los meses actualizados" : "Todas las cuotas actualizadas"
         );

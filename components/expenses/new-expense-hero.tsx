@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +42,8 @@ import { DescriptionAutocomplete } from "./description-autocomplete";
 import { AmountInput } from "./amount-input";
 import { InstallmentPresets } from "./installment-presets";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
+import { GuardedLink } from "@/components/shared/guarded-link";
+import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
@@ -100,6 +101,9 @@ export function NewExpenseHero({
     payload: ExpenseFormData;
   } | null>(null);
   const [localCategories, setLocalCategories] = React.useState<Category[]>(categories);
+  // Se pone en true justo antes de navegar tras un guardado exitoso, para que
+  // el guard de "cambios sin guardar" no dispare en la redirección.
+  const [savedOk, setSavedOk] = React.useState(false);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -116,7 +120,7 @@ export function NewExpenseHero({
     control,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ExpenseFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(expenseSchema) as any,
@@ -141,6 +145,8 @@ export function NewExpenseHero({
   const exchangeRate = watch("exchange_rate");
   const isUsd = currency === "USD";
   const amountPrefix = isUsd ? "US$" : "$";
+
+  useUnsavedChangesGuard(isDirty && !savedOk);
 
   function changeCurrency(next: "ARS" | "USD") {
     setValue("currency", next);
@@ -217,6 +223,7 @@ export function NewExpenseHero({
 
       if (result.success) {
         setLastCardId(payload.card_id);
+        setSavedOk(true);
         toast.success("Consumo registrado");
         router.push(payload.card_id ? `/cards/${payload.card_id}` : "/expenses");
         router.refresh();
@@ -257,12 +264,12 @@ export function NewExpenseHero({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Header sticky: Cancelar / Título / Guardar */}
         <div className="-mx-4 -mt-4 sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-border/50 bg-background/85 px-4 py-3 backdrop-blur supports-backdrop-filter:bg-background/70">
-          <Link
+          <GuardedLink
             href={backHref}
             className="justify-self-start text-[15px] font-medium text-foreground/80 transition-colors hover:text-foreground"
           >
             Cancelar
-          </Link>
+          </GuardedLink>
           <h1 className="text-[15px] font-semibold tracking-tight">
             {feeMode
               ? "Gasto de tarjeta"
@@ -775,7 +782,7 @@ function CardSelector({
                 )}
               </button>
             ))}
-            <Link
+            <GuardedLink
               href={`/cards/new?return=${encodeURIComponent("/expenses/new")}`}
               className="flex w-full items-center gap-3.5 px-5 py-3.5 text-left text-primary transition-colors active:bg-muted/60"
             >
@@ -785,7 +792,7 @@ function CardSelector({
               <span className="flex-1 text-[15px] font-semibold">
                 Agregar tarjeta nueva
               </span>
-            </Link>
+            </GuardedLink>
           </div>
         </SheetContent>
       </Sheet>

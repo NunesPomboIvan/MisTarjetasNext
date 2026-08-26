@@ -14,6 +14,7 @@ import { AmountInput } from "@/components/expenses/amount-input";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
+import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
@@ -80,6 +81,20 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
   const [manual, setManual] = useState<ManualInstallment[]>([
     { amount: null, due_date: format(new Date(), "yyyy-MM-dd") },
   ]);
+
+  // Guard de cambios sin guardar. savedOk se pone en true al redirigir tras
+  // crear el préstamo, para no pedir confirmación en esa navegación.
+  const [savedOk, setSavedOk] = useState(false);
+  const dirty =
+    !savedOk &&
+    (description.trim() !== "" ||
+      bank.trim() !== "" ||
+      total != null ||
+      firstDue !== "" ||
+      Object.keys(simpleAmounts).length > 0 ||
+      manual.length > 1 ||
+      manual.some((m) => m.amount != null));
+  useUnsavedChangesGuard(dirty);
 
   // Cuotas pre-calculadas en modo simple
   const simpleInstallments = useMemo(() => {
@@ -229,6 +244,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
     startTransition(async () => {
       const result = await createLoan(data);
       if (result.success) {
+        setSavedOk(true);
         toast.success("Préstamo creado");
         router.push("/prestamos");
         router.refresh();

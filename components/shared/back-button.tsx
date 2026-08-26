@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { GuardedLink } from "./guarded-link";
 
 interface BackButtonProps {
   /**
@@ -14,12 +14,12 @@ interface BackButtonProps {
 
 export function BackButton({ href = "/", label = "Volver" }: BackButtonProps) {
   return (
-    <Link
+    <GuardedLink
       href={href}
       aria-label={label}
       className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground active:scale-95"
     >
       <ArrowLeft className="h-5 w-5" />
-    </Link>
+    </GuardedLink>
   );
 }
