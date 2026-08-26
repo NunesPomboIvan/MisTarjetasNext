@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 const COLOR_PRESETS = [
   "#6366f1", "#f97316", "#ef4444", "#eab308",
@@ -52,6 +52,8 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
     initial.exchange_rate != null ? Number(initial.exchange_rate) : null
   );
   const [confirmRateOpen, setConfirmRateOpen] = useState(false);
+  // Errores por campo — mismo patrón visual que tarjeta / consumo.
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isUsd = initial.currency === "USD";
   const rateChanged =
@@ -59,15 +61,27 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
     exchangeRate != null &&
     exchangeRate !== (initial.exchange_rate != null ? Number(initial.exchange_rate) : null);
 
-  function submit() {
-    if (!description.trim()) {
-      toast.error("La descripción es requerida");
+  function clearError(key: string) {
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!description.trim()) errs.description = "La descripción es requerida";
+    if (isUsd && !(exchangeRate && exchangeRate > 0))
+      errs.exchange_rate = "Ingresá el tipo de cambio";
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
-    if (isUsd && !(exchangeRate && exchangeRate > 0)) {
-      toast.error("Ingresá el tipo de cambio");
-      return;
-    }
+    setErrors({});
     // Cambio de TC: pedir confirmación antes de recalcular todas las cuotas.
     if (rateChanged) {
       setConfirmRateOpen(true);
@@ -100,7 +114,7 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="bank">Banco o entidad</Label>
@@ -118,8 +132,15 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
             id="description"
             placeholder="Ej: Préstamo personal auto"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearError("description");
+            }}
+            className={cn(errors.description && "border-destructive")}
           />
+          {errors.description && (
+            <p className="text-xs text-destructive">{errors.description}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -134,15 +155,23 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
             <AmountInput
               id="exchange_rate"
               value={exchangeRate}
-              onChange={(v) => setExchangeRate(v ?? null)}
+              onChange={(v) => {
+                setExchangeRate(v ?? null);
+                clearError("exchange_rate");
+              }}
               prefix="$"
               placeholder="1.187,50"
+              invalid={!!errors.exchange_rate}
             />
-            <p className="text-xs text-muted-foreground">
-              {rateChanged
-                ? "Al guardar se van a recalcular todas las cuotas con el nuevo TC."
-                : "Si lo cambiás, todas las cuotas se recalculan con el nuevo valor."}
-            </p>
+            {errors.exchange_rate ? (
+              <p className="text-xs text-destructive">{errors.exchange_rate}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {rateChanged
+                  ? "Al guardar se van a recalcular todas las cuotas con el nuevo TC."
+                  : "Si lo cambiás, todas las cuotas se recalculan con el nuevo valor."}
+              </p>
+            )}
           </div>
         )}
 
@@ -168,8 +197,7 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
       </p>
 
       <Button
-        type="button"
-        onClick={submit}
+        type="submit"
         className="btn-glass-primary w-full font-semibold"
         disabled={isPending}
       >
@@ -220,6 +248,6 @@ export function LoanEditForm({ loanId, initial }: LoanEditFormProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </form>
   );
 }

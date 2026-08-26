@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Save, Plus, Trash2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { createLoan } from "@/actions/loans";
-import { loanSchema } from "@/lib/schemas/loan";
+import { loanSchema, type LoanFormData } from "@/lib/schemas/loan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,13 +96,60 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
     });
   }, [mode, total, count, firstDue, simpleAmounts]);
 
-  // Reset edits cuando cambian total/count
-  useEffect(() => {
+  // Reset de los importes editados a mano cuando cambian total/cantidad.
+  // Patrón "setState during render" (no useEffect) para no disparar renders en
+  // cascada — mismo criterio que AmountInput.
+  const [prevTotalCount, setPrevTotalCount] = useState<{ total: number | null; count: number }>({
+    total,
+    count,
+  });
+  if (prevTotalCount.total !== total || prevTotalCount.count !== count) {
+    setPrevTotalCount({ total, count });
     setSimpleAmounts({});
-  }, [total, count]);
+  }
 
-  function submit() {
-    // Construir lista final de cuotas según modo
+  // Errores por campo — mismo patrón visual que los formularios de tarjeta y
+  // consumo (mensaje debajo del campo + borde rojo), en vez de un toast único.
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function clearError(key: string) {
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  /** Mapea el path de un issue de Zod a la clave de campo del formulario. */
+  function zodPathToKey(path: readonly PropertyKey[]): string {
+    const [head, idx, sub] = path;
+    if (head === "installments" && typeof idx === "number") {
+      if (mode === "simple") return `simple.${idx}`;
+      return sub === "due_date" ? `manual.${idx}.due_date` : `manual.${idx}.amount`;
+    }
+    if (head === "total_amount" || head === "installment_amount") return "total";
+    if (head === "issue_date") return "issueDate";
+    return String(head);
+  }
+
+  function focusFirstError(errs: Record<string, string>) {
+    const order = ["description", "total", "count", "firstDue", "exchange_rate"];
+    const key = order.find((k) => k in errs) ?? Object.keys(errs)[0];
+    const idByKey: Record<string, string> = {
+      description: "description",
+      total: "total",
+      count: "count",
+      exchange_rate: "loan-exchange-rate",
+    };
+    const el = idByKey[key] ? document.getElementById(idByKey[key]) : null;
+    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    el?.focus();
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
     const installments =
       mode === "simple"
         ? simpleInstallments
@@ -112,20 +159,32 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
             due_date: m.due_date,
           }));
 
-    if (installments.length === 0) {
-      toast.error("Agregá al menos una cuota");
-      return;
+    const errs: Record<string, string> = {};
+
+    if (!description.trim()) errs.description = "La descripción es requerida";
+
+    if (mode === "simple") {
+      if (!total || total <= 0) errs.total = "El importe debe ser mayor a 0";
+      if (!count || count < 1 || count > 120) errs.count = "Entre 1 y 120 cuotas";
+      if (!firstDue) errs.firstDue = "Elegí la fecha de la primera cuota";
+      simpleInstallments.forEach((it, idx) => {
+        if (!it.amount || it.amount <= 0) errs[`simple.${idx}`] = "Monto inválido";
+      });
+    } else {
+      if (manual.length === 0) errs.installments = "Agregá al menos una cuota";
+      manual.forEach((m, idx) => {
+        if (!m.amount || m.amount <= 0) errs[`manual.${idx}.amount`] = "Ingresá el monto";
+        if (!m.due_date) errs[`manual.${idx}.due_date`] = "Elegí la fecha";
+      });
     }
-    if (installments.some((i) => !i.amount || i.amount <= 0)) {
-      toast.error("Todas las cuotas deben tener monto");
-      return;
-    }
-    if (installments.some((i) => !i.due_date)) {
-      toast.error("Todas las cuotas deben tener fecha de vencimiento");
-      return;
-    }
+
     if (isUsd && !(exchangeRate && exchangeRate > 0)) {
-      toast.error("Ingresá el tipo de cambio");
+      errs.exchange_rate = "Ingresá el tipo de cambio";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      focusFirstError(errs);
       return;
     }
 
@@ -153,13 +212,22 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
 
     const parsed = loanSchema.safeParse(payload);
     if (!parsed.success) {
-      const first = parsed.error.issues[0];
-      toast.error(first.message);
+      for (const issue of parsed.error.issues) {
+        const key = zodPathToKey(issue.path);
+        if (!errs[key]) errs[key] = issue.message;
+      }
+      setErrors(errs);
+      focusFirstError(errs);
       return;
     }
 
+    setErrors({});
+    save(parsed.data);
+  }
+
+  function save(data: LoanFormData) {
     startTransition(async () => {
-      const result = await createLoan(parsed.data);
+      const result = await createLoan(data);
       if (result.success) {
         toast.success("Préstamo creado");
         router.push("/prestamos");
@@ -171,7 +239,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {/* Tabs Simple / Manual */}
       <div className="flex rounded-[14px] border border-border bg-muted/40 p-1">
         <button
@@ -218,8 +286,15 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
             id="description"
             placeholder="Ej: Préstamo personal auto"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearError("description");
+            }}
+            className={cn(errors.description && "border-destructive")}
           />
+          {errors.description && (
+            <p className="text-xs text-destructive">{errors.description}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -254,21 +329,33 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
             <AmountInput
               id="total"
               value={total}
-              onChange={(v) => setTotal(v ?? null)}
+              onChange={(v) => {
+                setTotal(v ?? null);
+                clearError("total");
+              }}
               prefix={amountPrefix}
               size="lg"
+              invalid={!!errors.total}
             />
+            {errors.total && (
+              <p className="text-xs text-destructive">{errors.total}</p>
+            )}
           </div>
 
           {isUsd && (
             <ExchangeRateField
               id="loan-exchange-rate"
               value={exchangeRate}
-              onChange={setExchangeRate}
+              onChange={(v) => {
+                setExchangeRate(v);
+                clearError("exchange_rate");
+              }}
               equivalentBase={total}
               globalRate={globalRate}
               followsGlobal={rateFollowsGlobal}
               onFollowsGlobalChange={changeRateMode}
+              invalid={!!errors.exchange_rate}
+              errorMessage={errors.exchange_rate}
             />
           )}
 
@@ -281,17 +368,31 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               min={1}
               max={120}
               value={count}
-              onChange={(e) => setCount(parseInt(e.target.value || "0", 10) || 0)}
+              onChange={(e) => {
+                setCount(parseInt(e.target.value || "0", 10) || 0);
+                clearError("count");
+              }}
+              className={cn(errors.count && "border-destructive")}
             />
+            {errors.count && (
+              <p className="text-xs text-destructive">{errors.count}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <Label>Vencimiento primera cuota</Label>
             <DatePickerField
               value={firstDue}
-              onChange={setFirstDue}
+              onChange={(v) => {
+                setFirstDue(v);
+                clearError("firstDue");
+              }}
               placeholder="Elegí una fecha"
+              className={cn(errors.firstDue && "border-destructive")}
             />
+            {errors.firstDue && (
+              <p className="text-xs text-destructive">{errors.firstDue}</p>
+            )}
           </div>
 
           {simpleInstallments.length > 0 && (
@@ -311,10 +412,12 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
                     <div className="flex-1">
                       <AmountInput
                         value={i.amount}
-                        onChange={(v) =>
-                          setSimpleAmounts((prev) => ({ ...prev, [idx]: v ?? 0 }))
-                        }
+                        onChange={(v) => {
+                          setSimpleAmounts((prev) => ({ ...prev, [idx]: v ?? 0 }));
+                          clearError(`simple.${idx}`);
+                        }}
                         prefix={amountPrefix}
+                        invalid={!!errors[`simple.${idx}`]}
                       />
                     </div>
                     <span className="text-[11px] text-muted-foreground tabular-nums w-[78px] text-right">
@@ -340,11 +443,16 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
             <ExchangeRateField
               id="loan-exchange-rate"
               value={exchangeRate}
-              onChange={setExchangeRate}
+              onChange={(v) => {
+                setExchangeRate(v);
+                clearError("exchange_rate");
+              }}
               equivalentBase={manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null}
               globalRate={globalRate}
               followsGlobal={rateFollowsGlobal}
               onFollowsGlobalChange={changeRateMode}
+              invalid={!!errors.exchange_rate}
+              errorMessage={errors.exchange_rate}
             />
           )}
 
@@ -367,6 +475,10 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
               Cuota
             </Button>
           </div>
+
+          {errors.installments && (
+            <p className="text-xs text-destructive">{errors.installments}</p>
+          )}
 
           <div className="space-y-2">
             {manual.map((m, idx) => (
@@ -393,24 +505,38 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
                     <Label className="text-[11px]">Monto</Label>
                     <AmountInput
                       value={m.amount}
-                      onChange={(v) =>
+                      onChange={(v) => {
                         setManual((prev) =>
                           prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
-                        )
-                      }
+                        );
+                        clearError(`manual.${idx}.amount`);
+                      }}
                       prefix={amountPrefix}
+                      invalid={!!errors[`manual.${idx}.amount`]}
                     />
+                    {errors[`manual.${idx}.amount`] && (
+                      <p className="text-[11px] text-destructive">
+                        {errors[`manual.${idx}.amount`]}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[11px]">Vencimiento</Label>
                     <DatePickerField
                       value={m.due_date}
-                      onChange={(v) =>
+                      onChange={(v) => {
                         setManual((prev) =>
                           prev.map((it, i) => (i === idx ? { ...it, due_date: v } : it))
-                        )
-                      }
+                        );
+                        clearError(`manual.${idx}.due_date`);
+                      }}
+                      className={cn(errors[`manual.${idx}.due_date`] && "border-destructive")}
                     />
+                    {errors[`manual.${idx}.due_date`] && (
+                      <p className="text-[11px] text-destructive">
+                        {errors[`manual.${idx}.due_date`]}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -421,8 +547,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
 
       {/* Submit */}
       <Button
-        type="button"
-        onClick={submit}
+        type="submit"
         className="btn-glass-primary w-full font-semibold"
         disabled={isPending}
       >
@@ -438,7 +563,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
           </>
         )}
       </Button>
-    </div>
+    </form>
   );
 }
 
