@@ -12,16 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { Money } from "@/components/shared/money";
 import { deleteExpense, excludeExpenseInstallment, cloneExpense } from "@/actions/expenses";
 import { getInstallmentAmountForIndex } from "@/lib/periods/calculate";
@@ -379,58 +370,34 @@ export function ExpenseItem({
       </Sheet>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {canChooseDeleteScope ? (
-                <>
-                  &quot;{expense.description}&quot; es un consumo fijo mensual. Elegí si
-                  eliminás solo este mes o el consumo completo (todos los meses, pasados y
-                  futuros). Esta acción no se puede deshacer.
-                </>
-              ) : (
-                <>
-                  Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se
-                  puede deshacer.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {canChooseDeleteScope ? (
-            <AlertDialogFooter className="flex-col sm:flex-col gap-2">
-              <AlertDialogAction
-                onClick={handleDeleteOnlyThis}
-                disabled={isPending}
-                className="w-full bg-destructive text-white hover:bg-destructive/90"
-              >
-                Eliminar solo este mes
-              </AlertDialogAction>
-              <AlertDialogAction
-                onClick={handleDeleteAll}
-                disabled={isPending}
-                className="w-full bg-destructive text-white hover:bg-destructive/90"
-              >
-                Eliminar todos los meses
-              </AlertDialogAction>
-              <AlertDialogCancel className="w-full" disabled={isPending}>
-                Cancelar
-              </AlertDialogCancel>
-            </AlertDialogFooter>
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        pending={isPending}
+        title="¿Eliminar consumo?"
+        description={
+          canChooseDeleteScope ? (
+            <>
+              &quot;{expense.description}&quot; es un consumo fijo mensual. Elegí si
+              eliminás solo este mes o el consumo completo (todos los meses, pasados y
+              futuros). Esta acción no se puede deshacer.
+            </>
           ) : (
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAll}
-                className="bg-destructive text-white hover:bg-destructive/90"
-              >
-                Eliminar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+            <>
+              Vas a eliminar &quot;{expense.description}&quot;. Esta acción no se
+              puede deshacer.
+            </>
+          )
+        }
+        {...(canChooseDeleteScope
+          ? {
+              actions: [
+                { label: "Eliminar solo este mes", onClick: handleDeleteOnlyThis },
+                { label: "Eliminar todos los meses", onClick: handleDeleteAll },
+              ],
+            }
+          : { onConfirm: handleDeleteAll })}
+      />
     </>
   );
 }

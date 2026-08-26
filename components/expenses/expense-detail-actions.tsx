@@ -7,16 +7,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/shared/delete-confirm-dialog";
 import { deleteExpense, excludeExpenseInstallment } from "@/actions/expenses";
 
 interface ExpenseDetailActionsProps {
@@ -97,59 +88,34 @@ export function ExpenseDetailActions({
         Eliminar
       </Button>
 
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar consumo?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {canChooseDeleteScope ? (
-                <>
-                  &quot;{description}&quot; es un consumo fijo mensual. Elegí si eliminás
-                  solo este mes o el consumo completo (todos los meses, pasados y
-                  futuros). Esta acción no se puede deshacer.
-                </>
-              ) : (
-                <>
-                  Vas a eliminar &quot;{description}&quot;. Esta acción no se puede
-                  deshacer.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {canChooseDeleteScope ? (
-            <AlertDialogFooter className="flex-col sm:flex-col gap-2">
-              <AlertDialogAction
-                onClick={handleDeleteOnlyThis}
-                disabled={isPending}
-                className="w-full bg-destructive text-white hover:bg-destructive/90"
-              >
-                {isPending ? "Eliminando..." : "Eliminar solo este mes"}
-              </AlertDialogAction>
-              <AlertDialogAction
-                onClick={handleDeleteAll}
-                disabled={isPending}
-                className="w-full bg-destructive text-white hover:bg-destructive/90"
-              >
-                {isPending ? "Eliminando..." : "Eliminar todos los meses"}
-              </AlertDialogAction>
-              <AlertDialogCancel className="w-full" disabled={isPending}>
-                Cancelar
-              </AlertDialogCancel>
-            </AlertDialogFooter>
+      <DeleteConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        pending={isPending}
+        title="¿Eliminar consumo?"
+        description={
+          canChooseDeleteScope ? (
+            <>
+              &quot;{description}&quot; es un consumo fijo mensual. Elegí si eliminás
+              solo este mes o el consumo completo (todos los meses, pasados y
+              futuros). Esta acción no se puede deshacer.
+            </>
           ) : (
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAll}
-                disabled={isPending}
-                className="bg-destructive text-white hover:bg-destructive/90"
-              >
-                {isPending ? "Eliminando..." : "Eliminar"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+            <>
+              Vas a eliminar &quot;{description}&quot;. Esta acción no se puede
+              deshacer.
+            </>
+          )
+        }
+        {...(canChooseDeleteScope
+          ? {
+              actions: [
+                { label: "Eliminar solo este mes", onClick: handleDeleteOnlyThis },
+                { label: "Eliminar todos los meses", onClick: handleDeleteAll },
+              ],
+            }
+          : { onConfirm: handleDeleteAll })}
+      />
     </div>
   );
 }
