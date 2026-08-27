@@ -55,7 +55,15 @@ export default async function ExpensesPage({
   if (filters.cuotas === "single") query = query.eq("installments", 1);
   if (filters.q) query = query.ilike("description", `%${filters.q}%`);
 
-  const [{ data: expensesData }, cardsResult, categoriesResult] =
+  // Conteo total de consumos del titular activo, SIN los filtros de la vista:
+  // distingue "la cuenta no tiene consumos" de "el filtro no devolvió nada".
+  let totalCountQuery = supabase
+    .from("expenses")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user!.id);
+  if (titularCardIds) totalCountQuery = totalCountQuery.in("card_id", titularCardIds);
+
+  const [{ data: expensesData }, cardsResult, categoriesResult, totalCountResult] =
     await Promise.all([
       query,
       (activeTitularId
@@ -78,9 +86,19 @@ export default async function ExpensesPage({
         .or(`user_id.eq.${user!.id},user_id.is.null`)
         .order("is_preset", { ascending: false })
         .order("name"),
+      totalCountQuery,
     ]);
 
   const expenses = (expensesData ?? []) as ExpenseWithAll[];
+  const hasAnyExpense = (totalCountResult.count ?? 0) > 0;
+  const hasActiveFilters = Boolean(
+    filters.card_id ||
+      filters.category_id ||
+      filters.date_from ||
+      filters.date_to ||
+      filters.cuotas ||
+      filters.q,
+  );
   const filterCards = (cardsResult.data ?? []) as Pick<
     Card,
     "id" | "name" | "last_four"
@@ -114,12 +132,21 @@ export default async function ExpensesPage({
       <LiveSearch basePath="/expenses" label="Buscar consumo" />
 
       {expenses.length === 0 ? (
-        <EmptyState
-          icon={<span>🧾</span>}
-          title="Sin movimientos"
-          description="Empezá registrando tu primer consumo"
-          action={{ label: "Agregar consumo", href: "/expenses/new" }}
-        />
+        hasAnyExpense || hasActiveFilters ? (
+          <EmptyState
+            icon={<span>🔍</span>}
+            title="Sin resultados"
+            description="No encontramos movimientos con estos filtros"
+            action={{ label: "Limpiar filtros", href: "/expenses" }}
+          />
+        ) : (
+          <EmptyState
+            icon={<span>🧾</span>}
+            title="Sin movimientos"
+            description="Empezá registrando tu primer consumo"
+            action={{ label: "Agregar consumo", href: "/expenses/new" }}
+          />
+        )
       ) : (
         <SelectableExpenseList
           groupByMonth

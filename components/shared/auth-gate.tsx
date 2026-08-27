@@ -2,18 +2,21 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Fingerprint, KeyRound, Loader2 } from "lucide-react";
+import { Fingerprint, KeyRound, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  getPinLockRemainingMs,
   hasBiometricSet,
   hasPinSet,
   isLockEnabled,
   isUnlocked,
   markUnlocked,
+  registerFailedPinAttempt,
   verifyBiometric,
   verifyPin,
+  type BiometricFailReason,
 } from "@/lib/security/local-lock";
 
 const STORAGE_KEY = "mt_auth_v1";
@@ -41,17 +44,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (isLockEnabled() && !isUnlocked()) {
-      setPhase("locked");
-    } else {
-      setPhase("ready");
-    }
+    // Init de una sola vez tras leer localStorage (no hay servidor con el que
+    // sincronizar el estado de bloqueo).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPhase(isLockEnabled() && !isUnlocked() ? "locked" : "ready");
   }, [router]);
 
   if (phase === "checking") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+        <BrandLoader />
       </div>
     );
   }
@@ -63,38 +65,103 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Marca de la app latiendo suavemente — reemplaza el spinner genérico. */
+function BrandLoader() {
+  return (
+    <div
+      className="flex h-16 w-16 animate-pulse items-center justify-center rounded-3xl text-white"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.62 0.16 35) 0%, oklch(0.55 0.18 25) 100%)",
+        boxShadow: "0 12px 32px oklch(0.55 0.18 25 / 0.35)",
+      }}
+    >
+      <KeyRound className="h-7 w-7" />
+    </div>
+  );
+}
+
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const mm = Math.floor(totalSeconds / 60);
+  const ss = totalSeconds % 60;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
+const BIO_MESSAGES: Record<BiometricFailReason, string | null> = {
+  // Cancelación deliberada: no alarmamos, solo volvemos al PIN.
+  cancelled: null,
+  error:
+    "No pudimos verificar tu identidad. Probá de nuevo o usá tu PIN.",
+  unavailable:
+    "La biometría no está disponible en este momento. Ingresá tu PIN para continuar.",
+  "not-registered":
+    "La biometría no está configurada. Ingresá tu PIN para continuar.",
+};
+
 function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = React.useState("");
   const [error, setError] = React.useState("");
+  const [bioError, setBioError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const [lockMs, setLockMs] = React.useState(() => getPinLockRemainingMs());
   const bioAvailable = hasBiometricSet();
   const pinAvailable = hasPinSet();
+  const isLocked = lockMs > 0;
 
   const triedBioRef = React.useRef(false);
+
+  // Countdown del bloqueo temporal. Re-lee de localStorage por si el bloqueo
+  // fue impuesto en otra pestaña / recarga.
+  React.useEffect(() => {
+    if (lockMs <= 0) return;
+    const id = setInterval(() => {
+      setLockMs(getPinLockRemainingMs());
+    }, 250);
+    return () => clearInterval(id);
+  }, [lockMs]);
 
   async function tryBiometric() {
     if (!bioAvailable || triedBioRef.current) return;
     triedBioRef.current = true;
+    setBioError("");
     setBusy(true);
-    const ok = await verifyBiometric();
+    const res = await verifyBiometric();
     setBusy(false);
-    if (ok) onUnlock();
+    if (res.ok) {
+      onUnlock();
+      return;
+    }
+    const msg = BIO_MESSAGES[res.reason];
+    if (msg) setBioError(msg);
   }
 
   // Disparamos biometría automáticamente al montar (si está activada).
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   React.useEffect(() => {
     if (bioAvailable) tryBiometric();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   async function handlePinSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isLocked) return;
     setError("");
     setBusy(true);
     const ok = await verifyPin(pin);
     setBusy(false);
-    if (ok) onUnlock();
-    else setError("PIN incorrecto");
+    if (ok) {
+      onUnlock();
+      return;
+    }
+    const { lockRemainingMs } = registerFailedPinAttempt();
+    setPin("");
+    if (lockRemainingMs > 0) {
+      setLockMs(lockRemainingMs);
+      setError("");
+    } else {
+      setError("PIN incorrecto");
+    }
   }
 
   return (
@@ -119,6 +186,15 @@ function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           </p>
         </div>
 
+        {bioError && (
+          <div className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2.5 text-left">
+            <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+            <p className="text-[12.5px] leading-snug text-foreground/80">
+              {bioError}
+            </p>
+          </div>
+        )}
+
         {pinAvailable && (
           <form onSubmit={handlePinSubmit} className="space-y-3 text-left">
             <div className="space-y-1.5">
@@ -132,14 +208,21 @@ function LockScreen({ onUnlock }: { onUnlock: () => void }) {
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                 autoFocus
+                disabled={isLocked || busy}
                 className="text-center text-lg tracking-[0.4em]"
               />
-              {error && <p className="text-xs text-destructive">{error}</p>}
+              {isLocked ? (
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  Demasiados intentos. Probá de nuevo en {formatCountdown(lockMs)}
+                </p>
+              ) : (
+                error && <p className="text-xs text-destructive">{error}</p>
+              )}
             </div>
             <Button
               type="submit"
               className="gradient-primary shadow-brand w-full"
-              disabled={busy || pin.length < 4}
+              disabled={busy || isLocked || pin.length < 4}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Desbloquear"}
             </Button>

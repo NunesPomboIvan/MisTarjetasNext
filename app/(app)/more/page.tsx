@@ -14,10 +14,21 @@ import {
   LocalUserInitial,
 } from "@/components/shared/local-user";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { resolveTitulares } from "@/lib/titulares/server";
+import { capitalize } from "@/lib/utils";
 
 export const metadata = { title: "Cuenta" };
 
-export default function MorePage() {
+export default async function MorePage() {
+  // Mismo origen que el saludo del inicio: el titular activo. Si no hay
+  // titular cargado, caemos al nombre/inicial derivados del email (o "Usuario").
+  const { active } = await resolveTitulares();
+  const titularName = active?.name?.trim();
+  const displayName = titularName ? capitalize(titularName) : null;
+  const displayInitial = displayName
+    ? displayName.charAt(0).toUpperCase()
+    : null;
+
   return (
     <div className="space-y-5">
       <StickyPageHeader>
@@ -32,11 +43,11 @@ export default function MorePage() {
           className="flex h-12 w-12 items-center justify-center rounded-full font-display text-[18px] font-bold text-white"
           style={{ background: "linear-gradient(135deg, #6366f1, #4338ca)" }}
         >
-          <LocalUserInitial fallback="U" />
+          {displayInitial ?? <LocalUserInitial fallback="U" />}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold text-foreground">
-            <LocalUserName fallback="Usuario" />
+            {displayName ?? <LocalUserName fallback="Usuario" />}
           </p>
           <p className="truncate text-[12px] text-muted-foreground">
             <LocalUserEmail />

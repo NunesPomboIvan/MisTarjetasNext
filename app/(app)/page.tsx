@@ -197,7 +197,7 @@ export default async function DashboardPage() {
           {/* Acceso a vencimientos, sin montos: fecha de hoy + acceso al detalle por período */}
           <Link
             href="/vencimientos"
-            aria-label="Ver próximos vencimientos"
+            aria-label="Ver resumen de períodos"
             className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
           >
             <div className="flex w-full items-center justify-between gap-3">
@@ -211,7 +211,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-display text-[16px] font-bold leading-tight text-foreground">
-                    Próximos vencimientos
+                    Resumen de Períodos
                   </p>
                   <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
                     Ver por período

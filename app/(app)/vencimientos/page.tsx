@@ -13,7 +13,7 @@ import { CardVencimientoRow } from "@/components/vencimientos/card-vencimiento-r
 import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Próximos vencimientos" };
+export const metadata = { title: "Resumen de Períodos" };
 
 export default async function VencimientosPage() {
   const supabase = await createClient();
@@ -78,7 +78,7 @@ export default async function VencimientosPage() {
         <div className="flex items-center justify-between">
           <BackButton href="/" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
-            Próximos vencimientos
+            Resumen de Períodos
           </h1>
           <div className="h-10 w-10" aria-hidden />
         </div>

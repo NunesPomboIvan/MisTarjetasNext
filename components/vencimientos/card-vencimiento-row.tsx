@@ -21,40 +21,6 @@ function dueText(item: CardVencimiento): { text: string; tone: "muted" | "amber"
   return { text: `Vence el ${formatLongDate(parseLocalDate(item.dueDateKey))}`, tone: "muted" };
 }
 
-/** Formatea un monto sin signo ni decimales: "$15.300" / "$8.200" / "$0". */
-function formatAbsCurrency(diff: number): string {
-  const abs = new Intl.NumberFormat("es-AR").format(Math.abs(Math.round(diff)));
-  return `$${abs}`;
-}
-
-/** Formatea un porcentaje sin signo: "12,4%" / "6,1%" / "0,0%". */
-function formatAbsPct(pct: number, decimals = 1): string {
-  const abs = new Intl.NumberFormat("es-AR", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(Math.abs(pct));
-  return `${abs}%`;
-}
-
-/** Comparación del monto contra el mismo mes anterior de la tarjeta. */
-function MonthOverMonthDiff({ amount, prevAmount }: { amount: number; prevAmount: number }) {
-  const diff = amount - prevAmount;
-  const pct = (diff / prevAmount) * 100;
-  const toneClass =
-    diff < 0
-      ? "text-emerald-600 dark:text-emerald-400"
-      : diff > 0
-        ? "text-destructive"
-        : "text-muted-foreground";
-  return (
-    <p className={cn("mt-0.5 text-[10.5px] font-semibold tabular-nums", toneClass)}>
-      {formatAbsCurrency(diff)}
-      <span className="text-muted-foreground"> · </span>
-      {formatAbsPct(pct)}
-    </p>
-  );
-}
-
 /** Fila de tarjeta en /vencimientos: incluye checkbox para marcar el período
  *  como pagado sin salir de la lista (recalcula el acumulado al instante). */
 export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
@@ -117,9 +83,6 @@ export function CardVencimientoRow({ item }: { item: CardVencimiento }) {
             amount={item.amount}
             className="block text-[14px] font-semibold tabular-nums text-foreground"
           />
-          {item.prevAmount != null && (
-            <MonthOverMonthDiff amount={item.amount} prevAmount={item.prevAmount} />
-          )}
           <p className={cn("mt-0.5 text-[10.5px] font-semibold", toneClass)}>{text}</p>
         </div>
       </Link>

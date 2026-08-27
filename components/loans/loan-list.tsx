@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Archive } from "lucide-react";
+import { Archive, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { LoanSummaryCard } from "@/components/loans/loan-summary-card";
 import {
   Select,
@@ -33,6 +34,15 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 const STORAGE_KEY = "prestamos:sort";
 const STORAGE_EVENT = "prestamos:sort-change";
 const DEFAULT_SORT: SortKey = "name";
+
+/** Filtro de visualización "Solo activos" (oculta los préstamos cancelados). */
+const ONLY_ACTIVE_KEY = "prestamos:only-active";
+const ONLY_ACTIVE_DEFAULT = true;
+
+/** Un préstamo está cancelado cuando todas sus cuotas están pagadas. */
+function isCancelled(item: LoanItem): boolean {
+  return item.totalCount > 0 && item.paidCount >= item.totalCount;
+}
 
 function isSortKey(v: string | null): v is SortKey {
   return !!v && SORT_OPTIONS.some((o) => o.value === v);
@@ -70,6 +80,24 @@ function usePersistentSort(): [SortKey, (next: SortKey) => void] {
   return [sort, setSort];
 }
 
+function usePersistentOnlyActive(): [boolean, (next: boolean) => void] {
+  const stored = useSyncExternalStore(
+    subscribe,
+    () => localStorage.getItem(ONLY_ACTIVE_KEY),
+    () => null
+  );
+  const onlyActive = stored === null ? ONLY_ACTIVE_DEFAULT : stored === "1";
+
+  const setOnlyActive = (next: boolean) => {
+    try {
+      localStorage.setItem(ONLY_ACTIVE_KEY, next ? "1" : "0");
+    } catch {}
+    window.dispatchEvent(new Event(STORAGE_EVENT));
+  };
+
+  return [onlyActive, setOnlyActive];
+}
+
 function loanName(item: LoanItem): string {
   return (item.loan.bank || item.loan.description || "").trim();
 }
@@ -99,17 +127,37 @@ interface LoanListProps {
 
 export function LoanList({ active, archived }: LoanListProps) {
   const [sort, changeSort] = usePersistentSort();
+  const [onlyActive, setOnlyActive] = usePersistentOnlyActive();
 
   const sortedActive = sortItems(active, sort);
   const sortedArchived = sortItems(archived, sort);
 
+  const cancelledCount = active.filter(isCancelled).length;
+  const visibleActive = onlyActive
+    ? sortedActive.filter((i) => !isCancelled(i))
+    : sortedActive;
+
   return (
     <div className="space-y-5">
-      {/* Selector de orden — se recuerda la última elección. Pegado a la
-          derecha, cerca del botón "Nuevo" del header de arriba (margen
-          negativo para acercarlo, ya que el gap con el header lo separaba
-          demasiado). */}
-      <div className="-mt-4 flex items-center justify-end">
+      {/* Fila de controles: filtro "Solo activos" (izq.) + orden (der.).
+          Margen negativo para acercar al header de arriba. */}
+      <div className="-mt-4 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setOnlyActive(!onlyActive)}
+          aria-pressed={onlyActive}
+          className={cn(
+            "inline-flex h-9 flex-shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold transition-colors",
+            onlyActive
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-border bg-card text-foreground/70 hover:text-foreground"
+          )}
+        >
+          <Check
+            className={cn("h-3.5 w-3.5", onlyActive ? "opacity-100" : "opacity-40")}
+          />
+          Solo activos
+        </button>
         <Select value={sort} onValueChange={(v) => changeSort(v as SortKey)}>
           <SelectTrigger size="sm" aria-label="Ordenar préstamos">
             {/* Label explícito: si no lo pasamos, hasta que el desplegable
@@ -132,7 +180,24 @@ export function LoanList({ active, archived }: LoanListProps) {
         </Select>
       </div>
 
-      {sortedActive.length > 0 && <StackedLoans items={sortedActive} />}
+      {visibleActive.length > 0 && <StackedLoans items={visibleActive} />}
+
+      {onlyActive && cancelledCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setOnlyActive(false)}
+          className="flex w-full items-center justify-center gap-1.5 rounded-full border border-dashed border-border py-2 text-[12.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Ver {cancelledCount} préstamo{cancelledCount !== 1 ? "s" : ""} cancelado
+          {cancelledCount !== 1 ? "s" : ""}
+        </button>
+      )}
+
+      {visibleActive.length === 0 && cancelledCount > 0 && onlyActive && (
+        <p className="py-4 text-center text-[13px] text-muted-foreground">
+          No tenés préstamos activos.
+        </p>
+      )}
 
       {sortedArchived.length > 0 && (
         <details className="group">
