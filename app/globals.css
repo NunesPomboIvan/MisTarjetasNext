@@ -331,37 +331,54 @@
       0 0 0 4px #000;
   }
 
-  /* ─── Skeletons: barrido de brillo en vez de un pulso plano ───
-     Da una carga con textura, coherente con el resto de superficies glass.
-     Se apaga con prefers-reduced-motion. */
-  @keyframes skeleton-shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+  /* ─── Estilo de carga minimal ────────────────────────────────
+     La señal de "cargando" vive en una barra indeterminada fija en el
+     borde superior (.loading-bar). El contenido se sugiere con ghosts
+     muy tenues que respiran despacio, sin barrido de brillo. Todo se
+     aquieta con prefers-reduced-motion. */
+
+  /* Ghost: bloque tenue con respiración lenta (reemplaza al shimmer). */
+  @keyframes skeleton-ghost {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
-  .skeleton-shimmer {
-    position: relative;
+  .skeleton-ghost {
+    background-color: color-mix(in oklch, var(--foreground) 6%, transparent);
+    animation: skeleton-ghost 2.4s ease-in-out infinite;
+  }
+
+  /* Barra de progreso indeterminada, fija al top del viewport. */
+  @keyframes loading-bar-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(340%); }
+  }
+  .loading-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: env(safe-area-inset-top);
+    z-index: 50;
+    height: 2.5px;
     overflow: hidden;
+    background: color-mix(in oklch, var(--primary) 15%, transparent);
   }
-  .skeleton-shimmer::after {
+  .loading-bar::before {
     content: "";
     position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklch, var(--foreground) 9%, transparent),
-      transparent
-    );
-    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+    inset: 0 auto 0 0;
+    width: 40%;
+    border-radius: 999px;
+    background: var(--primary);
+    animation: loading-bar-slide 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
+
   @media (prefers-reduced-motion: reduce) {
-    .skeleton-shimmer {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .skeleton-ghost {
+      animation: skeleton-ghost 3s ease-in-out infinite;
     }
-    .skeleton-shimmer::after {
-      display: none;
+    .loading-bar::before {
+      width: 100%;
+      animation: skeleton-ghost 1.8s ease-in-out infinite;
     }
   }
 }

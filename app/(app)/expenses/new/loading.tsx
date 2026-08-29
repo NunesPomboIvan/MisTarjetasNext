@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormSkeleton } from "@/components/shared/skeletons";
+import { FormSkeleton, LoadingBar } from "@/components/shared/skeletons";
 
 export default function Loading() {
   return (
@@ -10,6 +10,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-9 w-20 rounded-full" />
       </div>
+      <LoadingBar />
       {/* Hero monto */}
       <div className="space-y-3 py-4 text-center">
         <Skeleton className="mx-auto h-3 w-16" />

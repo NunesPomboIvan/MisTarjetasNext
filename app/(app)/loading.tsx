@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingBar } from "@/components/shared/skeletons";
 
 /**
  * Fallback de la pantalla de inicio (y de cualquier ruta de (app) sin su
@@ -12,6 +13,7 @@ export default function Loading() {
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-8 w-8 rounded-full" />
       </div>
+      <LoadingBar />
 
       <Skeleton className="h-[200px] w-full rounded-[22px]" />
 

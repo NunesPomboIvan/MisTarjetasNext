@@ -5,32 +5,53 @@ import { cn } from "@/lib/utils";
  * Piezas de esqueleto reutilizables para los `loading.tsx` de cada ruta.
  * La idea es que cada pantalla muestre un esqueleto acorde a su layout real
  * (header + lista, header + formulario, etc.), no un spinner genérico.
+ *
+ * Estilo minimal: la señal de "cargando" la lleva <LoadingBar /> (barra
+ * indeterminada fija en el top). Los header skeletons ya la incluyen, así
+ * que las pantallas con header no necesitan agregarla a mano; las que
+ * arman su propio header (home, alta de consumo) la montan ellas.
  */
+
+/**
+ * Barra de progreso indeterminada, fija al borde superior del viewport.
+ * Va `position: fixed`, así que no ocupa lugar en el flujo: por eso los
+ * header skeletons la renderizan como segundo hijo (no primero) para no
+ * alterar el `space-y-*` del contenedor de cada loading.tsx.
+ */
+export function LoadingBar() {
+  return <div aria-hidden="true" className="loading-bar" />;
+}
 
 /** Header compacto: botón "atrás" + título (mismo lugar que StickyPageHeader). */
 export function BackHeaderSkeleton({ withAction = false }: { withAction?: boolean }) {
   return (
-    <div className="flex items-center gap-3">
-      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-20" />
+    <>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        {withAction && <Skeleton className="h-10 w-10 shrink-0 rounded-full" />}
       </div>
-      {withAction && <Skeleton className="h-10 w-10 shrink-0 rounded-full" />}
-    </div>
+      <LoadingBar />
+    </>
   );
 }
 
 /** Header con título grande (Tarjetas, Cuenta, Ajustes…). */
 export function TitleHeaderSkeleton({ withAction = false }: { withAction?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-3.5 w-24" />
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-3.5 w-24" />
+        </div>
+        {withAction && <Skeleton className="h-10 w-24 rounded-full" />}
       </div>
-      {withAction && <Skeleton className="h-10 w-24 rounded-full" />}
-    </div>
+      <LoadingBar />
+    </>
   );
 }
 
