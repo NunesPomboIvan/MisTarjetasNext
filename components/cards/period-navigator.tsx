@@ -37,7 +37,11 @@ export function PeriodNavigator({ card, currentPeriod, startLabel, endLabel, due
     } else {
       params.set("offset", newOffset.toString());
     }
-    router.push(`${pathname}?${params.toString()}`);
+    // `replace` (no `push`): moverse entre períodos es cambio de estado, no
+    // navegación. Así el botón "volver" regresa al origen real y no va saltando
+    // período por período.
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
 
   const isCurrentMonth = currentPeriod.status === "current" && offset === 0;

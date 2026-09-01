@@ -1,9 +1,12 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Home, CreditCard, Banknote, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GuardedLink } from "./guarded-link";
+import { AddActionSheet } from "./add-action-sheet";
+import { useNavigationBlocker } from "./navigation-blocker";
 
 const NAV_ITEMS = [
   { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") },
@@ -14,6 +17,23 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
+  const { isBlocked, message } = useNavigationBlocker();
+  const [addOpen, setAddOpen] = useState(false);
+
+  // Dentro de una tarjeta concreta (detalle o subpáginas, no "nueva") el (+) va
+  // directo a "nuevo consumo" con esa tarjeta preseleccionada. En el resto abre
+  // el selector de acción.
+  const cardMatch = pathname.match(/^\/cards\/(?!new(?:\/|$))([^/]+)/);
+
+  function handleAdd() {
+    if (isBlocked && !window.confirm(message)) return;
+    if (cardMatch) {
+      router.push(`/expenses/new?card_id=${cardMatch[1]}`);
+    } else {
+      setAddOpen(true);
+    }
+  }
 
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
@@ -31,9 +51,10 @@ export function BottomNav() {
       <div className="pointer-events-auto relative mx-auto w-full max-w-lg px-3 pb-3 pt-3">
         <div className="relative">
           {/* FAB central — apenas sobresale sobre la barra */}
-          <GuardedLink
-            href="/expenses/new"
-            aria-label="Nuevo consumo"
+          <button
+            type="button"
+            onClick={handleAdd}
+            aria-label="Agregar"
             className="tap-target absolute left-1/2 top-0 z-20 flex h-[60px] w-[60px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[16px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
               background:
@@ -46,7 +67,7 @@ export function BottomNav() {
             }}
           >
             <Plus className="h-5 w-5" strokeWidth={2.6} />
-          </GuardedLink>
+          </button>
 
           {/* Barra flotante OPACA con halo violeta exterior. Nada de
               transparencia: el contenido nunca se lee a través de la barra
@@ -87,6 +108,8 @@ export function BottomNav() {
           </div>
         </div>
       </div>
+
+      <AddActionSheet open={addOpen} onOpenChange={setAddOpen} />
     </nav>
   );
 }

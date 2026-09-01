@@ -6,15 +6,18 @@
  * Función pura — se alimenta de datos ya consultados. La usan tanto el
  * homepage (para el total general del acceso) como la pantalla /vencimientos.
  */
-import { differenceInCalendarDays, format, startOfDay } from "date-fns";
+import { differenceInCalendarDays, format, isBefore, startOfDay } from "date-fns";
 import {
   getInstallmentPeriod,
   getInstallmentAmountForIndex,
   getCurrentPeriod,
   getNextDuePeriod,
+  getPeriodByOffset,
+  getAmountInPeriodArs,
   toArs,
   parseLocalDate,
 } from "@/lib/periods/calculate";
+import { capitalize, formatDate } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 /**
@@ -253,4 +256,198 @@ export function computeUpcomingByMonth({
   const loansGrandTotal = months.reduce((s, m) => s + m.loansTotal, 0);
 
   return { months, grandTotal, cardsGrandTotal, loansGrandTotal };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DETALLE DE UN PERÍODO (pantalla /vencimientos/[month])
+// ══════════════════════════════════════════════════════════════════
+
+export type PeriodItemStatus = "paid" | "overdue" | "pending";
+
+export interface PeriodDetailCard {
+  cardId: string;
+  name: string;
+  lastFour: string;
+  accent: string;
+  /** Fecha de cierre del período de ESA tarjeta, "YYYY-MM-DD". */
+  closeDateKey: string;
+  /** Fecha de vencimiento del período de ESA tarjeta, "YYYY-MM-DD". */
+  dueDateKey: string;
+  /** Saldo del período (ARS). */
+  amount: number;
+  status: PeriodItemStatus;
+  /** Clave "YYYY-MM" del período de cierre. */
+  periodKey: string;
+  /** Offset (meses) del período respecto al período actual de la tarjeta. */
+  offset: number;
+}
+
+export interface PeriodDetailLoan {
+  loanId: string;
+  installmentId: string;
+  name: string;
+  accent: string;
+  installmentNumber: number;
+  totalInstallments: number;
+  dueDateKey: string;
+  amount: number;
+  status: PeriodItemStatus;
+}
+
+export interface PeriodDetailResult {
+  monthKey: string;
+  label: string;
+  isCurrentMonth: boolean;
+  cards: PeriodDetailCard[];
+  loans: PeriodDetailLoan[];
+  cardsTotal: number;
+  loansTotal: number;
+  total: number;
+  /** Mes vecino (con movimiento) anterior / siguiente, o null en los extremos. */
+  prevKey: string | null;
+  nextKey: string | null;
+}
+
+interface PeriodDetailParams {
+  /** Mes de vencimiento, "YYYY-MM". */
+  monthKey: string;
+  cards: Card[];
+  expenses: Expense[];
+  loans: Loan[];
+  /** TODAS las cuotas (pagadas y no) para poder mostrar estado y "Cuota X de N". */
+  allInstallments: LoanInstallment[];
+  /** Períodos de tarjeta marcados como pagados: set de "cardId:periodKey". */
+  paidCardPeriods: Set<string>;
+  now: Date;
+}
+
+/** Ventana de períodos que exploramos alrededor del actual de cada tarjeta. */
+const DETAIL_PAST_MONTHS = 6;
+const DETAIL_FUTURE_MONTHS = 18;
+
+/**
+ * Detalle de un período (mes de vencimiento): saldo de cada tarjeta cuyo período
+ * vence en ese mes + cada cuota de préstamo que vence en ese mes, con su estado
+ * (pagado / vencido / pendiente). A diferencia de `computeUpcomingByMonth`, acá
+ * SÍ se listan los ítems ya pagados.
+ */
+export function computePeriodDetail({
+  monthKey,
+  cards,
+  expenses,
+  loans,
+  allInstallments,
+  paidCardPeriods,
+  now,
+}: PeriodDetailParams): PeriodDetailResult {
+  const todayStart = startOfDay(now);
+  const currentMonthKey = format(todayStart, "yyyy-MM");
+
+  const totalByLoan = new Map<string, number>();
+  for (const i of allInstallments) {
+    totalByLoan.set(i.loan_id, (totalByLoan.get(i.loan_id) ?? 0) + 1);
+  }
+
+  // Meses (de vencimiento) que tienen algún movimiento, para navegar ‹ ›.
+  const monthsWithMovement = new Set<string>();
+
+  const detailCards: PeriodDetailCard[] = [];
+  for (const card of cards) {
+    const cardExpenses = expenses.filter((e) => e.card_id === card.id);
+
+    for (let off = -DETAIL_PAST_MONTHS; off <= DETAIL_FUTURE_MONTHS; off++) {
+      const period = getPeriodByOffset(card, off);
+      const amount = cardExpenses.reduce(
+        (s, e) => s + getAmountInPeriodArs(e, period),
+        0
+      );
+      if (amount <= 0) continue;
+
+      const dueMonthKey = format(period.due, "yyyy-MM");
+      monthsWithMovement.add(dueMonthKey);
+      if (dueMonthKey !== monthKey) continue;
+
+      const paid = paidCardPeriods.has(`${card.id}:${period.key}`);
+      detailCards.push({
+        cardId: card.id,
+        name: card.bank || card.name,
+        lastFour: card.last_four,
+        accent: card.color || "#6366f1",
+        closeDateKey: format(period.end, "yyyy-MM-dd"),
+        dueDateKey: format(period.due, "yyyy-MM-dd"),
+        amount,
+        status: paid
+          ? "paid"
+          : isBefore(period.due, todayStart)
+            ? "overdue"
+            : "pending",
+        periodKey: period.key,
+        offset: off,
+      });
+    }
+  }
+
+  const loanById = new Map(loans.map((l) => [l.id, l]));
+  const detailLoans: PeriodDetailLoan[] = [];
+  for (const inst of allInstallments) {
+    const loan = loanById.get(inst.loan_id);
+    if (!loan) continue;
+
+    const due = parseLocalDate(inst.due_date);
+    const dueMonthKey = format(due, "yyyy-MM");
+    monthsWithMovement.add(dueMonthKey);
+    if (dueMonthKey !== monthKey) continue;
+
+    const amount = toArs(
+      { currency: loan.currency, exchange_rate: inst.exchange_rate },
+      Number(inst.amount)
+    );
+    detailLoans.push({
+      loanId: loan.id,
+      installmentId: inst.id,
+      name: loan.bank || loan.description,
+      accent: loan.color || "#6366f1",
+      installmentNumber: inst.installment_number,
+      totalInstallments: totalByLoan.get(loan.id) ?? inst.installment_number,
+      dueDateKey: inst.due_date,
+      amount,
+      status: inst.paid
+        ? "paid"
+        : isBefore(due, todayStart)
+          ? "overdue"
+          : "pending",
+    });
+  }
+
+  detailCards.sort(
+    (a, b) =>
+      a.dueDateKey.localeCompare(b.dueDateKey) || a.name.localeCompare(b.name)
+  );
+  detailLoans.sort(
+    (a, b) =>
+      a.dueDateKey.localeCompare(b.dueDateKey) || a.name.localeCompare(b.name)
+  );
+
+  const cardsTotal = detailCards.reduce((s, c) => s + c.amount, 0);
+  const loansTotal = detailLoans.reduce((s, l) => s + l.amount, 0);
+
+  monthsWithMovement.add(monthKey);
+  const sortedMonths = [...monthsWithMovement].sort();
+  const idx = sortedMonths.indexOf(monthKey);
+  const prevKey = idx > 0 ? sortedMonths[idx - 1] : null;
+  const nextKey =
+    idx >= 0 && idx < sortedMonths.length - 1 ? sortedMonths[idx + 1] : null;
+
+  return {
+    monthKey,
+    label: capitalize(formatDate(parseLocalDate(`${monthKey}-01`), "MMMM yyyy")),
+    isCurrentMonth: monthKey === currentMonthKey,
+    cards: detailCards,
+    loans: detailLoans,
+    cardsTotal,
+    loansTotal,
+    total: cardsTotal + loansTotal,
+    prevKey,
+    nextKey,
+  };
 }

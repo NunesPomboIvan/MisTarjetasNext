@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { format, subMonths } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
@@ -8,8 +9,6 @@ import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import type { MonthGroup } from "@/lib/vencimientos";
-import { LoanVencimientoRow } from "@/components/vencimientos/loan-vencimiento-row";
-import { CardVencimientoRow } from "@/components/vencimientos/card-vencimiento-row";
 import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
@@ -75,12 +74,12 @@ export default async function VencimientosPage() {
   return (
     <div className="space-y-5">
       <StickyPageHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <BackButton href="/" />
           <h1 className="font-display text-[20px] font-semibold text-foreground">
             Resumen de Períodos
           </h1>
-          <div className="h-10 w-10" aria-hidden />
+          <div className="h-10 w-10 shrink-0" aria-hidden />
         </div>
       </StickyPageHeader>
 
@@ -117,25 +116,18 @@ export default async function VencimientosPage() {
             </div>
           </section>
 
-          {/* Meses */}
+          {/* Períodos: cada uno es una fila navegable al detalle */}
           {(() => {
-            // Comparamos cada mes contra el mes CALENDARIO anterior (por
-            // clave), no contra la posición anterior del array: un mes sin
-            // vencimientos pendientes (todo pagado) no aparece en `months`,
-            // así que comparar por posición desplaza qué mes queda como
-            // "anterior" y produce una variación espuria en el mes siguiente
-            // cuando se marca algo como pagado.
+            // Variación contra el mes CALENDARIO anterior (por clave), no contra
+            // la posición previa del array: un mes sin saldo pendiente no aparece
+            // en `months`, y comparar por posición produciría variaciones espurias.
             const totalByKey = new Map(months.map((m) => [m.key, m.total]));
             return (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {months.map((m, i) => {
                   const prevKey = format(subMonths(m.date, 1), "yyyy-MM");
-                  // El primer mes mostrado es siempre el actual: no hay mes
-                  // anterior con el que comparar. Para el resto, si el mes
-                  // calendario anterior no aparece en `months` es porque su
-                  // saldo pendiente es $0 (todo pagado), no que no exista.
                   const prevTotal = i === 0 ? null : (totalByKey.get(prevKey) ?? 0);
-                  return <MonthSection key={m.key} month={m} prevTotal={prevTotal} />;
+                  return <PeriodRow key={m.key} month={m} prevTotal={prevTotal} />;
                 })}
               </div>
             );
@@ -146,104 +138,81 @@ export default async function VencimientosPage() {
   );
 }
 
-function MonthSection({ month, prevTotal }: { month: MonthGroup; prevTotal: number | null }) {
+function PeriodRow({ month, prevTotal }: { month: MonthGroup; prevTotal: number | null }) {
   const label = capitalize(formatDate(month.date, "MMMM yyyy"));
-  // Abrimos por defecto el mes actual y cualquier mes con algo vencido.
-  const defaultOpen = month.isCurrent || month.hasOverdue;
+
+  const parts: string[] = [];
+  if (month.cards.length > 0) {
+    parts.push(`${month.cards.length} ${month.cards.length === 1 ? "tarjeta" : "tarjetas"}`);
+  }
+  if (month.loans.length > 0) {
+    parts.push(`${month.loans.length} ${month.loans.length === 1 ? "préstamo" : "préstamos"}`);
+  }
 
   return (
-    <details
-      open={defaultOpen}
+    <Link
+      href={`/vencimientos/${month.key}`}
       className={cn(
-        "group overflow-hidden rounded-[18px] border bg-card",
-        month.isCurrent ? "border-primary/40" : "border-border"
+        "flex items-center gap-3 rounded-[18px] border px-4 py-3.5 transition-transform active:scale-[0.99]",
+        month.hasOverdue
+          ? "border-destructive/40 bg-card"
+          : month.isCurrent
+            ? "border-primary/40 bg-card"
+            : "border-border bg-card/70"
       )}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "truncate text-[14px] font-bold",
-                  month.isCurrent ? "text-primary" : "text-foreground"
-                )}
-              >
-                {label}
-              </span>
-              {month.isCurrent && (
-                <span className="flex-shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                  Este mes
-                </span>
-              )}
-            </div>
-            <MonthVariation total={month.total} prevTotal={prevTotal} />
-          </div>
+      <span
+        aria-hidden
+        className={cn(
+          "h-2.5 w-2.5 flex-shrink-0 rounded-full",
+          month.hasOverdue
+            ? "bg-destructive"
+            : month.isCurrent
+              ? "bg-primary"
+              : "bg-amber-500/80"
+        )}
+      />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "truncate text-[14px] font-bold",
+              month.isCurrent ? "text-primary" : "text-foreground"
+            )}
+          >
+            {label}
+          </span>
+          {month.isCurrent && (
+            <span className="flex-shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+              Actual
+            </span>
+          )}
         </div>
-        <Money
-          amount={month.total}
-          className="flex-shrink-0 text-[14px] font-bold tabular-nums text-foreground"
-        />
-      </summary>
-
-      <div className="space-y-4 border-t border-border px-4 py-4">
-        {month.cards.length > 0 && (
-          <Block
-            label="Tarjetas"
-            subtotal={month.cardsTotal}
-            items={month.cards.map((c) => (
-              <CardVencimientoRow key={`${c.cardId}:${c.periodKey}`} item={c} />
-            ))}
+        <div className="mt-0.5 flex items-baseline justify-between gap-3">
+          <p className="truncate text-[11.5px] text-muted-foreground">
+            {parts.join(" · ")}
+          </p>
+          <Money
+            amount={month.total}
+            className="flex-shrink-0 text-[14px] font-bold tabular-nums text-foreground"
           />
-        )}
-        {month.loans.length > 0 && (
-          <Block
-            label="Préstamos"
-            subtotal={month.loansTotal}
-            items={month.loans.map((l) => (
-              <LoanVencimientoRow key={l.installmentId} item={l} />
-            ))}
-          />
-        )}
+        </div>
+        <MonthVariation total={month.total} prevTotal={prevTotal} />
       </div>
-    </details>
+
+      <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 
-function Block({
-  label,
-  subtotal,
-  items,
-}: {
-  label: string;
-  subtotal: number;
-  items: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-baseline justify-between px-0.5">
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          {label}
-        </h3>
-        <Money
-          amount={subtotal}
-          className="text-[11.5px] font-semibold tabular-nums text-foreground"
-        />
-      </div>
-      <div className="space-y-2">{items}</div>
-    </div>
-  );
-}
-
-/** Formatea un monto sin signo ni decimales: "$15.300" / "$8.200" / "$0".
- *  El color y la flecha indican si subió o bajó. */
+/** Formatea un monto sin signo ni decimales: "$15.300" / "$0". */
 function formatAbsCurrency(diff: number): string {
   const abs = new Intl.NumberFormat("es-AR").format(Math.abs(Math.round(diff)));
   return `$${abs}`;
 }
 
-/** Formatea un porcentaje sin signo: "12,4%" / "6,1%" / "0,0%". */
+/** Formatea un porcentaje sin signo: "12,40%". */
 function formatAbsPct(pct: number, decimals = 1): string {
   const abs = new Intl.NumberFormat("es-AR", {
     minimumFractionDigits: decimals,
@@ -253,9 +222,8 @@ function formatAbsPct(pct: number, decimals = 1): string {
 }
 
 /**
- * Variación del total del mes contra el mes anterior de la lista. Verde si
- * bajó, rojo si subió. Muestra el importe de la diferencia y luego el
- * porcentaje. No muestra nada en el primer mes ni cuando no hay cambios.
+ * Variación del total del mes contra el mes anterior. Verde si bajó, rojo si
+ * subió. No muestra nada en el primer mes ni cuando no hay cambios.
  */
 function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number | null }) {
   if (prevTotal == null) return null;
@@ -278,4 +246,3 @@ function MonthVariation({ total, prevTotal }: { total: number; prevTotal: number
     </p>
   );
 }
-
