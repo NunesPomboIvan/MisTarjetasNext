@@ -300,9 +300,12 @@ export interface PeriodDetailResult {
   isCurrentMonth: boolean;
   cards: PeriodDetailCard[];
   loans: PeriodDetailLoan[];
+  /** Totales de lo que FALTA pagar (excluye los ítems ya marcados como pagados). */
   cardsTotal: number;
   loansTotal: number;
   total: number;
+  /** Suma de los ítems (tarjetas + cuotas) ya pagados en el período. */
+  paidTotal: number;
   /** Mes vecino (con movimiento) anterior / siguiente, o null en los extremos. */
   prevKey: string | null;
   nextKey: string | null;
@@ -428,8 +431,20 @@ export function computePeriodDetail({
       a.dueDateKey.localeCompare(b.dueDateKey) || a.name.localeCompare(b.name)
   );
 
-  const cardsTotal = detailCards.reduce((s, c) => s + c.amount, 0);
-  const loansTotal = detailLoans.reduce((s, l) => s + l.amount, 0);
+  // Los totales representan el saldo pendiente: los ítems marcados como pagados
+  // no suman (así "Total a pagar" baja al tildar un pago, igual que en la lista
+  // de /vencimientos y el homepage).
+  const cardsTotal = detailCards.reduce(
+    (s, c) => s + (c.status === "paid" ? 0 : c.amount),
+    0
+  );
+  const loansTotal = detailLoans.reduce(
+    (s, l) => s + (l.status === "paid" ? 0 : l.amount),
+    0
+  );
+  const paidTotal =
+    detailCards.reduce((s, c) => s + (c.status === "paid" ? c.amount : 0), 0) +
+    detailLoans.reduce((s, l) => s + (l.status === "paid" ? l.amount : 0), 0);
 
   monthsWithMovement.add(monthKey);
   const sortedMonths = [...monthsWithMovement].sort();
@@ -447,6 +462,7 @@ export function computePeriodDetail({
     cardsTotal,
     loansTotal,
     total: cardsTotal + loansTotal,
+    paidTotal,
     prevKey,
     nextKey,
   };

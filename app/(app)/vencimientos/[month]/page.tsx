@@ -87,7 +87,9 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
         nextKey={detail.nextKey}
         isCurrentMonth={detail.isCurrentMonth}
       >
-        <p className="text-[12px] font-medium text-muted-foreground">Total a pagar</p>
+        <p className="text-[12px] font-medium text-muted-foreground">
+          {detail.paidTotal > 0 ? "Falta pagar" : "Total a pagar"}
+        </p>
         <Money
           amount={detail.total}
           className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
@@ -108,6 +110,12 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
             />
           </span>
         </div>
+        {detail.paidTotal > 0 && (
+          <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+            Ya pagaste{" "}
+            <Money amount={detail.paidTotal} className="font-semibold tabular-nums" />
+          </p>
+        )}
       </PeriodDetailNav>
 
       {isEmpty ? (
