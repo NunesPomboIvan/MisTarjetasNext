@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, CreditCard, Banknote, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GuardedLink } from "./guarded-link";
-import { AddActionSheet } from "./add-action-sheet";
 import { useNavigationBlocker } from "./navigation-blocker";
 
 const NAV_ITEMS = [
@@ -19,20 +17,16 @@ export function BottomNav() {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const { isBlocked, message } = useNavigationBlocker();
-  const [addOpen, setAddOpen] = useState(false);
 
-  // Dentro de una tarjeta concreta (detalle o subpáginas, no "nueva") el (+) va
-  // directo a "nuevo consumo" con esa tarjeta preseleccionada. En el resto abre
-  // el selector de acción.
+  // Dentro de una tarjeta concreta (detalle o subpáginas, no "nueva") el (+)
+  // abre la pantalla de alta con esa tarjeta preseleccionada; en el resto, sin
+  // preselección. Siempre arranca en "Consumo", con el switch a "Préstamo"
+  // disponible.
   const cardMatch = pathname.match(/^\/cards\/(?!new(?:\/|$))([^/]+)/);
 
   function handleAdd() {
     if (isBlocked && !window.confirm(message)) return;
-    if (cardMatch) {
-      router.push(`/expenses/new?card_id=${cardMatch[1]}`);
-    } else {
-      setAddOpen(true);
-    }
+    router.push(cardMatch ? `/nuevo?card_id=${cardMatch[1]}` : "/nuevo");
   }
 
   return (
@@ -108,8 +102,6 @@ export function BottomNav() {
           </div>
         </div>
       </div>
-
-      <AddActionSheet open={addOpen} onOpenChange={setAddOpen} />
     </nav>
   );
 }
