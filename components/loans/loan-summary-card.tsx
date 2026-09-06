@@ -29,10 +29,12 @@ const STRIP_WIDTH = 5;
 /**
  * Resumen de un préstamo para el listado /prestamos.
  *
- * Sistema de color: el color de identidad del préstamo vive en un único
- * elemento — la franja vertical izquierda. El resto de la card usa colores
- * semánticos (verde de éxito, ámbar/rojo de alerta) o neutros, de forma que
- * las cards sean comparables de un vistazo y el color comunique estado real.
+ * Sistema de color: el color de identidad del préstamo vive en dos lugares —
+ * la franja vertical izquierda y el fill de la barra de progreso. Verde,
+ * ámbar y rojo quedan reservados para el estado del préstamo (al día / por
+ * vencer / en mora); nunca se usan para el saldo pendiente, que es una deuda
+ * normal, no un error. La jerarquía tipográfica hace que PENDIENTE —el dato
+ * que se viene a buscar— sea el protagonista.
  */
 export function LoanSummaryCard({
   bank,
@@ -54,7 +56,6 @@ export function LoanSummaryCard({
   const isComplete = paidCount === totalCount && totalCount > 0;
   const hasOverdue = !isComplete && overdueCount > 0;
   const hasProgress = progressPct > 0;
-  const hasPaid = paid > 0;
   const showDescription =
     !!bank && bank.trim().toLowerCase() !== description.trim().toLowerCase();
 
@@ -85,7 +86,7 @@ export function LoanSummaryCard({
       )}
       style={{ borderRadius: CARD_RADIUS }}
     >
-      {/* Franja de identidad — único lugar de la card con el color del préstamo */}
+      {/* Franja de identidad — color del préstamo (también en el fill de la barra) */}
       <span
         aria-hidden
         className="absolute inset-y-0 left-0"
@@ -121,69 +122,61 @@ export function LoanSummaryCard({
         </span>
       </div>
 
-      {/* MIDDLE: Pendiente / Pagado / Total */}
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      {/* PENDIENTE: dato protagonista — fila propia */}
+      <div className="mt-5 min-w-0">
+        <p className="text-[11px] font-medium uppercase tracking-[0.5px] text-[#7A8089]">
+          Pendiente
+        </p>
+        <Money
+          amount={pending}
+          currency={currency}
+          style={{ fontWeight: 600 }}
+          className="mt-1 block truncate text-[26px] leading-tight tabular-nums text-white"
+        />
+      </div>
+
+      {/* PAGADO / TOTAL: fila secundaria de contexto */}
+      <div className="mt-3 flex items-baseline gap-6">
         <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Pendiente
-          </p>
-          <Money
-            amount={pending}
-            currency={currency}
-            className={cn(
-              "mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums",
-              hasOverdue ? "text-amber-300" : "text-foreground"
-            )}
-          />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.5px] text-[#7A8089]">
             Pagado
           </p>
           <Money
             amount={paid}
             currency={currency}
-            className={cn(
-              "mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums",
-              hasPaid ? "text-[#30D158]" : "text-foreground"
-            )}
+            style={{ fontWeight: 400 }}
+            className="mt-0.5 block truncate text-[16px] leading-tight tabular-nums text-[#4ADE80]"
           />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.5px] text-[#7A8089]">
             Total
           </p>
           <Money
             amount={total}
             currency={currency}
-            className="mt-1 block truncate text-[13.5px] font-bold leading-tight tabular-nums text-foreground"
+            style={{ fontWeight: 400 }}
+            className="mt-0.5 block truncate text-[16px] leading-tight tabular-nums text-[#7A8089]"
           />
         </div>
       </div>
 
-      {/* PROGRESO: chip % + cuotas + barra */}
+      {/* PROGRESO: cuotas (izq) + % (der) sobre la barra */}
       <div className="mt-5">
-        <div className="flex items-center gap-2.5">
-          <span
-            className={cn(
-              "flex h-6 flex-shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-bold tabular-nums",
-              hasProgress
-                ? "bg-[#30D158]/15 text-[#30D158]"
-                : "bg-white/10 text-muted-foreground"
-            )}
-            style={{ minWidth: 40 }}
-          >
-            {progressPct}%
+        <div className="flex items-center justify-between gap-2 text-[12px]">
+          <span className="text-[#7A8089]">
+            {paidCount} de {totalCount} cuotas
           </span>
-          <span className="text-[11.5px] text-muted-foreground">
-            {paidCount} de {totalCount} cuotas pagadas
-          </span>
+          <span className="tabular-nums text-white">{progressPct}%</span>
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="mt-2 overflow-hidden rounded-full"
+          style={{ height: 6, background: "rgba(255,255,255,0.08)" }}
+        >
           {hasProgress && (
             <div
-              className="h-full rounded-full bg-[#30D158] transition-all"
-              style={{ width: `${progressPct}%` }}
+              className="h-full rounded-full transition-all"
+              style={{ width: `${progressPct}%`, background: accent }}
             />
           )}
         </div>
