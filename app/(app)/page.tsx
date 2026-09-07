@@ -3,16 +3,14 @@ import { CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
-import { VencimientosSelector } from "@/components/home/vencimientos-selector";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs, toArs } from "@/lib/periods/calculate";
+import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { LockScroll } from "@/components/shared/lock-scroll";
-import { parseLocalDate } from "@/lib/periods/calculate";
-import type { Card, Expense, Category, Loan, LoanInstallment } from "@/lib/supabase/database.types";
+import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
 
@@ -36,29 +34,13 @@ export default async function DashboardPage() {
     .order("created_at");
   if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
-  let loansQuery = supabase
-    .from("loans")
-    .select("*")
-    .eq("user_id", user!.id)
-    .eq("archived", false);
-  if (activeTitularId) loansQuery = loansQuery.eq("titular_id", activeTitularId);
-
-  const [cardsResult, expensesResult, loansResult, installmentsResult] = await Promise.all([
+  const [cardsResult, expensesResult] = await Promise.all([
     cardsQuery,
     supabase.from("expenses").select("*, category:categories(*)").eq("user_id", user!.id).order("expense_date", { ascending: false }),
-    loansQuery,
-    supabase.from("loan_installments").select("*").eq("user_id", user!.id).order("due_date"),
   ]);
 
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
-  const loans = (loansResult.data ?? []) as Loan[];
-  const allInstallments = (installmentsResult.data ?? []) as LoanInstallment[];
-  const pendingInstallments = allInstallments.filter((i) => !i.paid);
-  const totalInstallmentsByLoan = new Map<string, number>();
-  for (const i of allInstallments) {
-    totalInstallmentsByLoan.set(i.loan_id, (totalInstallmentsByLoan.get(i.loan_id) ?? 0) + 1);
-  }
 
   // Para "Próximos pagos" y "Próximo a pagar": usamos getNextDuePeriod
   // (el período cuyo vencimiento no pasó aún).
@@ -99,39 +81,6 @@ export default async function DashboardPage() {
       cardName: card.bank || card.name,
       total,
     }));
-
-  // Préstamos bancarios: próxima cuota pendiente por préstamo, ordenadas
-  // por proximidad de vencimiento. Para saber el total de cuotas del préstamo
-  // necesitamos contar TODAS las cuotas (pagadas + no pagadas), por eso traemos
-  // un conteo aparte abajo.
-  const installmentsByLoan = new Map<string, LoanInstallment[]>();
-  for (const i of pendingInstallments) {
-    const arr = installmentsByLoan.get(i.loan_id) ?? [];
-    arr.push(i);
-    installmentsByLoan.set(i.loan_id, arr);
-  }
-  const loansUpcoming = loans
-    .map((loan) => {
-      const pending = installmentsByLoan.get(loan.id) ?? [];
-      const next = pending[0];
-      if (!next) return null;
-      const totalForLoan = totalInstallmentsByLoan.get(loan.id) ?? next.installment_number;
-      const primary = loan.bank || loan.description;
-      return {
-        id: loan.id,
-        accent: loan.color,
-        primary,
-        suffix: `· Cuota ${next.installment_number}/${totalForLoan}`,
-        // Cuotas en USD: convertidas a pesos con el TC efectivo de la cuota.
-        amount: toArs(
-          { currency: loan.currency, exchange_rate: next.exchange_rate },
-          Number(next.amount)
-        ),
-        days: differenceInCalendarDays(parseLocalDate(next.due_date), todayStart),
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
-    .sort((a, b) => a.days - b.days);
 
   const hour = today.getHours();
   const saludo = greeting(hour);
@@ -242,9 +191,27 @@ export default async function DashboardPage() {
               Tarjetas y préstamos
             </h2>
             <div className="glass-card space-y-3 rounded-[20px] px-5 py-4">
-            <VencimientosSelector
-              loansHref={loansUpcoming.length > 0 ? "/prestamos/pagos" : "/prestamos"}
-            />
+            <Link
+              href="/pagos"
+              aria-label="Ver vencimientos de tarjetas y préstamos"
+              className="group flex w-full items-center gap-3 text-left transition-colors"
+            >
+              <div
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                style={{ background: "#6366f120", color: "#6366f1" }}
+              >
+                <CalendarClock className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold leading-tight text-foreground">
+                  Vencimientos
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  Tarjetas y préstamos
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
+            </Link>
 
             <div className="h-px bg-border dark:bg-white/[0.16]" />
 
