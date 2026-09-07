@@ -4,8 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { BackButton } from "@/components/shared/back-button";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { StackHeader } from "@/components/shared/stack-header";
 import { PagosSwitch } from "@/components/vencimientos/pagos-switch";
 import { getNextPayment, parseLocalDate, toArs } from "@/lib/periods/calculate";
 import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
@@ -99,15 +98,11 @@ export default async function PagosPage() {
 
   return (
     <div className="space-y-5">
-      <StickyPageHeader>
-        <div className="flex items-center justify-between">
-          <BackButton href="/" />
-          <h1 className="font-display text-[20px] font-semibold text-foreground">
-            Próximos vencimientos
-          </h1>
-          <div className="h-10 w-10" aria-hidden />
-        </div>
-      </StickyPageHeader>
+      <StackHeader
+        title="Próximos vencimientos"
+        titleClassName="font-display text-[20px] font-semibold text-foreground"
+        backHref="/"
+      />
 
       <PagosSwitch
         tarjetas={<CardsPanel items={cardUpcoming} />}

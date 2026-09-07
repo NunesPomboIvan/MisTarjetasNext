@@ -5,8 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { Money } from "@/components/shared/money";
 import { UtilizationDonut } from "@/components/shared/utilization-donut";
-import { BackButton } from "@/components/shared/back-button";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { StackHeader } from "@/components/shared/stack-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
@@ -153,13 +152,14 @@ export default async function CardDetailPage({
       )}
 
       {/* Header */}
-      <StickyPageHeader>
-        <div className="flex items-center justify-between">
-          <BackButton href="/cards" />
-          <h1 className="text-[15px] font-semibold text-foreground">Detalle de tarjeta</h1>
+      <StackHeader
+        title="Detalle de tarjeta"
+        titleClassName="text-[15px] font-semibold text-foreground"
+        backHref="/cards"
+        right={
           <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
-        </div>
-      </StickyPageHeader>
+        }
+      />
 
       {/* Wallet card */}
       <WalletCard

@@ -5,8 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { BackButton } from "@/components/shared/back-button";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { StackHeader } from "@/components/shared/stack-header";
 import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import type { MonthGroup } from "@/lib/vencimientos";
 import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
@@ -73,15 +72,11 @@ export default async function VencimientosPage() {
 
   return (
     <div className="space-y-5">
-      <StickyPageHeader>
-        <div className="flex items-center justify-between gap-3">
-          <BackButton href="/" />
-          <h1 className="font-display text-[20px] font-semibold text-foreground">
-            Resumen de Períodos
-          </h1>
-          <div className="h-10 w-10 shrink-0" aria-hidden />
-        </div>
-      </StickyPageHeader>
+      <StackHeader
+        title="Resumen de Períodos"
+        titleClassName="font-display text-[20px] font-semibold text-foreground"
+        backHref="/"
+      />
 
       {months.length === 0 ? (
         <EmptyState
