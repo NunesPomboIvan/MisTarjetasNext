@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Save, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { createLoan } from "@/actions/loans";
 import { loanSchema, type LoanFormData } from "@/lib/schemas/loan";
@@ -33,9 +33,16 @@ interface ManualInstallment {
 interface LoanFormProps {
   /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
   globalRate?: number | null;
+  /**
+   * Id del `<form>`: lo usa el tilde ✓ del `AppHeader` (que vive fuera del
+   * form) para dispararlo con `requestSubmit()`.
+   */
+  formId?: string;
+  /** Informa al shell (`AddFlow`) si los campos obligatorios están completos. */
+  onStateChange?: (state: { canSave: boolean; saving: boolean }) => void;
 }
 
-export function LoanForm({ globalRate = null }: LoanFormProps) {
+export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -96,6 +103,20 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
       manual.length > 1 ||
       manual.some((m) => m.amount != null));
   useUnsavedChangesGuard(dirty);
+
+  // Habilitación del tilde ✓ del header: campos obligatorios del modo activo
+  // completos. La validación fina (schema Zod) sigue corriendo en el submit.
+  const canSave =
+    description.trim() !== "" &&
+    (!isUsd || (exchangeRate != null && exchangeRate > 0)) &&
+    (mode === "simple"
+      ? total != null && total > 0 && count >= 1 && count <= 120 && firstDue !== ""
+      : manual.length > 0 &&
+        manual.every((m) => m.amount != null && m.amount > 0 && m.due_date !== ""));
+
+  useEffect(() => {
+    onStateChange?.({ canSave, saving: isPending });
+  }, [canSave, isPending, onStateChange]);
 
   // Cuotas pre-calculadas en modo simple
   const simpleInstallments = useMemo(() => {
@@ -256,7 +277,13 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-5">
+      {/* Modo de carga: contexto del switch de abajo. Antes vivía como bajada
+          del header; es ayuda de ESTE campo, no de la pantalla entera. */}
+      <p className="text-xs text-muted-foreground">
+        Elegí entre monto total dividido o cargar cada cuota a mano
+      </p>
+
       {/* Tabs Simple / Manual */}
       <div className="flex rounded-[14px] border border-border bg-muted/40 p-1">
         <button
@@ -565,25 +592,7 @@ export function LoanForm({ globalRate = null }: LoanFormProps) {
       )}
 
       <RequiredFieldsNote />
-
-      {/* Submit */}
-      <Button
-        type="submit"
-        className="btn-glass-primary w-full font-semibold"
-        disabled={isPending}
-      >
-        {isPending ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creando...
-          </>
-        ) : (
-          <>
-            <Save className="mr-2 h-4 w-4" />
-            Crear préstamo
-          </>
-        )}
-      </Button>
+      {/* El guardado vive en el tilde ✓ del AppHeader (dispara este form por id). */}
     </form>
   );
 }

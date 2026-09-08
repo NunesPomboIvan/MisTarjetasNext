@@ -4,14 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StackHeader } from "@/components/shared/stack-header";
+import { AppHeader } from "@/components/shared/app-header";
 import { PagosSwitch } from "@/components/vencimientos/pagos-switch";
 import { getNextPayment, parseLocalDate, toArs } from "@/lib/periods/calculate";
 import { nowInArgentina, formatWeekdayLongDate } from "@/lib/utils";
 import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
-export const metadata = { title: "Próximos vencimientos" };
+export const metadata = { title: "Vencimientos" };
 
 export default async function PagosPage() {
   const supabase = await createClient();
@@ -97,17 +97,15 @@ export default async function PagosPage() {
     });
 
   return (
-    <div className="space-y-5">
-      <StackHeader
-        title="Próximos vencimientos"
-        titleClassName="font-display text-[20px] font-semibold text-foreground"
-        backHref="/"
-      />
+    <div>
+      <AppHeader title="Vencimientos" backHref="/" />
 
-      <PagosSwitch
-        tarjetas={<CardsPanel items={cardUpcoming} />}
-        prestamos={<LoansPanel items={loanUpcoming} />}
-      />
+      <div className="mt-1">
+        <PagosSwitch
+          tarjetas={<CardsPanel items={cardUpcoming} />}
+          prestamos={<LoansPanel items={loanUpcoming} />}
+        />
+      </div>
     </div>
   );
 }

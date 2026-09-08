@@ -1,30 +1,43 @@
-import { LoanForm } from "@/components/loans/loan-form";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
-import { BackButton } from "@/components/shared/back-button";
+import { createClient } from "@/lib/supabase/server";
+import { getActiveTitularId } from "@/lib/titulares/server";
 import { getGlobalExchangeRate } from "@/lib/exchange/server";
+import { AddFlow } from "@/components/shared/add-flow";
 
 export const metadata = { title: "Nuevo préstamo" };
 
 export default async function NewLoanPage() {
-  const globalRate = await getGlobalExchangeRate();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const activeTitularId = await getActiveTitularId();
+
+  let cardsQuery = supabase
+    .from("cards")
+    .select("*")
+    .eq("user_id", user!.id)
+    .eq("archived", false)
+    .order("name");
+  if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
+
+  const [cardsResult, categoriesResult, globalRate] = await Promise.all([
+    cardsQuery,
+    supabase
+      .from("categories")
+      .select("*")
+      .or(`user_id.eq.${user!.id},user_id.is.null`)
+      .order("is_preset", { ascending: false })
+      .order("name"),
+    getGlobalExchangeRate(),
+  ]);
 
   return (
-    <div className="space-y-4">
-      <StickyPageHeader>
-        <div className="flex items-center gap-3">
-          <BackButton href="/prestamos" />
-          <div>
-            <h1 className="text-xl font-bold">Nuevo préstamo</h1>
-            <p className="text-sm text-muted-foreground">
-              Elegí entre monto total dividido o cargar cada cuota a mano
-            </p>
-          </div>
-        </div>
-      </StickyPageHeader>
-
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <LoanForm globalRate={globalRate?.rate ?? null} />
-      </div>
-    </div>
+    <AddFlow
+      initialMode="prestamo"
+      cards={cardsResult.data ?? []}
+      categories={categoriesResult.data ?? []}
+      backHref="/prestamos"
+      globalRate={globalRate?.rate ?? null}
+    />
   );
 }

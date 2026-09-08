@@ -54,13 +54,26 @@ interface NewExpenseHeroProps {
   cards: Card[];
   categories: Category[];
   defaultCardId?: string;
-  backHref: string;
   /** Modo "gastos de tarjeta": preselecciona la categoría y muestra chips rápidos */
   feeMode?: boolean;
   /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
   globalRate?: number | null;
   /** Arranca el form como "consumo fijo mensual" (recurrente) */
   recurringMode?: boolean;
+  /**
+   * Id del `<form>`: lo usa el tilde ✓ del `AppHeader` (que vive fuera del form)
+   * para dispararlo con `requestSubmit()`.
+   */
+  formId?: string;
+  /**
+   * Informa al shell (`AddFlow`) el título que corresponde al header y si los
+   * campos obligatorios están completos, para habilitar/deshabilitar el tilde.
+   */
+  onStateChange?: (state: {
+    canSave: boolean;
+    saving: boolean;
+    title: string;
+  }) => void;
 }
 
 /** Descripciones rápidas para los gastos propios de la tarjeta */
@@ -79,10 +92,11 @@ export function NewExpenseHero({
   cards,
   categories,
   defaultCardId,
-  backHref,
   feeMode = false,
   globalRate = null,
   recurringMode = false,
+  formId,
+  onStateChange,
 }: NewExpenseHeroProps) {
   const router = useRouter();
   const { lastCardId, setLastCardId } = useLastCard();
@@ -144,10 +158,33 @@ export function NewExpenseHero({
   const discountCap = watch("discount_cap");
   const currency = watch("currency");
   const exchangeRate = watch("exchange_rate");
+  const cardId = watch("card_id");
+  const description = watch("description");
+  const expenseDate = watch("expense_date");
   const isUsd = currency === "USD";
   const amountPrefix = isUsd ? "US$" : "$";
 
   useUnsavedChangesGuard(isDirty && !savedOk);
+
+  // Estado para el shell (`AddFlow`): título del header + si el tilde ✓ se
+  // habilita. "Completo" = campos obligatorios del modo activo cargados; la
+  // validación fina sigue corriendo en el submit (schema + duplicados).
+  const canSave = Boolean(
+    cardId &&
+      (description ?? "").trim() &&
+      totalAmount &&
+      totalAmount !== 0 &&
+      expenseDate &&
+      (currency !== "USD" || (exchangeRate != null && exchangeRate > 0))
+  );
+  const headerTitle = feeMode
+    ? "Gasto de tarjeta"
+    : recurring
+      ? "Consumo fijo mensual"
+      : "Nuevo consumo";
+  React.useEffect(() => {
+    onStateChange?.({ canSave, saving: isPending, title: headerTitle });
+  }, [canSave, isPending, headerTitle, onStateChange]);
 
   function changeCurrency(next: "ARS" | "USD") {
     setValue("currency", next);
@@ -262,35 +299,11 @@ export function NewExpenseHero({
 
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Header sticky: Cancelar / Título / Guardar */}
-        <div className="-mx-4 -mt-4 sticky top-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-border/50 bg-background/85 px-4 py-3 backdrop-blur supports-backdrop-filter:bg-background/70">
-          <GuardedLink
-            href={backHref}
-            className="justify-self-start text-[15px] font-medium text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Cancelar
-          </GuardedLink>
-          <h1 className="text-[15px] font-semibold tracking-tight">
-            {feeMode
-              ? "Gasto de tarjeta"
-              : recurring
-                ? "Consumo fijo mensual"
-                : "Nuevo consumo"}
-          </h1>
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="btn-glass-primary h-9 justify-self-end rounded-full px-5 text-sm font-semibold"
-          >
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Guardar"
-            )}
-          </Button>
-        </div>
-
+      <form
+        id={formId}
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-5"
+      >
         {/* Hero: monto */}
         <div className="halo-warm relative -mx-4 px-4 pt-4 pb-8 text-center">
           <div className="flex items-center justify-center gap-2">

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { getGlobalExchangeRate } from "@/lib/exchange/server";
-import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
+import { AddFlow } from "@/components/shared/add-flow";
 
 export const metadata = { title: "Nuevo consumo" };
 
@@ -40,14 +40,15 @@ export default async function NewExpensePage({
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-300 ease-out">
-      <NewExpenseHero
+      <AddFlow
+        initialMode="consumo"
         cards={cardsResult.data ?? []}
         categories={categoriesResult.data ?? []}
         defaultCardId={card_id}
         backHref={backHref}
         feeMode={fee === "1"}
-        globalRate={globalRate?.rate ?? null}
         recurringMode={recurring === "1"}
+        globalRate={globalRate?.rate ?? null}
       />
     </div>
   );

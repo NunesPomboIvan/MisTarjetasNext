@@ -4,11 +4,14 @@ import * as React from "react";
 
 import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
 import { LoanForm } from "@/components/loans/loan-form";
-import { BackButton } from "@/components/shared/back-button";
-import { cn } from "@/lib/utils";
+import { AppHeader } from "@/components/shared/app-header";
+import { TypeSwitch } from "@/components/shared/type-switch";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
 type Mode = "consumo" | "prestamo";
+
+const CONSUMO_FORM_ID = "add-consumo-form";
+const PRESTAMO_FORM_ID = "add-prestamo-form";
 
 interface AddFlowProps {
   initialMode?: Mode;
@@ -17,16 +20,24 @@ interface AddFlowProps {
   defaultCardId?: string;
   backHref: string;
   globalRate: number | null;
+  /** Modo "gastos de tarjeta": sólo consumo, sin selector de tipo. */
+  feeMode?: boolean;
+  /** Arranca el consumo como "fijo mensual" (recurrente). */
+  recurringMode?: boolean;
 }
 
 /**
- * Pantalla de alta del botón (+) de la bottom bar. Arranca en "Consumo" y un
- * selector segmentado permite pasar a "Préstamo" sin recargar: ambos
- * formularios quedan montados y sólo se alterna cuál se ve, así los datos ya
- * cargados en cada uno se conservan al ir y volver.
+ * Pantalla de alta del botón (+) de la bottom bar, y también de `/expenses/new`
+ * y `/prestamos/new`. Orden vertical fijo, idéntico a "Vencimientos":
  *
- * Los formularios (`NewExpenseHero`, `LoanForm`) son los mismos que usan
- * `/expenses/new` y `/prestamos/new`; acá sólo se los envuelve con el switch.
+ *   1. AppHeader (chevron ‹ · título · tilde ✓) — pegado al safe-area
+ *   2. TypeSwitch Consumo | Préstamo
+ *   3. Divisoria de 1 px
+ *   4. Formulario
+ *
+ * Ambos formularios quedan montados y sólo se alterna cuál se ve con `hidden`,
+ * así los datos ya cargados se conservan al ir y volver entre modos. El tilde ✓
+ * del header dispara el `<form>` activo por su id (`requestSubmit()`).
  */
 export function AddFlow({
   initialMode = "consumo",
@@ -35,85 +46,89 @@ export function AddFlow({
   defaultCardId,
   backHref,
   globalRate,
+  feeMode = false,
+  recurringMode = false,
 }: AddFlowProps) {
-  const [mode, setMode] = React.useState<Mode>(initialMode);
+  const [mode, setMode] = React.useState<Mode>(feeMode ? "consumo" : initialMode);
+
+  const [consumoState, setConsumoState] = React.useState({
+    canSave: false,
+    saving: false,
+    title: feeMode ? "Gasto de tarjeta" : "Nuevo consumo",
+  });
+  const [prestamoState, setPrestamoState] = React.useState({
+    canSave: false,
+    saving: false,
+  });
+
+  const onConsumoState = React.useCallback(
+    (s: { canSave: boolean; saving: boolean; title: string }) => setConsumoState(s),
+    []
+  );
+  const onPrestamoState = React.useCallback(
+    (s: { canSave: boolean; saving: boolean }) => setPrestamoState(s),
+    []
+  );
+
+  const active = mode === "consumo" ? consumoState : prestamoState;
+  const activeFormId = mode === "consumo" ? CONSUMO_FORM_ID : PRESTAMO_FORM_ID;
+  const title = mode === "consumo" ? consumoState.title : "Nuevo préstamo";
+
+  function submitActive() {
+    const form = document.getElementById(activeFormId);
+    if (form instanceof HTMLFormElement) form.requestSubmit();
+  }
 
   return (
     <div>
-      {/* Selector segmentado: Consumo | Préstamo */}
-      <div
-        role="tablist"
-        aria-label="Tipo de carga"
-        className="mb-5 flex rounded-[14px] border border-border bg-muted/40 p-1"
-      >
-        <SegmentButton
-          active={mode === "consumo"}
-          onClick={() => setMode("consumo")}
-        >
-          Consumo
-        </SegmentButton>
-        <SegmentButton
-          active={mode === "prestamo"}
-          onClick={() => setMode("prestamo")}
-        >
-          Préstamo
-        </SegmentButton>
-      </div>
+      <AppHeader
+        title={title}
+        backHref={backHref}
+        action={{
+          label: "Guardar",
+          enabled: active.canSave && !active.saving,
+          onClick: submitActive,
+        }}
+      />
 
-      {/* Consumo */}
-      <div hidden={mode !== "consumo"}>
-        <NewExpenseHero
-          cards={cards}
-          categories={categories}
-          defaultCardId={defaultCardId}
-          backHref={backHref}
-          globalRate={globalRate}
-        />
-      </div>
+      <div className="mt-1 space-y-4">
+        {!feeMode && (
+          <TypeSwitch
+            aria-label="Tipo de carga"
+            options={[
+              { value: "consumo", label: "Consumo" },
+              { value: "prestamo", label: "Préstamo" },
+            ]}
+            value={mode}
+            onChange={setMode}
+          />
+        )}
 
-      {/* Préstamo */}
-      <div hidden={mode !== "prestamo"} className="space-y-4">
-        <div className="sticky top-0 z-20 -mx-4 flex items-center gap-3 bg-background px-4 pb-3">
-          <BackButton href="/prestamos" />
-          <div>
-            <h1 className="text-xl font-bold">Nuevo préstamo</h1>
-            <p className="text-sm text-muted-foreground">
-              Elegí entre monto total dividido o cargar cada cuota a mano
-            </p>
-          </div>
+        <div className="-mx-4 border-t border-border" />
+
+        <div hidden={mode !== "consumo"}>
+          <NewExpenseHero
+            cards={cards}
+            categories={categories}
+            defaultCardId={defaultCardId}
+            feeMode={feeMode}
+            recurringMode={recurringMode}
+            globalRate={globalRate}
+            formId={CONSUMO_FORM_ID}
+            onStateChange={onConsumoState}
+          />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <LoanForm globalRate={globalRate} />
+        <div hidden={mode !== "prestamo"}>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <LoanForm
+              globalRate={globalRate}
+              formId={PRESTAMO_FORM_ID}
+              onStateChange={onPrestamoState}
+            />
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function SegmentButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
-        active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "text-muted-foreground"
-      )}
-    >
-      {children}
-    </button>
   );
 }
