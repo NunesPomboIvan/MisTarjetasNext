@@ -4,7 +4,6 @@ import { Plus, Landmark, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { Money } from "@/components/shared/money";
-import { UtilizationDonut } from "@/components/shared/utilization-donut";
 import { StackHeader } from "@/components/shared/stack-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
@@ -104,7 +103,7 @@ export default async function CardDetailPage({
     .reduce((sum, e) => sum + getAmountInPeriodArs(e, currentPeriod), 0);
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
-  const utilizacion = limite > 0 ? Math.round((saldo / limite) * 100) : 0;
+  const cardColor = card.color || "#6366f1";
 
   // Acciones de movimientos (Fijo / Gastos / Agregar). Se renderizan en la
   // misma fila que "Seleccionar" dentro de la lista.
@@ -181,28 +180,18 @@ export default async function CardDetailPage({
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
           en dos columnas para reducir la altura de la card. */}
       <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <CardPeriodPaidToggle
-              cardId={id}
-              periodKey={period.key}
-              paid={periodPayment?.paid ?? false}
-              paidDate={periodPayment?.paid_date ?? null}
-            />
-            <Money
-              amount={saldo}
-              className="mt-1 block font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-            />
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <Money
+            amount={saldo}
+            className="min-w-0 font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+          />
 
-          {limite > 0 && (
-            <UtilizationDonut
-              percent={utilizacion}
-              size={62}
-              thickness={7}
-              label="Utilizado"
-            />
-          )}
+          <CardPeriodPaidToggle
+            cardId={id}
+            periodKey={period.key}
+            paid={periodPayment?.paid ?? false}
+            paidDate={periodPayment?.paid_date ?? null}
+          />
         </div>
 
         <div className="my-2.5 h-px bg-border" />
@@ -231,7 +220,7 @@ export default async function CardDetailPage({
               <Money
                 amount={disponible}
                 className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
-                style={{ color: "#30D158" }}
+                style={{ color: cardColor }}
               />
             </div>
           </div>

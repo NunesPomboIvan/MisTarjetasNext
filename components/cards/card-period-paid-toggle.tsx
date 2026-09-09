@@ -107,7 +107,7 @@ export function CardPeriodPaidToggle({
             aria-hidden="true"
           />
         ) : null}
-        <span>{paid ? "Pagado" : "Pagar"}</span>
+        <span>{paid ? "Pagado" : "Pendiente de Pago"}</span>
       </button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
