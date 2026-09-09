@@ -183,18 +183,15 @@ export default async function CardDetailPage({
       <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-[10.5px] font-medium text-muted-foreground">Saldo actual</p>
-              <CardPeriodPaidToggle
-                cardId={id}
-                periodKey={period.key}
-                paid={periodPayment?.paid ?? false}
-                paidDate={periodPayment?.paid_date ?? null}
-              />
-            </div>
+            <CardPeriodPaidToggle
+              cardId={id}
+              periodKey={period.key}
+              paid={periodPayment?.paid ?? false}
+              paidDate={periodPayment?.paid_date ?? null}
+            />
             <Money
               amount={saldo}
-              className="mt-0.5 block font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+              className="mt-1 block font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
             />
           </div>
 

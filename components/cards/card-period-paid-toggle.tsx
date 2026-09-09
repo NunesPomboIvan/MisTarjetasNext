@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -106,10 +106,8 @@ export function CardPeriodPaidToggle({
             className="h-3.5 w-3.5 animate-in zoom-in-75 duration-200"
             aria-hidden="true"
           />
-        ) : (
-          <Circle className="h-3.5 w-3.5" aria-hidden="true" />
-        )}
-        <span>{paid ? "Pagado" : "Marcar pagado"}</span>
+        ) : null}
+        <span>{paid ? "Pagado" : "Pagar"}</span>
       </button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -124,6 +122,7 @@ export function CardPeriodPaidToggle({
             <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                setConfirmOpen(false);
                 haptic();
                 apply(false);
               }}
