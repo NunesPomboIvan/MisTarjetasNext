@@ -220,7 +220,7 @@ export default async function CardDetailPage({
               <Money
                 amount={disponible}
                 className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
-                style={{ color: cardColor }}
+                style={{ color: `color-mix(in srgb, ${cardColor} 70%, var(--card-foreground))` }}
               />
             </div>
           </div>
