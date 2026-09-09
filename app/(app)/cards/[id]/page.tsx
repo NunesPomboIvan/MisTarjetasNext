@@ -68,7 +68,6 @@ export default async function CardDetailPage({
 
   const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
-  const currentPeriod = getPeriodByOffset(card, 0);
   const timeline = getPeriodTimeline(card, offset);
 
   const { data: expenses } = await supabase
@@ -98,11 +97,6 @@ export default async function CardDetailPage({
     0
   );
 
-  // La imagen de la tarjeta siempre muestra el período actual,
-  // sin importar qué período se esté navegando abajo.
-  const currentSaldo = allExpenses
-    .filter((e) => expenseFallsInPeriod(e, currentPeriod))
-    .reduce((sum, e) => sum + getAmountInPeriodArs(e, currentPeriod), 0);
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
@@ -161,12 +155,13 @@ export default async function CardDetailPage({
         }
       />
 
-      {/* Wallet card */}
+      {/* Wallet card — los datos siguen al período que se está navegando */}
       <WalletCard
         card={card}
-        total={currentSaldo}
-        closeLabel={formatDate(currentPeriod.end, "d MMM")}
-        dueLabel={formatDate(currentPeriod.due, "d MMM")}
+        total={saldo}
+        periodLabel={period.status === "current" ? "Período actual" : period.label}
+        closeLabel={formatDate(period.end, "d MMM")}
+        dueLabel={formatDate(period.due, "d MMM")}
       />
 
       {/* Period Navigator */}

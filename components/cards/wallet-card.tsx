@@ -8,8 +8,10 @@ interface WalletCardProps {
     Card,
     "id" | "name" | "type" | "last_four" | "color" | "bank" | "is_extension" | "holder_name"
   >;
-  /** Total del período. Si se pasa, se renderiza el strip "Período actual" + monto */
+  /** Total del período. Si se pasa, se renderiza el strip de período + monto */
   total?: number;
+  /** Texto del strip sobre el monto. Default: "Período actual" */
+  periodLabel?: string;
   currency?: Currency;
   hideBalance?: boolean;
   compact?: boolean;
@@ -59,6 +61,7 @@ function relativeLuminance(hex: string): number {
 export function WalletCard({
   card,
   total,
+  periodLabel = "Período actual",
   currency = "ARS",
   hideBalance = false,
   compact = false,
@@ -301,7 +304,7 @@ export function WalletCard({
               className="mb-1 text-[9.5px] font-semibold uppercase"
               style={{ color: fgMuted, letterSpacing: "0.18em" }}
             >
-              Período actual
+              {periodLabel}
             </div>
             {total != null ? (
               <Money
