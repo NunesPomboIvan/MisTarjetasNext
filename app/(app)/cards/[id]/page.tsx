@@ -13,6 +13,7 @@ import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getPeriodByOffset,
+  getPeriodTimeline,
   expenseFallsInPeriod,
   getAmountInPeriodArs,
   getInstallmentIndexInPeriod,
@@ -68,6 +69,7 @@ export default async function CardDetailPage({
   const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
   const currentPeriod = getPeriodByOffset(card, 0);
+  const timeline = getPeriodTimeline(card, offset);
 
   const { data: expenses } = await supabase
     .from("expenses")
@@ -172,9 +174,16 @@ export default async function CardDetailPage({
       <PeriodNavigator
         card={card}
         currentPeriod={period}
-        startLabel={formatDate(period.start, "d MMM")}
-        endLabel={formatDate(period.end, "d MMM")}
-        dueLabel={formatDate(period.due, "d/M")}
+        color={cardColor}
+        statusText={timeline.statusText}
+        duePct={timeline.duePct}
+        progressPct={timeline.progressPct}
+        closeLabel={formatDate(timeline.close, "dd/MM")}
+        dueLabel={formatDate(timeline.due, "dd/MM")}
+        nextCloseLabel={formatDate(timeline.nextClose, "dd/MM")}
+        closeReached={timeline.closeReached}
+        dueReached={timeline.dueReached}
+        nextCloseReached={timeline.nextCloseReached}
       />
 
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento

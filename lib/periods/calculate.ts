@@ -26,6 +26,7 @@ import {
   isAfter,
   format,
   addDays,
+  differenceInCalendarDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -493,6 +494,88 @@ export function getInstallmentDates(expense: ExpenseForPeriod): Date[] {
 export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
   const closeDate = parseLocalDate(card.close_date);
   return isBefore(closeDate, startOfDay(nowAr()));
+}
+
+/**
+ * Línea de tiempo del período para la card de detalle: cierre, vencimiento y
+ * el cierre del período siguiente, más el avance de "hoy" sobre esa barra y
+ * una frase de estado ("Faltan 2 días para el cierre.").
+ *
+ * Eje de la barra: del cierre de este período al cierre del siguiente. El
+ * cierre queda en 0 %, el próximo cierre en 100 % y el vencimiento en la
+ * posición real que le corresponde (`duePct`). El avance de "hoy" es lineal
+ * sobre ese mismo eje, así el punto coincide con el nodo del vencimiento
+ * justo el día del vencimiento.
+ */
+export interface PeriodTimeline {
+  close: Date;
+  due: Date;
+  nextClose: Date;
+  closeReached: boolean;
+  dueReached: boolean;
+  nextCloseReached: boolean;
+  /** Posición del nodo "Vencimiento" en la barra (0–100). */
+  duePct: number;
+  /** Posición de "hoy" en la barra (0–100). */
+  progressPct: number;
+  statusText: string;
+}
+
+export function getPeriodTimeline(
+  card: CardForPeriod,
+  offsetMonths: number
+): PeriodTimeline {
+  const now = nowAr();
+  const today = startOfDay(now);
+
+  const period = getPeriodByOffset(card, offsetMonths);
+  const next = getPeriodByOffset(card, offsetMonths + 1);
+  const close = period.end;
+  const due = period.due;
+  const nextClose = next.end;
+
+  // "Alcanzado" = el hito ya quedó atrás (el día del hito todavía no cuenta:
+  // la tarjeta cierra al final del día, el vencimiento es pagable hasta ese día).
+  const closeReached = isAfter(today, startOfDay(close));
+  const dueReached = isAfter(today, startOfDay(due));
+  const nextCloseReached = isAfter(today, startOfDay(nextClose));
+
+  const span = nextClose.getTime() - close.getTime();
+  const clamp = (n: number) => Math.min(100, Math.max(0, n));
+  const duePct = span > 0 ? clamp(((due.getTime() - close.getTime()) / span) * 100) : 50;
+  const progressPct = span > 0 ? clamp(((now.getTime() - close.getTime()) / span) * 100) : 0;
+
+  let statusText: string;
+  if (nextCloseReached) {
+    statusText = "Período cerrado.";
+  } else {
+    const target = !closeReached ? close : !dueReached ? due : nextClose;
+    const noun = !closeReached
+      ? "el cierre"
+      : !dueReached
+      ? "el vencimiento"
+      : "el próximo cierre";
+    const d = differenceInCalendarDays(startOfDay(target), today);
+    if (d <= 0) {
+      statusText = `${noun.charAt(0).toUpperCase()}${noun.slice(1)} es hoy.`;
+    } else if (d === 1) {
+      statusText = `Falta 1 día para ${noun}.`;
+    } else {
+      statusText = `Faltan ${d} días para ${noun}.`;
+    }
+  }
+
+  return {
+    close,
+    due,
+    nextClose,
+    closeReached,
+    dueReached,
+    nextCloseReached,
+    duePct: Math.round(duePct),
+    progressPct: Math.round(progressPct),
+    statusText,
+  };
 }
 
 /**
