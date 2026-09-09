@@ -178,19 +178,20 @@ export default async function CardDetailPage({
         dueLabel={formatDate(period.due, "d/M")}
       />
 
-      <CardPeriodPaidToggle
-        cardId={id}
-        periodKey={period.key}
-        paid={periodPayment?.paid ?? false}
-        paidDate={periodPayment?.paid_date ?? null}
-      />
-
       {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
           en dos columnas para reducir la altura de la card. */}
       <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] font-medium text-muted-foreground">Saldo actual</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10.5px] font-medium text-muted-foreground">Saldo actual</p>
+              <CardPeriodPaidToggle
+                cardId={id}
+                periodKey={period.key}
+                paid={periodPayment?.paid ?? false}
+                paidDate={periodPayment?.paid_date ?? null}
+              />
+            </div>
             <Money
               amount={saldo}
               className="mt-0.5 block font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"

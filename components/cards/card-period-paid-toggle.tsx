@@ -1,9 +1,19 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toggleCardPeriodPaid } from "@/actions/cards";
 import { cn, formatDate } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
@@ -15,8 +25,21 @@ interface CardPeriodPaidToggleProps {
   paidDate: string | null;
 }
 
-/** Marca el período que se está viendo como pagado/no pagado. Se refleja al
- *  instante en /vencimientos, ya que ambos leen la misma tabla. */
+/** Vibración liviana al togglear (no-op donde no está soportado). */
+function haptic() {
+  try {
+    navigator.vibrate?.(10);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Chip compacto de estado del período: "Pagado" / "Marcar pagado".
+ * Reemplaza a la fila completa con checkbox. La lógica, el estado y la
+ * persistencia son idénticos: se sigue escribiendo en `card_period_payments`
+ * y se refleja al instante en /vencimientos.
+ */
 export function CardPeriodPaidToggle({
   cardId,
   periodKey,
@@ -25,55 +48,92 @@ export function CardPeriodPaidToggle({
 }: CardPeriodPaidToggleProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  function toggle() {
+  function apply(next: boolean) {
     startTransition(async () => {
-      const res = await toggleCardPeriodPaid(cardId, periodKey, !paid);
+      const res = await toggleCardPeriodPaid(cardId, periodKey, next);
       if (!res.success) {
         toast.error(res.error);
         return;
       }
-      toast.success(paid ? "Período marcado como no pagado" : "Período marcado como pagado");
+      toast.success(next ? "Período marcado como pagado" : "Período marcado como no pagado");
       router.refresh();
     });
   }
 
+  function onClick() {
+    if (isPending) return;
+    haptic();
+    if (paid) {
+      // Des-marcar pide confirmación para evitar toques accidentales.
+      setConfirmOpen(true);
+    } else {
+      apply(true);
+    }
+  }
+
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={isPending}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
-        paid
-          ? "border-emerald-500/40 bg-emerald-500/10"
-          : "border-border bg-card hover:border-foreground/30"
-      )}
-    >
-      <span
+    <>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={paid}
+        aria-label="Marcar período como pagado"
+        onClick={onClick}
+        disabled={isPending}
+        title={
+          paid && paidDate
+            ? `Pagado el ${formatDate(parseLocalDate(paidDate), "d/M/yyyy")}`
+            : undefined
+        }
         className={cn(
-          "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all",
+          "relative inline-flex items-center gap-[5px] rounded-full border px-[11px] py-[5px]",
+          "text-[12px] font-semibold tracking-[0.01em] transition-colors duration-200",
+          // Hit area mínima 44x44 sin agrandar el chip visualmente.
+          "after:absolute after:left-1/2 after:top-1/2 after:h-11 after:min-w-[44px] after:w-full",
+          "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
           paid
-            ? "border-transparent bg-emerald-500 text-white"
-            : "border-border bg-transparent text-transparent"
+            ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-400"
+            : "border-foreground/15 bg-transparent text-muted-foreground hover:text-foreground/70"
         )}
       >
         {isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin text-foreground" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : paid ? (
+          <CheckCircle2
+            key="paid"
+            className="h-3.5 w-3.5 animate-in zoom-in-75 duration-200"
+            aria-hidden="true"
+          />
         ) : (
-          <Check className="h-4 w-4" />
+          <Circle className="h-3.5 w-3.5" aria-hidden="true" />
         )}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold text-foreground">
-          {paid ? "Período pagado" : "Marcar período como pagado"}
-        </span>
-        {paid && paidDate && (
-          <span className="block text-[11px] text-muted-foreground">
-            Pagado el {formatDate(parseLocalDate(paidDate), "d/M/yyyy")}
-          </span>
-        )}
-      </span>
-    </button>
+        <span>{paid ? "Pagado" : "Marcar pagado"}</span>
+      </button>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desmarcar período</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Marcar este período como no pagado?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                haptic();
+                apply(false);
+              }}
+              disabled={isPending}
+            >
+              {isPending ? "Guardando…" : "Desmarcar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

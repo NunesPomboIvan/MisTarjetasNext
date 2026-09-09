@@ -18,7 +18,7 @@ interface PeriodNavigatorProps {
 }
 
 const STATUS_STYLES = {
-  current: "border-green-500 text-green-600 dark:text-green-400",
+  current: "border-slate-400/50 text-slate-500 dark:border-slate-500/60 dark:text-slate-300",
   past:    "border-border text-muted-foreground",
   future:  "border-orange-400 text-orange-500",
 };
