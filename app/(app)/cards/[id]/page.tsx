@@ -181,12 +181,7 @@ export default async function CardDetailPage({
 
       {/* Stats card: saldo + estado arriba; límite y disponible abajo. */}
       <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <Money
-            amount={saldo}
-            className="min-w-0 font-display text-[19px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-          />
-
+        <div className="flex items-center">
           <CardPeriodPaidToggle
             cardId={id}
             periodKey={period.key}

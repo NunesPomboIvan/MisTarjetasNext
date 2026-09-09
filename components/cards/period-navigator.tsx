@@ -1,14 +1,19 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPeriodByOffset } from "@/lib/periods/calculate";
 import type { CardForPeriod, Period } from "@/lib/periods/calculate";
 
 interface PeriodNavigatorProps {
   card: CardForPeriod;
-  /** Período que se está viendo (para el enlace "Ir al actual"). */
+  /** Período que se está viendo (para saber si es el actual). */
   currentPeriod: Period;
   /** Frase de estado: "Cierra en 2 días". */
   statusText: string;
@@ -25,10 +30,14 @@ interface PeriodNavigatorProps {
   nextCloseReached: boolean;
 }
 
+const ARROW_CLASS =
+  "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-muted";
+
 /**
  * Card de estado del período: frase de cuenta regresiva + línea de tiempo
  * cierre → vencimiento → próximo cierre, con el avance de hoy. Las flechas
- * laterales navegan entre períodos (cambia el offset en la URL).
+ * laterales navegan entre períodos; cuando no estás en el actual, la flecha
+ * que apunta hacia él salta directo (doble chevron).
  */
 export function PeriodNavigator({
   card,
@@ -67,6 +76,11 @@ export function PeriodNavigator({
   const previousPeriod = getPeriodByOffset(card, offset - 1);
   const nextPeriod = getPeriodByOffset(card, offset + 1);
 
+  // Si estás viendo un período pasado, el actual queda a la derecha; si estás
+  // en uno futuro, a la izquierda. Esa flecha salta directo al actual.
+  const jumpLeft = !isCurrentMonth && offset > 0;
+  const jumpRight = !isCurrentMonth && offset < 0;
+
   const nodes = [
     { key: "close", label: "Cierre", date: closeLabel, reached: closeReached, pct: 0, align: "start" as const },
     { key: "due", label: "Vencimiento", date: dueLabel, reached: dueReached, pct: duePct, align: "center" as const },
@@ -81,27 +95,51 @@ export function PeriodNavigator({
 
   return (
     <div className="rounded-2xl border border-border bg-card px-3 py-4">
-      {/* Estado + flechas de navegación */}
+      {/* Estado + navegación */}
       <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => navigate(offset - 1)}
-          aria-label={`Ir a ${previousPeriod.label}`}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-        </button>
+        {jumpLeft ? (
+          <button
+            type="button"
+            onClick={() => navigate(0)}
+            aria-label="Ir al período actual"
+            className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
+          >
+            <ChevronsLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(offset - 1)}
+            aria-label={`Ir a ${previousPeriod.label}`}
+            className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
+
         <p className="flex-1 text-center text-[14px] font-semibold text-foreground">
           {statusText}
         </p>
-        <button
-          type="button"
-          onClick={() => navigate(offset + 1)}
-          aria-label={`Ir a ${nextPeriod.label}`}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-        </button>
+
+        {jumpRight ? (
+          <button
+            type="button"
+            onClick={() => navigate(0)}
+            aria-label="Ir al período actual"
+            className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
+          >
+            <ChevronsRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(offset + 1)}
+            aria-label={`Ir a ${nextPeriod.label}`}
+            className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* Línea de tiempo */}
@@ -126,7 +164,7 @@ export function PeriodNavigator({
         <div className="relative mt-2 h-3">
           <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-border" />
           <div
-            className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-foreground transition-[width] duration-500"
+            className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-primary transition-[width] duration-500"
             style={{ width: `${progressPct}%` }}
           />
           {nodes.map((n) => (
@@ -134,14 +172,14 @@ export function PeriodNavigator({
               key={n.key}
               className={cn(
                 "absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
-                n.reached ? "border-foreground bg-foreground" : "border-border bg-card"
+                n.reached ? "border-primary bg-primary" : "border-border bg-card"
               )}
               style={{ left: `${n.pct}%` }}
             />
           ))}
           {progressPct > 0 && progressPct < 100 && (
             <span
-              className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card"
+              className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-card"
               style={{ left: `${progressPct}%` }}
             />
           )}
@@ -163,17 +201,6 @@ export function PeriodNavigator({
           ))}
         </div>
       </div>
-
-      {!isCurrentMonth && (
-        <div className="mt-3 text-center">
-          <button
-            onClick={() => navigate(0)}
-            className="text-xs font-medium text-primary underline-offset-2 hover:underline"
-          >
-            Ir al actual
-          </button>
-        </div>
-      )}
     </div>
   );
 }
