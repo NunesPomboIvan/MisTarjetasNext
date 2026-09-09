@@ -13,17 +13,17 @@ describe("getPeriodTimeline", () => {
     const t = getPeriodTimeline(CARD, 0);
     expect(t.progressPct).toBe(0);
     expect(t.closeReached).toBe(false);
-    expect(t.duePct).toBeGreaterThan(0);
-    expect(t.duePct).toBeLessThan(100);
-    expect(t.statusText).toBe("Faltan 8 días para el cierre.");
+    expect(t.duePct).toBeGreaterThanOrEqual(36);
+    expect(t.duePct).toBeLessThanOrEqual(64);
+    expect(t.statusText).toBe("Cierra en 8 días");
   });
 
-  it("día exacto del cierre → 'El cierre es hoy.'", () => {
+  it("día exacto del cierre → 'Cierra hoy'", () => {
     vi.setSystemTime(new Date(2026, 8, 23, 12, 0, 0)); // 23/sep
     const t = getPeriodTimeline(CARD, 0);
     expect(t.closeReached).toBe(false);
     expect(t.progressPct).toBe(0);
-    expect(t.statusText).toBe("El cierre es hoy.");
+    expect(t.statusText).toBe("Cierra hoy");
   });
 
   it("período viejo, entre cierre y vencimiento → avance < duePct", () => {
@@ -34,7 +34,7 @@ describe("getPeriodTimeline", () => {
     expect(t.dueReached).toBe(false);
     expect(t.progressPct).toBeGreaterThan(0);
     expect(t.progressPct).toBeLessThan(t.duePct);
-    expect(t.statusText).toBe("Faltan 9 días para el vencimiento.");
+    expect(t.statusText).toBe("Vence en 9 días");
   });
 
   it("período viejo, entre vencimiento y próximo cierre → avance > duePct", () => {
@@ -44,7 +44,7 @@ describe("getPeriodTimeline", () => {
     expect(t.nextCloseReached).toBe(false);
     expect(t.progressPct).toBeGreaterThan(t.duePct);
     expect(t.progressPct).toBeLessThan(100);
-    expect(t.statusText).toBe("Faltan 8 días para el próximo cierre.");
+    expect(t.statusText).toBe("Próximo cierre en 8 días");
   });
 
   it("período viejo ya cerrado → 100 y 'Período cerrado.'", () => {
@@ -52,6 +52,6 @@ describe("getPeriodTimeline", () => {
     const t = getPeriodTimeline(CARD, -2); // 2026-10: próx cierre 23/nov ya pasó
     expect(t.nextCloseReached).toBe(true);
     expect(t.progressPct).toBe(100);
-    expect(t.statusText).toBe("Período cerrado.");
+    expect(t.statusText).toBe("Período cerrado");
   });
 });

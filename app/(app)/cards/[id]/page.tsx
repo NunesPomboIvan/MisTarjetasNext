@@ -19,7 +19,7 @@ import {
   getInstallmentIndexInPeriod,
   isCurrentPeriodExpired,
 } from "@/lib/periods/calculate";
-import { formatDate, formatLongDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { PeriodRenewalDialog } from "@/components/cards/period-renewal-dialog";
 import type { ExpenseWithCategory } from "@/lib/supabase/database.types";
 
@@ -105,7 +105,6 @@ export default async function CardDetailPage({
     .reduce((sum, e) => sum + getAmountInPeriodArs(e, currentPeriod), 0);
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
-  const cardColor = card.color || "#6366f1";
 
   // Acciones de movimientos (Fijo / Gastos / Agregar). Se renderizan en la
   // misma fila que "Seleccionar" dentro de la lista.
@@ -174,7 +173,6 @@ export default async function CardDetailPage({
       <PeriodNavigator
         card={card}
         currentPeriod={period}
-        color={cardColor}
         statusText={timeline.statusText}
         duePct={timeline.duePct}
         progressPct={timeline.progressPct}
@@ -186,8 +184,7 @@ export default async function CardDetailPage({
         nextCloseReached={timeline.nextCloseReached}
       />
 
-      {/* Stats card: saldo + anillo arriba; límite/disponible y cierre/vencimiento
-          en dos columnas para reducir la altura de la card. */}
+      {/* Stats card: saldo + estado arriba; límite y disponible abajo. */}
       <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <Money
@@ -205,49 +202,31 @@ export default async function CardDetailPage({
 
         <div className="my-2.5 h-px bg-border" />
 
-        <div className="space-y-2">
-          {/* Límite total + Disponible, lado a lado */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
-              {limite > 0 ? (
-                <Money
-                  amount={limite}
-                  className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-                />
-              ) : (
-                <Link
-                  href={`/cards/${id}/edit`}
-                  className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                >
-                  Definir límite
-                </Link>
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground">Disponible</p>
+        {/* Límite total + Disponible, lado a lado */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
+            {limite > 0 ? (
               <Money
-                amount={disponible}
-                className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
-                style={{ color: `color-mix(in srgb, ${cardColor} 70%, var(--card-foreground))` }}
+                amount={limite}
+                className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
               />
-            </div>
+            ) : (
+              <Link
+                href={`/cards/${id}/edit`}
+                className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                Definir límite
+              </Link>
+            )}
           </div>
-
-          {/* Cierre + Vencimiento, lado a lado */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground">Cierre</p>
-              <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
-                {formatLongDate(period.end)}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-medium text-muted-foreground">Vencimiento</p>
-              <p className="mt-0.5 text-[13px] font-bold leading-tight text-foreground tabular-nums">
-                {formatLongDate(period.due)}
-              </p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium text-muted-foreground">Disponible</p>
+            <Money
+              amount={disponible}
+              className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
+              style={{ color: "#57B981" }}
+            />
           </div>
         </div>
       </section>

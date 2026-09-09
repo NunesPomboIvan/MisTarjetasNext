@@ -496,16 +496,20 @@ export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
   return isBefore(closeDate, startOfDay(nowAr()));
 }
 
+/** Posición mínima/máxima del nodo "Vencimiento" para que no se pegue a los otros dos. */
+const DUE_PCT_MIN = 36;
+const DUE_PCT_MAX = 64;
+
 /**
  * Línea de tiempo del período para la card de detalle: cierre, vencimiento y
  * el cierre del período siguiente, más el avance de "hoy" sobre esa barra y
- * una frase de estado ("Faltan 2 días para el cierre.").
+ * una frase de estado ("Cierra en 2 días").
  *
  * Eje de la barra: del cierre de este período al cierre del siguiente. El
- * cierre queda en 0 %, el próximo cierre en 100 % y el vencimiento en la
- * posición real que le corresponde (`duePct`). El avance de "hoy" es lineal
- * sobre ese mismo eje, así el punto coincide con el nodo del vencimiento
- * justo el día del vencimiento.
+ * cierre queda en 0 %, el próximo cierre en 100 % y el vencimiento en su
+ * posición real, acotada a [DUE_PCT_MIN, DUE_PCT_MAX] para que los nodos no
+ * se amontonen. El avance de "hoy" se re-mapea sobre esas posiciones, así el
+ * punto coincide con el nodo del vencimiento justo el día del vencimiento.
  */
 export interface PeriodTimeline {
   close: Date;
@@ -540,28 +544,44 @@ export function getPeriodTimeline(
   const dueReached = isAfter(today, startOfDay(due));
   const nextCloseReached = isAfter(today, startOfDay(nextClose));
 
+  const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
   const span = nextClose.getTime() - close.getTime();
-  const clamp = (n: number) => Math.min(100, Math.max(0, n));
-  const duePct = span > 0 ? clamp(((due.getTime() - close.getTime()) / span) * 100) : 50;
-  const progressPct = span > 0 ? clamp(((now.getTime() - close.getTime()) / span) * 100) : 0;
+  const rawDuePct = span > 0 ? ((due.getTime() - close.getTime()) / span) * 100 : 50;
+  const duePct = Math.min(DUE_PCT_MAX, Math.max(DUE_PCT_MIN, rawDuePct));
+
+  // El avance se re-mapea a las posiciones visuales de los nodos (0 / duePct / 100).
+  let progressPct: number;
+  if (!closeReached) {
+    progressPct = 0;
+  } else if (!dueReached) {
+    progressPct =
+      duePct *
+      clamp01((now.getTime() - close.getTime()) / (due.getTime() - close.getTime()));
+  } else if (!nextCloseReached) {
+    progressPct =
+      duePct +
+      (100 - duePct) *
+        clamp01((now.getTime() - due.getTime()) / (nextClose.getTime() - due.getTime()));
+  } else {
+    progressPct = 100;
+  }
 
   let statusText: string;
   if (nextCloseReached) {
-    statusText = "Período cerrado.";
+    statusText = "Período cerrado";
   } else {
-    const target = !closeReached ? close : !dueReached ? due : nextClose;
-    const noun = !closeReached
-      ? "el cierre"
+    const [target, verb] = !closeReached
+      ? [close, "Cierra"]
       : !dueReached
-      ? "el vencimiento"
-      : "el próximo cierre";
-    const d = differenceInCalendarDays(startOfDay(target), today);
+      ? [due, "Vence"]
+      : [nextClose, "Próximo cierre"];
+    const d = differenceInCalendarDays(startOfDay(target as Date), today);
     if (d <= 0) {
-      statusText = `${noun.charAt(0).toUpperCase()}${noun.slice(1)} es hoy.`;
+      statusText = `${verb} hoy`;
     } else if (d === 1) {
-      statusText = `Falta 1 día para ${noun}.`;
+      statusText = `${verb} en 1 día`;
     } else {
-      statusText = `Faltan ${d} días para ${noun}.`;
+      statusText = `${verb} en ${d} días`;
     }
   }
 

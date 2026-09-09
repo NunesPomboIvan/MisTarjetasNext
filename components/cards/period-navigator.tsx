@@ -10,9 +10,7 @@ interface PeriodNavigatorProps {
   card: CardForPeriod;
   /** Período que se está viendo (para el enlace "Ir al actual"). */
   currentPeriod: Period;
-  /** Color de acento de la barra (color de la tarjeta). */
-  color?: string;
-  /** Frase de estado: "Faltan 2 días para el cierre." */
+  /** Frase de estado: "Cierra en 2 días". */
   statusText: string;
   /** Posición del nodo "Vencimiento" en la barra (0–100). */
   duePct: number;
@@ -35,7 +33,6 @@ interface PeriodNavigatorProps {
 export function PeriodNavigator({
   card,
   currentPeriod,
-  color = "var(--primary)",
   statusText,
   duePct,
   progressPct,
@@ -129,24 +126,23 @@ export function PeriodNavigator({
         <div className="relative mt-2 h-3">
           <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-border" />
           <div
-            className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full transition-[width] duration-500"
-            style={{ width: `${progressPct}%`, background: color }}
+            className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-foreground transition-[width] duration-500"
+            style={{ width: `${progressPct}%` }}
           />
           {nodes.map((n) => (
             <span
               key={n.key}
-              className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-              style={{
-                left: `${n.pct}%`,
-                borderColor: n.reached ? color : "var(--border)",
-                background: n.reached ? color : "var(--card)",
-              }}
+              className={cn(
+                "absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
+                n.reached ? "border-foreground bg-foreground" : "border-border bg-card"
+              )}
+              style={{ left: `${n.pct}%` }}
             />
           ))}
           {progressPct > 0 && progressPct < 100 && (
             <span
-              className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-card"
-              style={{ left: `${progressPct}%`, background: color }}
+              className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card"
+              style={{ left: `${progressPct}%` }}
             />
           )}
         </div>
