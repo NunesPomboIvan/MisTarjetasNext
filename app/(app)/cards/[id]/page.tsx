@@ -13,7 +13,9 @@ import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getPeriodByOffset,
+  getPeriodForDate,
   getPeriodTimeline,
+  parseLocalDate,
   expenseFallsInPeriod,
   getAmountInPeriodArs,
   getInstallmentIndexInPeriod,
@@ -68,7 +70,13 @@ export default async function CardDetailPage({
 
   const periodExpired = isCurrentPeriodExpired(card);
   const period = getPeriodByOffset(card, offset);
-  const timeline = getPeriodTimeline(card, offset);
+  // Primer período de la tarjeta = aquel en el que se creó. Sirve para saber
+  // si el período navegado tiene un "período anterior" real.
+  const firstPeriodKey = getPeriodForDate(
+    card,
+    parseLocalDate(card.created_at.slice(0, 10))
+  ).key;
+  const timeline = getPeriodTimeline(card, offset, { firstPeriodKey });
 
   const { data: expenses } = await supabase
     .from("expenses")
@@ -169,14 +177,14 @@ export default async function CardDetailPage({
         card={card}
         currentPeriod={period}
         statusText={timeline.statusText}
-        duePct={timeline.duePct}
+        closePct={timeline.closePct}
         progressPct={timeline.progressPct}
+        lastDueLabel={timeline.lastDue ? formatDate(timeline.lastDue, "dd/MM") : "—"}
         closeLabel={formatDate(timeline.close, "dd/MM")}
         dueLabel={formatDate(timeline.due, "dd/MM")}
-        nextCloseLabel={formatDate(timeline.nextClose, "dd/MM")}
+        lastDueReached={timeline.lastDueReached}
         closeReached={timeline.closeReached}
         dueReached={timeline.dueReached}
-        nextCloseReached={timeline.nextCloseReached}
       />
 
       {/* Stats card: saldo + estado arriba; límite y disponible abajo. */}

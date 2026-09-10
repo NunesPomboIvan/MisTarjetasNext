@@ -17,17 +17,17 @@ interface PeriodNavigatorProps {
   currentPeriod: Period;
   /** Frase de estado: "Cierra en 2 días". */
   statusText: string;
-  /** Posición del nodo "Vencimiento" en la barra (0–100). */
-  duePct: number;
+  /** Posición del nodo "Cierre" en la barra (0–100). */
+  closePct: number;
   /** Avance de "hoy" sobre la barra (0–100). */
   progressPct: number;
-  /** Fechas pre-formateadas en el servidor ("06/08"). */
+  /** Fechas pre-formateadas en el servidor ("06/08"). "—" si no hay período previo. */
+  lastDueLabel: string;
   closeLabel: string;
   dueLabel: string;
-  nextCloseLabel: string;
+  lastDueReached: boolean;
   closeReached: boolean;
   dueReached: boolean;
-  nextCloseReached: boolean;
 }
 
 const ARROW_CLASS =
@@ -35,7 +35,7 @@ const ARROW_CLASS =
 
 /**
  * Card de estado del período: frase de cuenta regresiva + línea de tiempo
- * cierre → vencimiento → próximo cierre, con el avance de hoy. Las flechas
+ * último vencimiento → cierre → vencimiento, con el avance de hoy. Las flechas
  * laterales navegan entre períodos; cuando no estás en el actual, la flecha
  * que apunta hacia él salta directo (doble chevron).
  */
@@ -43,14 +43,14 @@ export function PeriodNavigator({
   card,
   currentPeriod,
   statusText,
-  duePct,
+  closePct,
   progressPct,
+  lastDueLabel,
   closeLabel,
   dueLabel,
-  nextCloseLabel,
+  lastDueReached,
   closeReached,
   dueReached,
-  nextCloseReached,
 }: PeriodNavigatorProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,10 +82,13 @@ export function PeriodNavigator({
   const jumpRight = !isCurrentMonth && offset < 0;
 
   const nodes = [
-    { key: "close", label: "Cierre", date: closeLabel, reached: closeReached, pct: 0, align: "start" as const },
-    { key: "due", label: "Vencimiento", date: dueLabel, reached: dueReached, pct: duePct, align: "center" as const },
-    { key: "next", label: "Próx. cierre", date: nextCloseLabel, reached: nextCloseReached, pct: 100, align: "end" as const },
+    { key: "lastDue", label: "Últ. vencimiento", date: lastDueLabel, reached: lastDueReached, pct: 0, align: "start" as const },
+    { key: "close", label: "Cierre", date: closeLabel, reached: closeReached, pct: closePct, align: "center" as const },
+    { key: "due", label: "Vencimiento", date: dueLabel, reached: dueReached, pct: 100, align: "end" as const },
   ];
+
+  // Primer hito todavía pendiente: se destaca; los ya pasados van atenuados.
+  const nextPendingKey = nodes.find((n) => !n.reached)?.key ?? null;
 
   function anchorStyle(pct: number, align: "start" | "center" | "end") {
     if (align === "start") return { left: 0 as const };
@@ -150,8 +153,13 @@ export function PeriodNavigator({
             <span
               key={n.key}
               className={cn(
-                "absolute top-0 whitespace-nowrap text-[12px] font-semibold tracking-[0.01em]",
-                n.reached ? "text-foreground" : "text-muted-foreground"
+                "absolute top-0 overflow-hidden text-ellipsis text-[12px] font-semibold tracking-[0.01em]",
+                n.align === "center" ? "whitespace-nowrap" : "max-w-[42%] whitespace-nowrap",
+                n.key === nextPendingKey
+                  ? "text-primary"
+                  : n.reached
+                  ? "text-foreground"
+                  : "text-muted-foreground"
               )}
               style={anchorStyle(n.pct, n.align)}
             >
@@ -161,7 +169,7 @@ export function PeriodNavigator({
         </div>
 
         {/* Riel */}
-        <div className="relative mt-2 h-3">
+        <div className="relative mt-2 h-3.5">
           <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-border" />
           <div
             className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-primary transition-[width] duration-500"
@@ -171,8 +179,12 @@ export function PeriodNavigator({
             <span
               key={n.key}
               className={cn(
-                "absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2",
-                n.reached ? "border-primary bg-primary" : "border-border bg-card"
+                "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors",
+                n.key === nextPendingKey
+                  ? "h-3.5 w-3.5 border-primary bg-card ring-2 ring-primary/25"
+                  : n.reached
+                  ? "h-3 w-3 border-primary/60 bg-primary/60"
+                  : "h-3 w-3 border-border bg-card"
               )}
               style={{ left: `${n.pct}%` }}
             />

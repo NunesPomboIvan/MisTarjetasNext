@@ -496,30 +496,36 @@ export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
   return isBefore(closeDate, startOfDay(nowAr()));
 }
 
-/** Posición mínima/máxima del nodo "Vencimiento" para que no se pegue a los otros dos. */
-const DUE_PCT_MIN = 36;
-const DUE_PCT_MAX = 64;
+/** Posición mínima/máxima del nodo "Cierre" para que no se pegue a los otros dos. */
+const CLOSE_PCT_MIN = 34;
+const CLOSE_PCT_MAX = 66;
 
 /**
- * Línea de tiempo del período para la card de detalle: cierre, vencimiento y
- * el cierre del período siguiente, más el avance de "hoy" sobre esa barra y
- * una frase de estado ("Cierra en 2 días").
+ * Línea de tiempo del período para la card de detalle. Tres hitos:
+ *   1. Último vencimiento → vencimiento del período anterior
+ *   2. Cierre actual      → cierre del período que se está viendo
+ *   3. Vencimiento actual → vencimiento del período que se está viendo
  *
- * Eje de la barra: del cierre de este período al cierre del siguiente. El
- * cierre queda en 0 %, el próximo cierre en 100 % y el vencimiento en su
- * posición real, acotada a [DUE_PCT_MIN, DUE_PCT_MAX] para que los nodos no
- * se amontonen. El avance de "hoy" se re-mapea sobre esas posiciones, así el
- * punto coincide con el nodo del vencimiento justo el día del vencimiento.
+ * Eje de la barra: del último vencimiento al vencimiento actual. El último
+ * vencimiento queda en 0 %, el vencimiento actual en 100 % y el cierre en su
+ * posición real, acotada a [CLOSE_PCT_MIN, CLOSE_PCT_MAX] para que los nodos
+ * no se amontonen. El avance de "hoy" se re-mapea sobre esas posiciones, así
+ * el punto coincide con el nodo del cierre justo el día del cierre.
+ *
+ * `firstPeriodKey` (opcional): clave del primer período de la tarjeta. Si el
+ * período que se navega es ese primero (o anterior), no hay período previo y
+ * `lastDue` vuelve null — el primer hito se muestra con guiones.
  */
 export interface PeriodTimeline {
+  /** Vencimiento del período anterior. null si no hay período previo. */
+  lastDue: Date | null;
   close: Date;
   due: Date;
-  nextClose: Date;
+  lastDueReached: boolean;
   closeReached: boolean;
   dueReached: boolean;
-  nextCloseReached: boolean;
-  /** Posición del nodo "Vencimiento" en la barra (0–100). */
-  duePct: number;
+  /** Posición del nodo "Cierre" en la barra (0–100). */
+  closePct: number;
   /** Posición de "hoy" en la barra (0–100). */
   progressPct: number;
   statusText: string;
@@ -527,55 +533,63 @@ export interface PeriodTimeline {
 
 export function getPeriodTimeline(
   card: CardForPeriod,
-  offsetMonths: number
+  offsetMonths: number,
+  opts?: { firstPeriodKey?: string }
 ): PeriodTimeline {
   const now = nowAr();
   const today = startOfDay(now);
 
   const period = getPeriodByOffset(card, offsetMonths);
-  const next = getPeriodByOffset(card, offsetMonths + 1);
+  const prev = getPeriodByOffset(card, offsetMonths - 1);
   const close = period.end;
   const due = period.due;
-  const nextClose = next.end;
+
+  const hasPrev =
+    !opts?.firstPeriodKey || period.key > opts.firstPeriodKey;
+  const lastDue = hasPrev ? prev.due : null;
+
+  // Borde izquierdo del eje: el último vencimiento, o el inicio del período
+  // cuando no hay período previo (siempre anterior al cierre → eje válido).
+  const left = lastDue ?? period.start;
 
   // "Alcanzado" = el hito ya quedó atrás (el día del hito todavía no cuenta:
   // la tarjeta cierra al final del día, el vencimiento es pagable hasta ese día).
+  const lastDueReached = lastDue ? isAfter(today, startOfDay(lastDue)) : false;
   const closeReached = isAfter(today, startOfDay(close));
   const dueReached = isAfter(today, startOfDay(due));
-  const nextCloseReached = isAfter(today, startOfDay(nextClose));
 
   const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
-  const span = nextClose.getTime() - close.getTime();
-  const rawDuePct = span > 0 ? ((due.getTime() - close.getTime()) / span) * 100 : 50;
-  const duePct = Math.min(DUE_PCT_MAX, Math.max(DUE_PCT_MIN, rawDuePct));
+  const span = due.getTime() - left.getTime();
+  const rawClosePct =
+    span > 0 ? ((close.getTime() - left.getTime()) / span) * 100 : 50;
+  const closePct = Math.min(
+    CLOSE_PCT_MAX,
+    Math.max(CLOSE_PCT_MIN, rawClosePct)
+  );
 
-  // El avance se re-mapea a las posiciones visuales de los nodos (0 / duePct / 100).
+  // El avance se re-mapea a las posiciones visuales de los nodos (0 / closePct / 100).
   let progressPct: number;
   if (!closeReached) {
-    progressPct = 0;
+    progressPct =
+      closePct *
+      clamp01((now.getTime() - left.getTime()) / (close.getTime() - left.getTime()));
   } else if (!dueReached) {
     progressPct =
-      duePct *
-      clamp01((now.getTime() - close.getTime()) / (due.getTime() - close.getTime()));
-  } else if (!nextCloseReached) {
-    progressPct =
-      duePct +
-      (100 - duePct) *
-        clamp01((now.getTime() - due.getTime()) / (nextClose.getTime() - due.getTime()));
+      closePct +
+      (100 - closePct) *
+        clamp01((now.getTime() - close.getTime()) / (due.getTime() - close.getTime()));
   } else {
     progressPct = 100;
   }
 
+  // El header sigue la fecha de cierre actual; si ya cerró, cuenta al
+  // vencimiento; si además venció, el período está cerrado.
   let statusText: string;
-  if (nextCloseReached) {
+  if (dueReached) {
     statusText = "Período cerrado";
   } else {
-    const [target, verb] = !closeReached
-      ? [close, "Cierra"]
-      : !dueReached
-      ? [due, "Vence"]
-      : [nextClose, "Próximo cierre"];
-    const d = differenceInCalendarDays(startOfDay(target as Date), today);
+    const [target, verb] = !closeReached ? [close, "Cierra"] : [due, "Vence"];
+    const d = differenceInCalendarDays(startOfDay(target), today);
     if (d <= 0) {
       statusText = `${verb} hoy`;
     } else if (d === 1) {
@@ -586,13 +600,13 @@ export function getPeriodTimeline(
   }
 
   return {
+    lastDue,
     close,
     due,
-    nextClose,
+    lastDueReached,
     closeReached,
     dueReached,
-    nextCloseReached,
-    duePct: Math.round(duePct),
+    closePct: Math.round(closePct),
     progressPct: Math.round(progressPct),
     statusText,
   };
