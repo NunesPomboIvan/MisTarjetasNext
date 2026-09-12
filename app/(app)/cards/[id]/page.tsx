@@ -161,13 +161,18 @@ export default async function CardDetailPage({
         }
       />
 
-      {/* Wallet card — los datos siguen al período que se está navegando */}
+      {/* Wallet card — los datos siguen al período que se está navegando.
+          Más achatada que la proporción real de tarjeta (que sí se usa en
+          el resto de la app) para ganar alto en esta pantalla. */}
       <WalletCard
         card={card}
         total={saldo}
         periodLabel={period.status === "current" ? "Período actual" : period.label}
         closeLabel={formatDate(period.end, "d MMM")}
         dueLabel={formatDate(period.due, "d MMM")}
+        aspectRatio="2.3 / 1"
+        minH={130}
+        maxH={170}
       />
 
       {/* Period Navigator: estado, navegación, línea de tiempo y límite/disponible */}

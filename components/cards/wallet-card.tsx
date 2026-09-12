@@ -22,6 +22,10 @@ interface WalletCardProps {
   dueLabel?: string;
   /** Altura máxima en px (en pantallas anchas la proporción la topea acá). Default 240. */
   maxH?: number;
+  /** Altura mínima en px. Default 170. */
+  minH?: number;
+  /** Relación ancho/alto. Default "1.586 / 1" (proporción ISO/IEC 7810 de una tarjeta física). */
+  aspectRatio?: string;
 }
 
 /* ─── Color utilities ─────────────────────────────────────── */
@@ -69,6 +73,8 @@ export function WalletCard({
   closeLabel,
   dueLabel,
   maxH = 240,
+  minH = 170,
+  aspectRatio = "1.586 / 1",
 }: WalletCardProps) {
   const base = card.color || "#6366f1";
   const lum = relativeLuminance(base);
@@ -94,11 +100,12 @@ export function WalletCard({
       className={cn("relative rounded-[24px]", className)}
       style={{
         width: "100%",
-        // Proporción de tarjeta física (ISO/IEC 7810): escala con el ancho
-        // de pantalla en vez de una altura fija en px. El container query
-        // permite que la tipografía interna acompañe (unidades cqw).
-        aspectRatio: "1.586 / 1",
-        minHeight: 170,
+        // Proporción de tarjeta física (ISO/IEC 7810 por default): escala
+        // con el ancho de pantalla en vez de una altura fija en px. El
+        // container query permite que la tipografía interna acompañe
+        // (unidades cqw).
+        aspectRatio,
+        minHeight: minH,
         maxHeight: maxH,
         containerType: "inline-size",
         // Sombra coloreada en la capa externa — no se recorta con el contenido.
