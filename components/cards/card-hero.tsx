@@ -108,8 +108,6 @@ export function CardHero({
     return { left: `${pct}%`, transform: "translateX(-50%)" };
   }
 
-  const pctUsado = limite > 0 ? Math.min(100, Math.round((saldo / limite) * 100)) : 0;
-
   const bank = card.bank?.trim();
   const name = card.name?.trim();
   const sameAsBank = !!bank && !!name && bank.toLowerCase() === name.toLowerCase();
@@ -352,47 +350,34 @@ export function CardHero({
           </div>
         </div>
 
-        {/* Disponible + límite, y barra de % usado */}
-        <div className="relative mt-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-[13px]" style={{ color: fgMuted }}>
-              Disponible{" "}
-              <Money
-                amount={disponible}
-                currency={currency}
-                hide={hideBalance}
-                className="text-[14px] font-bold tabular-nums"
-                style={{ color: fg }}
-              />
-            </span>
-            {limite > 0 ? (
-              <Money
-                amount={limite}
-                currency={currency}
-                hide={hideBalance}
-                className="text-[13px] font-semibold tabular-nums"
-                style={{ color: fgMuted }}
-              />
-            ) : (
-              <Link
-                href={`/cards/${cardId}/edit`}
-                className="text-[12px] font-medium underline underline-offset-2"
-                style={{ color: fgMuted }}
-              >
-                Definir límite
-              </Link>
-            )}
-          </div>
-          {limite > 0 && (
-            <div
-              className="relative mt-1.5 h-1.5 overflow-hidden rounded-full"
-              style={{ background: `rgba(255,255,255,${isLight ? "0.25" : "0.18"})` }}
+        {/* Disponible + límite */}
+        <div className="relative mt-3 flex items-baseline justify-between gap-3">
+          <span className="text-[13px]" style={{ color: fgMuted }}>
+            Disponible{" "}
+            <Money
+              amount={disponible}
+              currency={currency}
+              hide={hideBalance}
+              className="text-[14px] font-bold tabular-nums"
+              style={{ color: fg }}
+            />
+          </span>
+          {limite > 0 ? (
+            <Money
+              amount={limite}
+              currency={currency}
+              hide={hideBalance}
+              className="text-[13px] font-semibold tabular-nums"
+              style={{ color: fgMuted }}
+            />
+          ) : (
+            <Link
+              href={`/cards/${cardId}/edit`}
+              className="text-[12px] font-medium underline underline-offset-2"
+              style={{ color: fgMuted }}
             >
-              <div
-                className="h-full rounded-full transition-[width] duration-500"
-                style={{ width: `${pctUsado}%`, background: fg }}
-              />
-            </div>
+              Definir límite
+            </Link>
           )}
         </div>
       </div>
