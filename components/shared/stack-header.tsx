@@ -4,8 +4,8 @@ import { BackButton } from "./back-button";
 import { StickyPageHeader } from "./sticky-page-header";
 
 interface StackHeaderProps {
-  /** Título del header. Se centra respecto de la barra, no del espacio libre. */
-  title: ReactNode;
+  /** Título del header. Se centra respecto de la barra, no del espacio libre. Opcional: si no se pasa, no se renderiza. */
+  title?: ReactNode;
   /**
    * Clases de tipografía del título. Cada pantalla conserva su propio estilo
    * (no se unifica la tipografía, solo el layout del header).
@@ -37,14 +37,16 @@ export function StackHeader({
     <StickyPageHeader>
       <div className="relative flex items-center justify-between">
         <BackButton href={backHref} iconOnly />
-        <h1
-          className={cn(
-            "pointer-events-none absolute left-1/2 max-w-[62%] -translate-x-1/2 truncate text-center",
-            titleClassName
-          )}
-        >
-          {title}
-        </h1>
+        {title != null && (
+          <h1
+            className={cn(
+              "pointer-events-none absolute left-1/2 max-w-[62%] -translate-x-1/2 truncate text-center",
+              titleClassName
+            )}
+          >
+            {title}
+          </h1>
+        )}
         {right ?? <div className="h-10 w-10 shrink-0" aria-hidden />}
       </div>
     </StickyPageHeader>

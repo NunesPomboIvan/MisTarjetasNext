@@ -205,7 +205,7 @@ export function ExpenseItem({
           }
         }}
         className={cn(
-          "focus-ring group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all active:scale-[0.99]",
+          "focus-ring group flex items-center gap-2.5 rounded-xl border bg-card p-2.5 transition-all active:scale-[0.99]",
           selectionMode && selected
             ? "border-primary ring-1 ring-primary/40"
             : "border-border",
@@ -237,7 +237,7 @@ export function ExpenseItem({
             emoji nativo con sombra propia para que "flote") */}
         {cat ? (
           <div
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-[15px] text-[26px]"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-[13px] text-[22px]"
             style={{
               background: `radial-gradient(130% 130% at 32% 24%, #ffffff 0%, ${cat.color_bg} 72%, ${cat.color_bg} 100%)`,
               boxShadow: `0 5px 12px -3px rgba(0,0,0,0.40), 0 2px 6px ${cat.color_text}40, inset 0 1px 1.5px rgba(255,255,255,0.95), inset 0 -2px 4px ${cat.color_text}26`,
@@ -248,17 +248,13 @@ export function ExpenseItem({
             </span>
           </div>
         ) : (
-          <div className="h-12 w-12 flex-shrink-0" />
+          <div className="h-10 w-10 flex-shrink-0" />
         )}
 
         {/* Info */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{expense.description}</p>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">
-              {formatDate(expense.expense_date + "T00:00:00")}
-            </span>
-
             {expense.recurring ? (
               <Badge
                 variant="secondary"
@@ -307,7 +303,7 @@ export function ExpenseItem({
         </div>
 
         {/* Amount */}
-        <div className="flex flex-shrink-0 flex-col items-end gap-1">
+        <div className="flex flex-shrink-0 flex-col items-end gap-0.5">
           <span className="inline-flex items-center gap-1">
             {/* Candado: consumo en USD con TC personalizado (no sigue el global) */}
             {expense.currency === "USD" && expense.exchange_rate_custom && (
@@ -323,9 +319,10 @@ export function ExpenseItem({
               className={cn(displayAmount < 0 && "text-emerald-600 dark:text-emerald-400")}
             />
           </span>
-          {expense.installments > 1 && !showInstallmentBadge && (
-            <span className="text-[10px] text-muted-foreground">c/u</span>
-          )}
+          <span className="text-[10px] text-muted-foreground">
+            {formatDate(expense.expense_date + "T00:00:00")}
+            {expense.installments > 1 && !showInstallmentBadge && " · c/u"}
+          </span>
         </div>
       </div>
 

@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, Landmark, Repeat } from "lucide-react";
+import { Plus, Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { StackHeader } from "@/components/shared/stack-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { CardHero } from "@/components/cards/card-hero";
+import { CardBalanceDialog } from "@/components/cards/card-balance-dialog";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -105,17 +106,11 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Fijo / Gastos / Agregar). Se renderizan en la
+  // Acciones de movimientos (Saldo / Gastos / Agregar). Se renderizan en la
   // misma fila que "Seleccionar" dentro de la lista.
   const movimientoActions = (
     <>
-      <Link
-        href={`/expenses/new?card_id=${id}&recurring=1`}
-        className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-      >
-        <Repeat className="h-3.5 w-3.5" />
-        Fijo
-      </Link>
+      <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}&fee=1`}
         className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
@@ -150,10 +145,8 @@ export default async function CardDetailPage({
         />
       )}
 
-      {/* Header */}
+      {/* Header — sin título, solo volver + menú de acciones */}
       <StackHeader
-        title="Detalle de tarjeta"
-        titleClassName="text-[15px] font-semibold text-foreground"
         backHref="/cards"
         right={
           <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
@@ -183,7 +176,7 @@ export default async function CardDetailPage({
         dueReached={timeline.dueReached}
       />
 
-      {/* Lista de movimientos del período. Las acciones (Fijo/Gastos/Agregar)
+      {/* Lista de movimientos del período. Las acciones (Saldo/Gastos/Agregar)
           van en la misma fila que "Seleccionar", sin título, para ganar
           espacio vertical. */}
       <section className="space-y-3">
