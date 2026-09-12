@@ -3,12 +3,10 @@ import Link from "next/link";
 import { Plus, Landmark, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { WalletCard } from "@/components/cards/wallet-card";
-import { Money } from "@/components/shared/money";
 import { StackHeader } from "@/components/shared/stack-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { PeriodNavigator } from "@/components/cards/period-navigator";
-import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -172,9 +170,10 @@ export default async function CardDetailPage({
         dueLabel={formatDate(period.due, "d MMM")}
       />
 
-      {/* Period Navigator */}
+      {/* Period Navigator: estado, navegación, saldo/límite/disponible y línea de tiempo */}
       <PeriodNavigator
         card={card}
+        cardId={id}
         currentPeriod={period}
         statusText={timeline.statusText}
         closePct={timeline.closePct}
@@ -185,49 +184,12 @@ export default async function CardDetailPage({
         lastDueReached={timeline.lastDueReached}
         closeReached={timeline.closeReached}
         dueReached={timeline.dueReached}
+        saldo={saldo}
+        limite={limite}
+        disponible={disponible}
+        paid={periodPayment?.paid ?? false}
+        paidDate={periodPayment?.paid_date ?? null}
       />
-
-      {/* Stats card: saldo + estado arriba; límite y disponible abajo. */}
-      <section className="rounded-[18px] border border-border bg-card p-3.5 shadow-sm">
-        <div className="flex items-center">
-          <CardPeriodPaidToggle
-            cardId={id}
-            periodKey={period.key}
-            paid={periodPayment?.paid ?? false}
-            paidDate={periodPayment?.paid_date ?? null}
-          />
-        </div>
-
-        <div className="my-2.5 h-px bg-border" />
-
-        {/* Límite total + Disponible, lado a lado */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
-            {limite > 0 ? (
-              <Money
-                amount={limite}
-                className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-              />
-            ) : (
-              <Link
-                href={`/cards/${id}/edit`}
-                className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-              >
-                Definir límite
-              </Link>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground">Disponible</p>
-            <Money
-              amount={disponible}
-              className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums"
-              style={{ color: "#57B981" }}
-            />
-          </div>
-        </div>
-      </section>
 
       {/* Lista de movimientos del período. Las acciones (Fijo/Gastos/Agregar)
           van en la misma fila que "Seleccionar", sin título, para ganar
