@@ -113,14 +113,14 @@ export default async function CardDetailPage({
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}&fee=1`}
-        className="inline-flex h-8 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
         <Landmark className="h-3.5 w-3.5" />
         Gastos
       </Link>
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 items-center gap-1 rounded-full border border-transparent px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full border border-transparent px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
       >
         <Plus className="h-3.5 w-3.5" />
         Agregar
@@ -154,14 +154,13 @@ export default async function CardDetailPage({
       />
 
       {/* Card unificada: tarjeta física + saldo + navegación + línea de
-          tiempo + límite/disponible, todo con el color de la tarjeta. */}
+          tiempo, todo con el color de la tarjeta. Límite/disponible viven
+          en el popup del botón "Saldo" (CardBalanceDialog), no acá. */}
       <CardHero
         card={card}
         cardId={id}
         currentPeriod={period}
         saldo={saldo}
-        limite={limite}
-        disponible={disponible}
         paid={periodPayment?.paid ?? false}
         paidDate={periodPayment?.paid_date ?? null}
         statusLabel={timeline.statusLabel}
@@ -182,7 +181,7 @@ export default async function CardDetailPage({
       <section className="space-y-3">
         {periodExpenses.length === 0 ? (
           <>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="-mx-0.5 flex items-center gap-2 overflow-x-auto px-0.5">
               {movimientoActions}
             </div>
             <EmptyState

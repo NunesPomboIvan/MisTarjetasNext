@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,8 +18,6 @@ interface CardHeroProps {
   currency?: Currency;
   hideBalance?: boolean;
   saldo: number;
-  limite: number;
-  disponible: number;
   paid: boolean;
   paidDate: string | null;
   /** Frase de estado partida en dos líneas: "Cierra en" / "42 días". */
@@ -41,10 +38,10 @@ interface CardHeroProps {
 
 /**
  * Card única de la pantalla de detalle: tarjeta física (gradiente de marca) +
- * saldo + navegación de período + línea de tiempo + límite/disponible, todo
- * en un solo contenedor con el color de la tarjeta. Reemplaza a WalletCard +
- * PeriodNavigator en esta pantalla (el resto de la app sigue usando
- * WalletCard solo).
+ * saldo + navegación de período + línea de tiempo, todo en un solo
+ * contenedor con el color de la tarjeta. Límite/disponible viven en el
+ * popup de CardBalanceDialog, no acá. Reemplaza a WalletCard + PeriodNavigator
+ * en esta pantalla (el resto de la app sigue usando WalletCard solo).
  */
 export function CardHero({
   card,
@@ -53,8 +50,6 @@ export function CardHero({
   currency = "ARS",
   hideBalance = false,
   saldo,
-  limite,
-  disponible,
   paid,
   paidDate,
   statusLabel,
@@ -348,37 +343,6 @@ export function CardHero({
               </span>
             ))}
           </div>
-        </div>
-
-        {/* Disponible + límite */}
-        <div className="relative mt-3 flex items-baseline justify-between gap-3">
-          <span className="text-[13px]" style={{ color: fgMuted }}>
-            Disponible{" "}
-            <Money
-              amount={disponible}
-              currency={currency}
-              hide={hideBalance}
-              className="text-[14px] font-bold tabular-nums"
-              style={{ color: fg }}
-            />
-          </span>
-          {limite > 0 ? (
-            <Money
-              amount={limite}
-              currency={currency}
-              hide={hideBalance}
-              className="text-[13px] font-semibold tabular-nums"
-              style={{ color: fgMuted }}
-            />
-          ) : (
-            <Link
-              href={`/cards/${cardId}/edit`}
-              className="text-[12px] font-medium underline underline-offset-2"
-              style={{ color: fgMuted }}
-            >
-              Definir límite
-            </Link>
-          )}
         </div>
       </div>
     </div>

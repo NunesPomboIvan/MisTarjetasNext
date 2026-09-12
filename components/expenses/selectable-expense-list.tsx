@@ -174,12 +174,12 @@ export function SelectableExpenseList({
             </div>
           </div>
         ) : (
-          <div className="flex w-full flex-wrap items-center gap-2">
+          <div className="-mx-0.5 flex w-full items-center gap-2 overflow-x-auto px-0.5">
             {items.length > 0 && (
               <button
                 type="button"
                 onClick={() => setMode(true)}
-                className="inline-flex h-8 items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
+                className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
               >
                 <ListChecks className="h-4 w-4" />
                 Seleccionar
