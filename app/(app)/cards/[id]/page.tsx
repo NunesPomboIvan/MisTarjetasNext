@@ -105,20 +105,21 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Saldo / menú / Agregar). Se renderizan en la
-  // misma fila que "Seleccionar" dentro de la lista. El menú de 3 puntos
-  // (antes en el header) incluye "Gastos" entre sus opciones.
+  // Acciones de movimientos (Saldo / Agregar / menú). Se renderizan en la
+  // misma fila que "Seleccionar" dentro de la lista. "Agregar" se estira
+  // para ocupar el espacio libre; el menú de 3 puntos (antes en el header,
+  // incluye "Gastos" entre sus opciones) queda pegado al margen derecho.
   const movimientoActions = (
     <>
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
-      <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 flex-shrink-0 items-center gap-1 rounded-full border border-transparent px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-transparent px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
       >
         <Plus className="h-3.5 w-3.5" />
         Agregar
       </Link>
+      <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
     </>
   );
 
