@@ -32,8 +32,7 @@ interface PeriodNavigatorProps {
   lastDueReached: boolean;
   closeReached: boolean;
   dueReached: boolean;
-  /** Saldo del período, límite de la tarjeta y disponible restante. */
-  saldo: number;
+  /** Límite de la tarjeta y disponible restante. */
   limite: number;
   disponible: number;
   /** Estado de pago del período. */
@@ -45,9 +44,9 @@ const ARROW_CLASS =
   "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-muted";
 
 /**
- * Card unificada del período: estado + navegación arriba, saldo/límite/
- * disponible en el medio, línea de tiempo (último vencimiento → cierre →
- * vencimiento) abajo. Todo se recalcula junto al navegar entre períodos.
+ * Card unificada del período: estado + navegación arriba, línea de tiempo
+ * (último vencimiento → cierre → vencimiento) en el medio, límite/disponible
+ * y toggle de pago abajo. Todo se recalcula junto al navegar entre períodos.
  */
 export function PeriodNavigator({
   card,
@@ -62,7 +61,6 @@ export function PeriodNavigator({
   lastDueReached,
   closeReached,
   dueReached,
-  saldo,
   limite,
   disponible,
   paid,
@@ -112,124 +110,57 @@ export function PeriodNavigator({
     return { left: `${pct}%`, transform: "translateX(-50%)" };
   }
 
-  const pctUsado = limite > 0 ? Math.round((saldo / limite) * 100) : null;
-
   return (
-    <div className="rounded-2xl border border-border bg-card px-3.5 py-3.5">
-      {/* Estado + toggle de pago (izq) / navegación (der) */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-[14px] font-semibold text-foreground">
-            {statusText}
-          </p>
-          <CardPeriodPaidToggle
-            cardId={cardId}
-            periodKey={currentPeriod.key}
-            paid={paid}
-            paidDate={paidDate}
-          />
-        </div>
+    <div className="rounded-2xl border border-border bg-card px-3.5 py-3">
+      {/* Navegación: flecha, estado centrado, flecha */}
+      <div className="flex items-center gap-1">
+        {jumpLeft ? (
+          <button
+            type="button"
+            onClick={() => navigate(0)}
+            aria-label="Ir al período actual"
+            className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
+          >
+            <ChevronsLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(offset - 1)}
+            aria-label={`Ir a ${previousPeriod.label}`}
+            className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
 
-        <div className="flex flex-shrink-0 items-center gap-1">
-          {jumpLeft ? (
-            <button
-              type="button"
-              onClick={() => navigate(0)}
-              aria-label="Ir al período actual"
-              className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
-            >
-              <ChevronsLeft className="h-5 w-5" aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => navigate(offset - 1)}
-              aria-label={`Ir a ${previousPeriod.label}`}
-              className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
-            >
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-            </button>
-          )}
+        <p className="flex-1 truncate text-center text-[14px] font-semibold text-foreground">
+          {statusText}
+        </p>
 
-          {jumpRight ? (
-            <button
-              type="button"
-              onClick={() => navigate(0)}
-              aria-label="Ir al período actual"
-              className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
-            >
-              <ChevronsRight className="h-5 w-5" aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => navigate(offset + 1)}
-              aria-label={`Ir a ${nextPeriod.label}`}
-              className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
-            >
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        {jumpRight ? (
+          <button
+            type="button"
+            onClick={() => navigate(0)}
+            aria-label="Ir al período actual"
+            className={cn(ARROW_CLASS, "text-primary hover:text-primary")}
+          >
+            <ChevronsRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(offset + 1)}
+            aria-label={`Ir a ${nextPeriod.label}`}
+            className={cn(ARROW_CLASS, "text-muted-foreground hover:text-foreground")}
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
       </div>
-
-      {/* Saldo actual + % usado */}
-      <div className="mt-3">
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground">Saldo actual</p>
-            <Money
-              amount={saldo}
-              className="mt-0.5 block font-display text-[22px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-            />
-          </div>
-          {pctUsado != null && (
-            <span
-              className={cn(
-                "mb-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold tabular-nums",
-                pctUsado > 100
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : "border-border text-muted-foreground"
-              )}
-            >
-              {pctUsado}% usado
-            </span>
-          )}
-        </div>
-
-        {/* Límite total + Disponible, lado a lado */}
-        <div className="mt-2.5 grid grid-cols-2 gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
-            {limite > 0 ? (
-              <Money
-                amount={limite}
-                className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
-              />
-            ) : (
-              <Link
-                href={`/cards/${cardId}/edit`}
-                className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-              >
-                Definir límite
-              </Link>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-medium text-muted-foreground">Disponible</p>
-            <Money
-              amount={disponible}
-              className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Separador sutil */}
-      <div className="my-3 h-px bg-border" />
 
       {/* Línea de tiempo */}
-      <div className="px-1">
+      <div className="mt-2 px-1">
         {/* Etiquetas */}
         <div className="relative h-4">
           {nodes.map((n) => (
@@ -295,6 +226,41 @@ export function PeriodNavigator({
             </span>
           ))}
         </div>
+      </div>
+
+      {/* Separador sutil */}
+      <div className="my-2.5 h-px bg-border" />
+
+      {/* Límite total (arriba) + Disponible (debajo); el toggle de pago al lado */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium text-muted-foreground">Límite total</p>
+          {limite > 0 ? (
+            <Money
+              amount={limite}
+              className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight text-foreground tabular-nums"
+            />
+          ) : (
+            <Link
+              href={`/cards/${cardId}/edit`}
+              className="mt-0.5 inline-flex items-center gap-0.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Definir límite
+            </Link>
+          )}
+          <p className="mt-1.5 text-[10px] font-medium text-muted-foreground">Disponible</p>
+          <Money
+            amount={disponible}
+            className="mt-0.5 block font-display text-[14px] font-bold leading-tight tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400"
+          />
+        </div>
+
+        <CardPeriodPaidToggle
+          cardId={cardId}
+          periodKey={currentPeriod.key}
+          paid={paid}
+          paidDate={paidDate}
+        />
       </div>
     </div>
   );

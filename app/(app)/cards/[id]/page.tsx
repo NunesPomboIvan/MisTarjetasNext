@@ -170,7 +170,7 @@ export default async function CardDetailPage({
         dueLabel={formatDate(period.due, "d MMM")}
       />
 
-      {/* Period Navigator: estado, navegación, saldo/límite/disponible y línea de tiempo */}
+      {/* Period Navigator: estado, navegación, línea de tiempo y límite/disponible */}
       <PeriodNavigator
         card={card}
         cardId={id}
@@ -184,7 +184,6 @@ export default async function CardDetailPage({
         lastDueReached={timeline.lastDueReached}
         closeReached={timeline.closeReached}
         dueReached={timeline.dueReached}
-        saldo={saldo}
         limite={limite}
         disponible={disponible}
         paid={periodPayment?.paid ?? false}
