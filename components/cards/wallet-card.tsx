@@ -1,6 +1,7 @@
 import { Money } from "@/components/shared/money";
 import { CardLogo } from "./card-logo";
 import { cn } from "@/lib/utils";
+import { getCardPalette, tint, shade } from "@/lib/cards/card-colors";
 import type { Card, Currency } from "@/lib/supabase/database.types";
 
 interface WalletCardProps {
@@ -28,38 +29,6 @@ interface WalletCardProps {
   aspectRatio?: string;
 }
 
-/* ─── Color utilities ─────────────────────────────────────── */
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const h = hex.replace("#", "");
-  const v = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-  return {
-    r: parseInt(v.slice(0, 2), 16),
-    g: parseInt(v.slice(2, 4), 16),
-    b: parseInt(v.slice(4, 6), 16),
-  };
-}
-
-function tint(hex: string, amount: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgb(${Math.round(r + (255 - r) * amount)},${Math.round(g + (255 - g) * amount)},${Math.round(b + (255 - b) * amount)})`;
-}
-
-function shade(hex: string, amount: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  const f = 1 - amount;
-  return `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`;
-}
-
-function relativeLuminance(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
-  const a = [r, g, b].map((v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
-}
-
 /* ─── WalletCard ──────────────────────────────────────────── */
 
 export function WalletCard({
@@ -76,24 +45,9 @@ export function WalletCard({
   minH = 170,
   aspectRatio = "1.586 / 1",
 }: WalletCardProps) {
-  const base = card.color || "#6366f1";
-  const lum = relativeLuminance(base);
-  const isLight = lum > 0.45;
-
-  const fg = isLight ? "rgba(18,10,4,0.93)" : "rgba(255,252,245,0.95)";
-  const fgMuted = isLight ? "rgba(18,10,4,0.52)" : "rgba(255,252,245,0.58)";
-  // Elementos secundarios (marca/nombre, número de tarjeta): opacidad reducida
-  // (~65%) para reforzar el contraste con el monto principal.
-  const fgSecondary = isLight ? "rgba(18,10,4,0.65)" : "rgba(255,252,245,0.65)";
-
-  /* Gradiente 3 paradas — profundidad real */
-  const g0 = tint(base, 0.28);
-  const g1 = base;
-  const g2 = shade(base, 0.42);
-
-  /* Sombra coloreada */
-  const shadowHex = shade(base, 0.1);
-  const { r, g, b } = hexToRgb(shadowHex);
+  const { base, isLight, fg, fgMuted, fgSecondary, g0, g1, g2, shadowRgb } =
+    getCardPalette(card.color);
+  const { r, g, b } = shadowRgb;
 
   return (
     <div

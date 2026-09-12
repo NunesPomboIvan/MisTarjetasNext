@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Plus, Landmark, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { WalletCard } from "@/components/cards/wallet-card";
 import { StackHeader } from "@/components/shared/stack-header";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
-import { PeriodNavigator } from "@/components/cards/period-navigator";
+import { CardHero } from "@/components/cards/card-hero";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -161,26 +160,19 @@ export default async function CardDetailPage({
         }
       />
 
-      {/* Wallet card — los datos siguen al período que se está navegando.
-          Más achatada que la proporción real de tarjeta (que sí se usa en
-          el resto de la app) para ganar alto en esta pantalla. */}
-      <WalletCard
-        card={card}
-        total={saldo}
-        periodLabel={period.status === "current" ? "Período actual" : period.label}
-        closeLabel={formatDate(period.end, "d MMM")}
-        dueLabel={formatDate(period.due, "d MMM")}
-        aspectRatio="2.3 / 1"
-        minH={130}
-        maxH={170}
-      />
-
-      {/* Period Navigator: estado, navegación, línea de tiempo y límite/disponible */}
-      <PeriodNavigator
+      {/* Card unificada: tarjeta física + saldo + navegación + línea de
+          tiempo + límite/disponible, todo con el color de la tarjeta. */}
+      <CardHero
         card={card}
         cardId={id}
         currentPeriod={period}
-        statusText={timeline.statusText}
+        saldo={saldo}
+        limite={limite}
+        disponible={disponible}
+        paid={periodPayment?.paid ?? false}
+        paidDate={periodPayment?.paid_date ?? null}
+        statusLabel={timeline.statusLabel}
+        statusValue={timeline.statusValue}
         closePct={timeline.closePct}
         progressPct={timeline.progressPct}
         lastDueLabel={timeline.lastDue ? formatDate(timeline.lastDue, "dd/MM") : "—"}
@@ -189,10 +181,6 @@ export default async function CardDetailPage({
         lastDueReached={timeline.lastDueReached}
         closeReached={timeline.closeReached}
         dueReached={timeline.dueReached}
-        limite={limite}
-        disponible={disponible}
-        paid={periodPayment?.paid ?? false}
-        paidDate={periodPayment?.paid_date ?? null}
       />
 
       {/* Lista de movimientos del período. Las acciones (Fijo/Gastos/Agregar)

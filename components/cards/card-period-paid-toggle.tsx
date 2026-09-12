@@ -23,6 +23,8 @@ interface CardPeriodPaidToggleProps {
   periodKey: string;
   paid: boolean;
   paidDate: string | null;
+  /** "onColor": chip translúcido para fondos de color (gradiente de la tarjeta). Default "neutral". */
+  tone?: "neutral" | "onColor";
 }
 
 /** Vibración liviana al togglear (no-op donde no está soportado). */
@@ -45,6 +47,7 @@ export function CardPeriodPaidToggle({
   periodKey,
   paid,
   paidDate,
+  tone = "neutral",
 }: CardPeriodPaidToggleProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -88,12 +91,16 @@ export function CardPeriodPaidToggle({
             : undefined
         }
         className={cn(
-          "relative inline-flex items-center gap-[5px] rounded-full border px-[11px] py-[5px]",
+          "relative inline-flex items-center gap-[6px] rounded-full border px-[11px] py-[5px]",
           "text-[12px] font-semibold tracking-[0.01em] transition-colors duration-200",
           // Hit area mínima 44x44 sin agrandar el chip visualmente.
           "after:absolute after:left-1/2 after:top-1/2 after:h-11 after:min-w-[44px] after:w-full",
           "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
-          paid
+          tone === "onColor"
+            ? paid
+              ? "border-white/25 bg-white/20 text-white"
+              : "border-white/20 bg-white/15 text-white hover:bg-white/20"
+            : paid
             ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-400"
             : "border-foreground/15 bg-transparent text-muted-foreground hover:text-foreground/70"
         )}
@@ -103,11 +110,16 @@ export function CardPeriodPaidToggle({
         ) : paid ? (
           <CheckCircle2
             key="paid"
-            className="h-3.5 w-3.5 animate-in zoom-in-75 duration-200"
+            className={cn(
+              "h-3.5 w-3.5 animate-in zoom-in-75 duration-200",
+              tone === "onColor" && "text-emerald-300"
+            )}
             aria-hidden="true"
           />
+        ) : tone === "onColor" ? (
+          <span className="h-[6px] w-[6px] flex-shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
         ) : null}
-        <span>{paid ? "Pagado" : "Pendiente de Pago"}</span>
+        <span>{paid ? "Pagado" : "Pendiente de pago"}</span>
       </button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

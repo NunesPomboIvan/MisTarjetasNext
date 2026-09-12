@@ -529,6 +529,9 @@ export interface PeriodTimeline {
   /** Posición de "hoy" en la barra (0–100). */
   progressPct: number;
   statusText: string;
+  /** `statusText` partido en dos para layouts de dos líneas: "CIERRA EN" / "42 días". */
+  statusLabel: string;
+  statusValue: string;
 }
 
 export function getPeriodTimeline(
@@ -585,17 +588,27 @@ export function getPeriodTimeline(
   // El header sigue la fecha de cierre actual; si ya cerró, cuenta al
   // vencimiento; si además venció, el período está cerrado.
   let statusText: string;
+  let statusLabel: string;
+  let statusValue: string;
   if (dueReached) {
     statusText = "Período cerrado";
+    statusLabel = "Período";
+    statusValue = "cerrado";
   } else {
     const [target, verb] = !closeReached ? [close, "Cierra"] : [due, "Vence"];
     const d = differenceInCalendarDays(startOfDay(target), today);
     if (d <= 0) {
       statusText = `${verb} hoy`;
+      statusLabel = verb;
+      statusValue = "hoy";
     } else if (d === 1) {
       statusText = `${verb} en 1 día`;
+      statusLabel = `${verb} en`;
+      statusValue = "1 día";
     } else {
       statusText = `${verb} en ${d} días`;
+      statusLabel = `${verb} en`;
+      statusValue = `${d} días`;
     }
   }
 
@@ -609,6 +622,8 @@ export function getPeriodTimeline(
     closePct: Math.round(closePct),
     progressPct: Math.round(progressPct),
     statusText,
+    statusLabel,
+    statusValue,
   };
 }
 
