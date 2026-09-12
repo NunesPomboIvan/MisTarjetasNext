@@ -114,7 +114,7 @@ export default async function CardDetailPage({
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-transparent px-3 text-[12px] font-semibold text-white gradient-primary shadow-brand"
+        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
         <Plus className="h-3.5 w-3.5" />
         Agregar
