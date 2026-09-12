@@ -174,7 +174,7 @@ export function SelectableExpenseList({
             </div>
           </div>
         ) : (
-          <div className="-mx-0.5 flex w-full items-center gap-2 overflow-x-auto px-0.5">
+          <div className="flex w-full items-center gap-2 overflow-x-auto pr-4 [&::-webkit-scrollbar]:hidden">
             {items.length > 0 && (
               <button
                 type="button"
