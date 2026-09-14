@@ -20,8 +20,7 @@ interface CardHeroProps {
   saldo: number;
   paid: boolean;
   paidDate: string | null;
-  /** Frase de estado partida en dos líneas: "Cierra en" / "42 días". */
-  statusLabel: string;
+  /** "42 días" — se muestra chiquito, flotando sobre el punto de avance de hoy en la línea de tiempo. */
   statusValue: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
   closePct: number;
@@ -52,7 +51,6 @@ export function CardHero({
   saldo,
   paid,
   paidDate,
-  statusLabel,
   statusValue,
   closePct,
   progressPct,
@@ -248,7 +246,7 @@ export function CardHero({
             style={{ letterSpacing: "-0.02em", color: fg }}
           />
 
-          <div className="flex flex-shrink-0 items-center gap-0.5">
+          <div className="flex flex-shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={() => navigate(offset - 1)}
@@ -258,17 +256,6 @@ export function CardHero({
             >
               <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
-            <div className="flex flex-col items-end leading-tight">
-              <span
-                className="text-[8px] font-bold uppercase"
-                style={{ color: fgMuted, letterSpacing: "0.06em" }}
-              >
-                {statusLabel}
-              </span>
-              <span className="text-[10px] font-bold" style={{ color: fg }}>
-                {statusValue}
-              </span>
-            </div>
             <button
               type="button"
               onClick={() => navigate(offset + 1)}
@@ -331,6 +318,18 @@ export function CardHero({
               />
             ))}
           </div>
+
+          {/* Días que faltan, flotando justo debajo del punto de avance de hoy */}
+          {progressPct > 0 && progressPct < 100 && (
+            <div className="relative h-3">
+              <span
+                className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.04em]"
+                style={{ left: `${progressPct}%`, color: fgMuted }}
+              >
+                {statusValue}
+              </span>
+            </div>
+          )}
 
           <div className="relative mt-1.5 h-3.5">
             {nodes.map((n) => (

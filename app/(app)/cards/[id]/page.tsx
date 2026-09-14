@@ -150,7 +150,6 @@ export default async function CardDetailPage({
         saldo={saldo}
         paid={periodPayment?.paid ?? false}
         paidDate={periodPayment?.paid_date ?? null}
-        statusLabel={timeline.statusLabel}
         statusValue={timeline.statusValue}
         closePct={timeline.closePct}
         progressPct={timeline.progressPct}
