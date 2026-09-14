@@ -260,12 +260,12 @@ export function CardHero({
             </button>
             <div className="flex flex-col items-end leading-tight">
               <span
-                className="text-[9.5px] font-bold uppercase"
-                style={{ color: fgMuted, letterSpacing: "0.08em" }}
+                className="text-[8px] font-bold uppercase"
+                style={{ color: fgMuted, letterSpacing: "0.06em" }}
               >
                 {statusLabel}
               </span>
-              <span className="text-[14px] font-bold" style={{ color: fg }}>
+              <span className="text-[10px] font-bold" style={{ color: fg }}>
                 {statusValue}
               </span>
             </div>
