@@ -150,7 +150,7 @@ export default async function CardDetailPage({
         saldo={saldo}
         paid={periodPayment?.paid ?? false}
         paidDate={periodPayment?.paid_date ?? null}
-        statusValue={timeline.statusValue}
+        statusText={timeline.statusText}
         closePct={timeline.closePct}
         progressPct={timeline.progressPct}
         lastDueLabel={timeline.lastDue ? formatDate(timeline.lastDue, "dd/MM") : "—"}

@@ -91,8 +91,8 @@ export function CardPeriodPaidToggle({
             : undefined
         }
         className={cn(
-          "relative inline-flex items-center gap-[6px] rounded-full border px-[11px] py-[5px]",
-          "text-[12px] font-semibold tracking-[0.01em] transition-colors duration-200",
+          "relative inline-flex items-center gap-[5px] rounded-full border px-[9px] py-[4px]",
+          "text-[11px] font-semibold tracking-[0.01em] transition-colors duration-200",
           // Hit area mínima 44x44 sin agrandar el chip visualmente.
           "after:absolute after:left-1/2 after:top-1/2 after:h-11 after:min-w-[44px] after:w-full",
           "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
@@ -106,18 +106,18 @@ export function CardPeriodPaidToggle({
         )}
       >
         {isPending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
         ) : paid ? (
           <CheckCircle2
             key="paid"
             className={cn(
-              "h-3.5 w-3.5 animate-in zoom-in-75 duration-200",
+              "h-3 w-3 animate-in zoom-in-75 duration-200",
               tone === "onColor" && "text-emerald-300"
             )}
             aria-hidden="true"
           />
         ) : tone === "onColor" ? (
-          <span className="h-[6px] w-[6px] flex-shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+          <span className="h-[5px] w-[5px] flex-shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
         ) : null}
         <span>{paid ? "Pagado" : "Pendiente de pago"}</span>
       </button>
