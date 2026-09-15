@@ -159,6 +159,7 @@ export default async function CardDetailPage({
         lastDueReached={timeline.lastDueReached}
         closeReached={timeline.closeReached}
         dueReached={timeline.dueReached}
+        highlightKey={timeline.highlightKey}
       />
 
       {/* Lista de movimientos del período. Las acciones (Saldo/menú/Agregar)

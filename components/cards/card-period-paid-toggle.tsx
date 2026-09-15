@@ -91,18 +91,22 @@ export function CardPeriodPaidToggle({
             : undefined
         }
         className={cn(
-          "relative inline-flex items-center gap-[4px] rounded-full border px-[7px] py-[3px]",
+          "relative inline-flex items-center gap-[4px] rounded-full border px-[9px] py-[4px]",
           "text-[10px] font-semibold tracking-[0.01em] transition-colors duration-200",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           // Hit area mínima 44x44 sin agrandar el chip visualmente.
           "after:absolute after:left-1/2 after:top-1/2 after:h-11 after:min-w-[44px] after:w-full",
           "after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']",
           tone === "onColor"
-            ? paid
-              ? "border-white/25 bg-white/20 text-white"
-              : "border-white/20 bg-white/15 text-white hover:bg-white/20"
+            ? cn(
+                "border-white/30 text-white focus-visible:outline-white/60",
+                paid
+                  ? "bg-white/20 hover:bg-white/25 active:bg-white/30"
+                  : "bg-white/15 hover:bg-white/20 active:bg-white/25"
+              )
             : paid
-            ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-400"
-            : "border-foreground/15 bg-transparent text-muted-foreground hover:text-foreground/70"
+            ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-400 focus-visible:outline-emerald-400/60"
+            : "border-foreground/15 bg-transparent text-muted-foreground hover:text-foreground/70 focus-visible:outline-foreground/40"
         )}
       >
         {isPending ? (

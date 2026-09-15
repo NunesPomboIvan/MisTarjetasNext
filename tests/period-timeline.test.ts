@@ -82,4 +82,43 @@ describe("getPeriodTimeline", () => {
     expect(siguiente.lastDue!.getTime()).toBe(actual.due.getTime());
     expect(siguiente.close.getMonth()).toBe(9); // cierra 23/oct
   });
+
+  it("hito resaltado 'close' aunque el último vencimiento (envuelto) sea futuro", () => {
+    // CARD cierra 23, vence 10 del mes siguiente: el "último vencimiento" del
+    // período que empieza el 24/ago (10/sep) cae DENTRO de ese período, antes
+    // del cierre. Si hoy es 2/sep, ese último vencimiento todavía no llegó
+    // (lastDueReached = false) pero el hito a resaltar sigue siendo "close",
+    // no debe ocultarse ni recaer en "lastDue".
+    vi.setSystemTime(new Date(2026, 8, 2, 12, 0, 0)); // 2/sep, antes del 10/sep
+    const t = getPeriodTimeline(CARD, 0);
+    expect(t.lastDueReached).toBe(false);
+    expect(t.closeReached).toBe(false);
+    expect(t.highlightKey).toBe("close");
+    expect(t.progressPct).toBe(0);
+    expect(t.statusText).toBe("Cierra en 21 días");
+  });
+
+  it("hito resaltado 'due' cuando ya cerró y falta 1 día → 'Vence mañana'", () => {
+    vi.setSystemTime(new Date(2026, 9, 9, 12, 0, 0)); // 9/oct; período actual venció... usamos offset -1
+    const t = getPeriodTimeline(CARD, -1); // cierra 23/sep, vence 10/oct
+    expect(t.closeReached).toBe(true);
+    expect(t.dueReached).toBe(false);
+    expect(t.highlightKey).toBe("due");
+    expect(t.statusText).toBe("Vence mañana");
+  });
+
+  it("hito resaltado 'close' cuando falta 1 día para el cierre → 'Cierra mañana'", () => {
+    vi.setSystemTime(new Date(2026, 8, 22, 12, 0, 0)); // 22/sep, cierra 23/sep
+    const t = getPeriodTimeline(CARD, 0);
+    expect(t.closeReached).toBe(false);
+    expect(t.highlightKey).toBe("close");
+    expect(t.statusText).toBe("Cierra mañana");
+  });
+
+  it("ningún hito resaltado una vez que todo pasó", () => {
+    vi.setSystemTime(new Date(2026, 9, 15, 12, 0, 0));
+    const t = getPeriodTimeline(CARD, -1);
+    expect(t.dueReached).toBe(true);
+    expect(t.highlightKey).toBeNull();
+  });
 });

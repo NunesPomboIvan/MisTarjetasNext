@@ -524,6 +524,15 @@ export interface PeriodTimeline {
   lastDueReached: boolean;
   closeReached: boolean;
   dueReached: boolean;
+  /**
+   * Hito a resaltar en la línea de tiempo: "close" mientras no haya cerrado,
+   * "due" desde que cierra y hasta que vence, null si ya venció (no queda
+   * ningún hito futuro). A propósito NO depende de `lastDueReached`: ese hito
+   * puede quedar en el futuro (cuando el vencimiento "envuelve" al mes
+   * siguiente, ver `buildPeriod`) sin que eso deba ocultar el resaltado de
+   * cierre/vencimiento.
+   */
+  highlightKey: "close" | "due" | null;
   /** Posición del nodo "Cierre" en la barra (0–100). */
   closePct: number;
   /** Posición de "hoy" en la barra (0–100). */
@@ -602,15 +611,21 @@ export function getPeriodTimeline(
       statusLabel = verb;
       statusValue = "hoy";
     } else if (d === 1) {
-      statusText = `${verb} en 1 día`;
-      statusLabel = `${verb} en`;
-      statusValue = "1 día";
+      statusText = `${verb} mañana`;
+      statusLabel = verb;
+      statusValue = "mañana";
     } else {
       statusText = `${verb} en ${d} días`;
       statusLabel = `${verb} en`;
       statusValue = `${d} días`;
     }
   }
+
+  const highlightKey: "close" | "due" | null = dueReached
+    ? null
+    : closeReached
+    ? "due"
+    : "close";
 
   return {
     lastDue,
@@ -619,6 +634,7 @@ export function getPeriodTimeline(
     lastDueReached,
     closeReached,
     dueReached,
+    highlightKey,
     closePct: Math.round(closePct),
     progressPct: Math.round(progressPct),
     statusText,
