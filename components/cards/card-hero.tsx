@@ -247,13 +247,7 @@ export function CardHero({
           />
         </div>
 
-        {/* Separador sutil */}
-        <div
-          className="relative mt-3"
-          style={{ height: 1, background: `rgba(255,255,255,${isLight ? "0.22" : "0.12"})` }}
-        />
-
-        {/* Línea de tiempo, con las flechas de navegación al principio y al final */}
+        {/* Separador con las flechas de navegación al principio y al final */}
         <div className="relative mt-3 flex items-center gap-1.5">
           <button
             type="button"
@@ -264,76 +258,10 @@ export function CardHero({
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
-
-          <div className="relative min-w-0 flex-1 px-1">
-            <div className="relative h-3.5">
-              {nodes.map((n) => (
-                <span
-                  key={n.key}
-                  className={cn(
-                    "absolute top-0 overflow-hidden text-ellipsis text-[11px] font-semibold whitespace-nowrap",
-                    n.align === "center" ? "" : "max-w-[42%]"
-                  )}
-                  style={{
-                    ...anchorStyle(n.pct, n.align),
-                    color: n.key === nextPendingKey ? fg : fgMuted,
-                  }}
-                >
-                  {n.label}
-                </span>
-              ))}
-            </div>
-
-            <div className="relative mt-1.5 h-3.5">
-              <div
-                className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full"
-                style={{ background: `rgba(255,255,255,${isLight ? "0.28" : "0.18"})` }}
-              />
-              <div
-                className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full transition-[width] duration-500"
-                style={{ width: `${progressPct}%`, background: fg }}
-              />
-              {nodes.map((n) => (
-                <span
-                  key={n.key}
-                  className={cn(
-                    "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors",
-                    n.key === nextPendingKey ? "h-3.5 w-3.5" : "h-3 w-3"
-                  )}
-                  style={{
-                    left: `${n.pct}%`,
-                    borderColor: n.reached || n.key === nextPendingKey ? fg : `rgba(255,255,255,${isLight ? "0.35" : "0.25"})`,
-                    backgroundColor: n.key === nextPendingKey ? g1 : n.reached ? fg : g1,
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Frase de estado, flotando justo debajo del punto de avance de hoy */}
-            {progressPct > 0 && progressPct < 100 && (
-              <div className="relative h-3">
-                <span
-                  className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[8px] font-bold"
-                  style={{ left: `${progressPct}%`, color: fgMuted }}
-                >
-                  {statusText}
-                </span>
-              </div>
-            )}
-
-            <div className="relative mt-1.5 h-3.5">
-              {nodes.map((n) => (
-                <span
-                  key={n.key}
-                  className="absolute top-0 whitespace-nowrap text-[13px] font-bold tabular-nums"
-                  style={{ ...anchorStyle(n.pct, n.align), color: n.reached ? fg : fgMuted }}
-                >
-                  {n.date}
-                </span>
-              ))}
-            </div>
-          </div>
-
+          <div
+            className="h-px flex-1"
+            style={{ background: `rgba(255,255,255,${isLight ? "0.22" : "0.12"})` }}
+          />
           <button
             type="button"
             onClick={() => navigate(offset + 1)}
@@ -343,6 +271,76 @@ export function CardHero({
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
+        </div>
+
+        {/* Línea de tiempo */}
+        <div className="relative mt-3 px-1">
+          <div className="relative h-3.5">
+            {nodes.map((n) => (
+              <span
+                key={n.key}
+                className={cn(
+                  "absolute top-0 overflow-hidden text-ellipsis text-[11px] font-semibold whitespace-nowrap",
+                  n.align === "center" ? "" : "max-w-[42%]"
+                )}
+                style={{
+                  ...anchorStyle(n.pct, n.align),
+                  color: n.key === nextPendingKey ? fg : fgMuted,
+                }}
+              >
+                {n.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="relative mt-1.5 h-3.5">
+            <div
+              className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full"
+              style={{ background: `rgba(255,255,255,${isLight ? "0.28" : "0.18"})` }}
+            />
+            <div
+              className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full transition-[width] duration-500"
+              style={{ width: `${progressPct}%`, background: fg }}
+            />
+            {nodes.map((n) => (
+              <span
+                key={n.key}
+                className={cn(
+                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors",
+                  n.key === nextPendingKey ? "h-3.5 w-3.5" : "h-3 w-3"
+                )}
+                style={{
+                  left: `${n.pct}%`,
+                  borderColor: n.reached || n.key === nextPendingKey ? fg : `rgba(255,255,255,${isLight ? "0.35" : "0.25"})`,
+                  backgroundColor: n.key === nextPendingKey ? g1 : n.reached ? fg : g1,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Frase de estado, flotando justo debajo del punto de avance de hoy */}
+          {progressPct > 0 && progressPct < 100 && (
+            <div className="relative h-3">
+              <span
+                className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[8px] font-bold"
+                style={{ left: `${progressPct}%`, color: fgMuted }}
+              >
+                {statusText}
+              </span>
+            </div>
+          )}
+
+          <div className="relative mt-1.5 h-3.5">
+            {nodes.map((n) => (
+              <span
+                key={n.key}
+                className="absolute top-0 whitespace-nowrap text-[13px] font-bold tabular-nums"
+                style={{ ...anchorStyle(n.pct, n.align), color: n.reached ? fg : fgMuted }}
+              >
+                {n.date}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>
