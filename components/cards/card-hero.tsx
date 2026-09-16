@@ -20,7 +20,7 @@ interface CardHeroProps {
   saldo: number;
   paid: boolean;
   paidDate: string | null;
-  /** "Cierra en 12 días" — se muestra debajo de la barra, a la altura del avance de hoy. */
+  /** "Cierra en 12 días" — se muestra centrado entre el hito anterior y el resaltado. */
   statusText: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
   closePct: number;
@@ -387,12 +387,17 @@ export function CardHero({
             })}
           </div>
 
-          {/* Días restantes: a la altura del avance de hoy en la barra. */}
+          {/* Días restantes: fijo en el punto medio entre el hito anterior y
+              el resaltado (no según el avance de hoy, para que no se mueva
+              día a día). */}
           {highlightKey && (
             <div className="relative mt-1 h-3">
               <span
                 className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
-                style={{ left: `${Math.min(92, Math.max(8, progressPct))}%`, color: fg }}
+                style={{
+                  left: `${highlightKey === "close" ? closePct / 2 : (closePct + 100) / 2}%`,
+                  color: fg,
+                }}
               >
                 {statusText}
               </span>
