@@ -178,7 +178,7 @@ export function CardHero({
       }}
     >
       <div
-        className="relative overflow-hidden rounded-[28px] p-[28px]"
+        className="relative overflow-hidden rounded-[28px] p-5"
         style={{
           backgroundColor: g1,
           background: `linear-gradient(145deg, ${g0} 0%, ${g1} 48%, ${g2} 100%)`,
@@ -231,7 +231,7 @@ export function CardHero({
             (centrado), red a la derecha. `items-start` alinea los tres por
             arriba, contra la primera línea del banco — los últimos 4 dígitos
             cuelgan debajo sin correr esa alineación. */}
-        <div className="relative grid grid-cols-[minmax(0,1.8fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
+        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
           <div className="min-w-0">
             {title && (
               <div
@@ -319,7 +319,7 @@ export function CardHero({
         )}
 
         {/* 2. Monto + botón de estado */}
-        <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="relative mt-3 flex flex-wrap items-center justify-between gap-2">
           <CardAmount
             amount={saldo}
             currency={currency}
@@ -339,7 +339,7 @@ export function CardHero({
         {/* 3. Línea de tiempo: etiquetas arriba de la barra, barra con los
             hitos, días restantes debajo (a la altura del avance de hoy),
             fechas al final. */}
-        <div className="relative mt-4 px-1">
+        <div className="relative mt-3">
           <div className="relative h-3.5">
             {nodes.map((n) => {
               const isHighlight = n.key === highlightKey;
@@ -359,7 +359,7 @@ export function CardHero({
             })}
           </div>
 
-          <div className="relative mt-1.5 h-3.5">
+          <div className="relative mt-1 h-3.5">
             <div
               className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full"
               style={{ background: `rgba(255,255,255,${isLight ? "0.28" : "0.18"})` }}
@@ -389,7 +389,7 @@ export function CardHero({
 
           {/* Días restantes: a la altura del avance de hoy en la barra. */}
           {highlightKey && (
-            <div className="relative mt-1.5 h-3">
+            <div className="relative mt-1 h-3">
               <span
                 className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
                 style={{ left: `${Math.min(92, Math.max(8, progressPct))}%`, color: fg }}
@@ -399,7 +399,7 @@ export function CardHero({
             </div>
           )}
 
-          <div className="relative mt-1.5 h-4">
+          <div className="relative mt-1 h-4">
             {nodes.map((n) => {
               const isHighlight = n.key === highlightKey;
               return (
