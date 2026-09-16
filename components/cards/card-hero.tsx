@@ -20,7 +20,7 @@ interface CardHeroProps {
   saldo: number;
   paid: boolean;
   paidDate: string | null;
-  /** "Cierra en 12 días" — se muestra debajo de la etiqueta del hito resaltado. */
+  /** "Cierra en 12 días" — se muestra centrado entre el hito anterior y el resaltado. */
   statusText: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
   closePct: number;
@@ -160,7 +160,7 @@ export function CardHero({
   const pillBg = `rgba(255,255,255,${isLight ? "0.16" : "0.12"})`;
 
   const ARROW_CLASS = cn(
-    "relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors",
+    "relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-colors",
     "hover:bg-white/10 active:bg-white/15",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60",
     // Hit area mínima 44x44 sin agrandar el botón visualmente.
@@ -227,8 +227,15 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco (+ últimos 4 dígitos debajo) a la izquierda, red a la derecha */}
-        <div className="relative flex items-start justify-between gap-2">
+        {/*
+          1. Encabezado: banco a la izquierda, período centrado, red a la
+          derecha. El shell de la app limita el ancho a max-w-lg (~480px)
+          incluso en desktop, así que en viewports angostos (<640px, todo
+          celular real) el período no entra en la misma fila sin pisar el
+          nombre del banco o el logo: se apila debajo, centrado, y recién
+          desde `sm:` pasa a compartir la fila con banco/red.
+        */}
+        <div className="relative grid grid-cols-2 items-start gap-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]">
           <div className="min-w-0">
             {title && (
               <div
@@ -239,13 +246,51 @@ export function CardHero({
               </div>
             )}
             <div
-              className="mt-0.5 text-[12px] tabular-nums"
+              className="mt-0.5 truncate text-[12px] tabular-nums"
               style={{ color: fgSecondary, letterSpacing: "0.08em" }}
             >
               •••• {card.last_four}
             </div>
           </div>
-          <CardLogo type={card.type} size="lg" fgColor={fg} />
+
+          <div className="min-w-0 order-2 justify-self-end sm:order-3">
+            <CardLogo type={card.type} size="lg" fgColor={fg} />
+          </div>
+
+          {/* Selector de período: flechas + label, dentro de una píldora. El
+              label trunca con ellipsis si el ancho disponible no alcanza,
+              para no empujar el layout ni superponerse con banco/red. */}
+          <div
+            className="col-span-2 order-3 inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1 sm:order-2 sm:col-span-1"
+            style={{ background: pillBg }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate(offset - 1)}
+              aria-label="Período anterior"
+              title={`Ir a ${previousPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+            </button>
+            <span
+              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
+              style={{ color: fgMuted, letterSpacing: "0.06em" }}
+            >
+              {currentPeriod.label}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate(offset + 1)}
+              aria-label="Período siguiente"
+              title={`Ir a ${nextPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {card.is_extension && (
@@ -277,48 +322,13 @@ export function CardHero({
           </div>
         )}
 
-        {/* 2. Selector de período: flechas + label, todo dentro de una píldora */}
-        <div className="relative mt-4 flex items-center">
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-1"
-            style={{ background: pillBg }}
-          >
-            <button
-              type="button"
-              onClick={() => navigate(offset - 1)}
-              aria-label="Período anterior"
-              title={`Ir a ${previousPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <span
-              className="text-[11px] font-semibold uppercase tabular-nums"
-              style={{ color: fgMuted, letterSpacing: "0.14em" }}
-            >
-              {currentPeriod.label}
-            </span>
-            <button
-              type="button"
-              onClick={() => navigate(offset + 1)}
-              aria-label="Período siguiente"
-              title={`Ir a ${nextPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Monto + botón de estado */}
+        {/* 2. Monto + botón de estado */}
         <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2">
           <CardAmount
             amount={saldo}
             currency={currency}
             hide={hideBalance}
-            className="font-display text-[30px] font-extrabold leading-none tabular-nums"
+            className="font-display text-[24px] font-extrabold leading-none tabular-nums"
             style={{ letterSpacing: "-0.02em", color: fg }}
           />
           <CardPeriodPaidToggle
@@ -330,7 +340,7 @@ export function CardHero({
           />
         </div>
 
-        {/* 4. Línea de tiempo */}
+        {/* 3. Línea de tiempo */}
         <div className="relative mt-4 px-1">
           <div className="relative h-3.5">
             <div
@@ -385,15 +395,25 @@ export function CardHero({
                   >
                     {n.label}
                   </span>
-                  {isHighlight && (
-                    <span className="mt-0.5 max-w-full truncate text-[10px] font-semibold" style={{ color: fg }}>
-                      {statusText}
-                    </span>
-                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Días restantes: centrado entre el hito anterior y el resaltado. */}
+          {highlightKey && (
+            <div className="relative mt-1 h-3.5">
+              <span
+                className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
+                style={{
+                  left: `${highlightKey === "close" ? closePct / 2 : (closePct + 100) / 2}%`,
+                  color: fg,
+                }}
+              >
+                {statusText}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>
