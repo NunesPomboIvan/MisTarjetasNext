@@ -236,16 +236,17 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco a la izquierda, período a la misma altura,
-            red a la derecha. `justify-between` en un flex (no grid) hace que
-            el HUECO entre banco↔período y período↔red sea igual — con
-            columnas de igual ancho el hueco visible dependía del ancho de
-            cada contenido (ej. "MACRO" es más ancho que el ícono de AMEX) y
-            quedaba asimétrico aunque las columnas midieran lo mismo.
-            `items-start` alinea los tres por arriba, contra la primera línea
-            del banco — los últimos 4 dígitos cuelgan debajo sin correr esa
-            alineación. */}
-        <div className="relative flex items-start justify-between gap-1.5">
+        {/* 1. Encabezado: banco a la izquierda, período centrado, red a la
+            derecha. Columnas de grid simétricas (1fr/auto/1fr) para que el
+            período quede siempre en el centro GEOMÉTRICO real de la tarjeta,
+            sin importar cuánto pese el texto del banco o el logo de la red a
+            cada lado (con flexbox + justify-between el hueco quedaba igual a
+            ambos costados, pero el período se corría del centro cuando un
+            lado pesaba más que el otro — ej. "MACRO" más ancho que el ícono
+            de AMEX). `items-start` alinea los tres por arriba, contra la
+            primera línea del banco — los últimos 4 dígitos cuelgan debajo
+            sin correr esa alineación. */}
+        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
           <div className="min-w-0">
             {title && (
               <div
@@ -270,7 +271,7 @@ export function CardHero({
               label trunca con ellipsis si el ancho disponible no alcanza,
               para no empujar el layout ni superponerse con banco/red. */}
           <div
-            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-1"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -284,7 +285,7 @@ export function CardHero({
               <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
             <span
-              className="whitespace-nowrap text-[10px] font-semibold uppercase tabular-nums"
+              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
               style={{ color: fgMuted, letterSpacing: "0.04em" }}
             >
               {currentPeriod.label}
@@ -301,7 +302,7 @@ export function CardHero({
             </button>
           </div>
 
-          <div className="flex-shrink-0">
+          <div className="min-w-0 justify-self-end">
             <CardLogo type={card.type} size="lg" fgColor={fg} />
           </div>
         </div>
