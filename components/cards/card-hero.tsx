@@ -157,6 +157,15 @@ export function CardHero({
   const sameAsBank = !!bank && !!name && bank.toLowerCase() === name.toLowerCase();
   const title = bank || name;
 
+  // El nombre del banco achica su letra antes de truncar: con nombres largos
+  // ("Banco de la Nación") el tamaño fijo de 19px lo cortaba con "…" enseguida.
+  const titleSizeClass =
+    !title || title.length <= 10
+      ? "text-[19px]"
+      : title.length <= 16
+      ? "text-[16px]"
+      : "text-[14px]";
+
   const pillBg = `rgba(255,255,255,${isLight ? "0.16" : "0.12"})`;
 
   const ARROW_CLASS = cn(
@@ -227,15 +236,23 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco a la izquierda, período a la misma altura
-            (centrado), red a la derecha. `items-start` alinea los tres por
-            arriba, contra la primera línea del banco — los últimos 4 dígitos
-            cuelgan debajo sin correr esa alineación. */}
-        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
+        {/* 1. Encabezado: banco a la izquierda, período a la misma altura,
+            red a la derecha. `justify-between` en un flex (no grid) hace que
+            el HUECO entre banco↔período y período↔red sea igual — con
+            columnas de igual ancho el hueco visible dependía del ancho de
+            cada contenido (ej. "MACRO" es más ancho que el ícono de AMEX) y
+            quedaba asimétrico aunque las columnas midieran lo mismo.
+            `items-start` alinea los tres por arriba, contra la primera línea
+            del banco — los últimos 4 dígitos cuelgan debajo sin correr esa
+            alineación. */}
+        <div className="relative flex items-start justify-between gap-1.5">
           <div className="min-w-0">
             {title && (
               <div
-                className="truncate text-[19px] font-extrabold uppercase leading-tight tracking-wide"
+                className={cn(
+                  "truncate font-extrabold uppercase leading-tight tracking-wide",
+                  titleSizeClass
+                )}
                 style={{ color: fg }}
               >
                 {title}
@@ -253,7 +270,7 @@ export function CardHero({
               label trunca con ellipsis si el ancho disponible no alcanza,
               para no empujar el layout ni superponerse con banco/red. */}
           <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
+            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -267,7 +284,7 @@ export function CardHero({
               <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
             <span
-              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
+              className="whitespace-nowrap text-[10px] font-semibold uppercase tabular-nums"
               style={{ color: fgMuted, letterSpacing: "0.04em" }}
             >
               {currentPeriod.label}
@@ -284,7 +301,7 @@ export function CardHero({
             </button>
           </div>
 
-          <div className="min-w-0 justify-self-end">
+          <div className="flex-shrink-0">
             <CardLogo type={card.type} size="lg" fgColor={fg} />
           </div>
         </div>
