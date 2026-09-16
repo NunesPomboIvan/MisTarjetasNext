@@ -498,11 +498,12 @@ export function isCurrentPeriodExpired(card: CardForPeriod): boolean {
 
 /**
  * Posición mínima/máxima del nodo "Cierre" para que no se pegue a los otros
- * dos. Asimétrico porque "Últ. venc." (10 caracteres) es más ancho que
- * "Vencim." (7): con 34 de mínimo llegaban a tocarse en tarjetas angostas
- * (mobile) cuando el cierre cae muy cerca del último vencimiento.
+ * dos. Asimétrico porque "Último vencimiento" (18 caracteres) es mucho más
+ * ancho que "Vencimiento" (11): con un mínimo más bajo llegaban a tocarse en
+ * tarjetas angostas (mobile) cuando el cierre cae muy cerca del último
+ * vencimiento.
  */
-const CLOSE_PCT_MIN = 38;
+const CLOSE_PCT_MIN = 44;
 const CLOSE_PCT_MAX = 66;
 
 /**

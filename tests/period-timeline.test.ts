@@ -28,7 +28,7 @@ describe("getPeriodTimeline", () => {
     expect(t.lastDueReached).toBe(true);
     expect(t.closeReached).toBe(false);
     expect(t.dueReached).toBe(false);
-    expect(t.closePct).toBeGreaterThanOrEqual(38);
+    expect(t.closePct).toBeGreaterThanOrEqual(44);
     expect(t.closePct).toBeLessThanOrEqual(66);
     expect(t.progressPct).toBeGreaterThan(0);
     expect(t.progressPct).toBeLessThan(t.closePct);
@@ -69,7 +69,7 @@ describe("getPeriodTimeline", () => {
     expect(t.lastDue).toBeNull();
     expect(t.lastDueReached).toBe(false);
     // El eje sigue siendo válido y el cierre queda acotado.
-    expect(t.closePct).toBeGreaterThanOrEqual(38);
+    expect(t.closePct).toBeGreaterThanOrEqual(44);
     expect(t.closePct).toBeLessThanOrEqual(66);
     expect(t.statusText).toBe("Cierra en 8 días");
   });

@@ -37,16 +37,6 @@ interface CardHeroProps {
   highlightKey: "close" | "due" | null;
 }
 
-const SHORT_MONTHS = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
-
-/** "2026-09" → "SEP 2026". Versión corta de `period.label` solo para el
- * selector de período: con el nombre completo del mes ("Septiembre 2026")
- * el pill no deja lugar para el banco/red en el ancho mínimo de mobile. */
-function shortPeriodLabel(periodKey: string): string {
-  const [year, month] = periodKey.split("-");
-  return `${SHORT_MONTHS[Number(month) - 1]} ${year}`;
-}
-
 /** Separa "$ 1.234,56" en símbolo/entero/decimales para achicar el símbolo y los decimales. */
 function splitAmount(formatted: string): { symbol: string; integer: string; decimals: string } | null {
   const match = formatted.match(/^([^\d]*)([\d.]+),(\d{2})$/);
@@ -151,9 +141,9 @@ export function CardHero({
   const nextPeriod = getPeriodByOffset(card, offset + 1);
 
   const nodes = [
-    { key: "lastDue", label: "Últ. venc.", date: lastDueLabel, reached: lastDueReached, pct: 0, align: "start" as const },
+    { key: "lastDue", label: "Último vencimiento", date: lastDueLabel, reached: lastDueReached, pct: 0, align: "start" as const },
     { key: "close", label: "Cierre", date: closeLabel, reached: closeReached, pct: closePct, align: "center" as const },
-    { key: "due", label: "Vencim.", date: dueLabel, reached: dueReached, pct: 100, align: "end" as const },
+    { key: "due", label: "Vencimiento", date: dueLabel, reached: dueReached, pct: 100, align: "end" as const },
   ];
 
   function anchorStyle(pct: number, align: "start" | "center" | "end") {
@@ -170,7 +160,7 @@ export function CardHero({
   const pillBg = `rgba(255,255,255,${isLight ? "0.16" : "0.12"})`;
 
   const ARROW_CLASS = cn(
-    "relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-colors",
+    "relative flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors",
     "hover:bg-white/10 active:bg-white/15",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60",
     // Hit area mínima 44x44 sin agrandar el botón visualmente.
@@ -241,7 +231,7 @@ export function CardHero({
             (centrado), red a la derecha. `items-start` alinea los tres por
             arriba, contra la primera línea del banco — los últimos 4 dígitos
             cuelgan debajo sin correr esa alineación. */}
-        <div className="relative grid grid-cols-[minmax(0,1.4fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
+        <div className="relative grid grid-cols-[minmax(0,1.8fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
           <div className="min-w-0">
             {title && (
               <div
@@ -263,7 +253,7 @@ export function CardHero({
               label trunca con ellipsis si el ancho disponible no alcanza,
               para no empujar el layout ni superponerse con banco/red. */}
           <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
+            className="inline-flex min-w-0 max-w-full items-center gap-1 justify-self-center rounded-full px-0.5"
             style={{ background: pillBg }}
           >
             <button
@@ -277,11 +267,10 @@ export function CardHero({
               <ChevronLeft className="h-3 w-3" aria-hidden="true" />
             </button>
             <span
-              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
-              style={{ color: fgMuted, letterSpacing: "0.06em" }}
-              title={currentPeriod.label}
+              className="min-w-0 truncate text-[9px] font-semibold uppercase tabular-nums"
+              style={{ color: fgMuted, letterSpacing: "0.02em" }}
             >
-              {shortPeriodLabel(currentPeriod.key)}
+              {currentPeriod.label}
             </span>
             <button
               type="button"
@@ -358,11 +347,11 @@ export function CardHero({
                 <span
                   key={n.key}
                   className={cn(
-                    "absolute top-0 max-w-[32%] truncate whitespace-nowrap text-[11px] font-semibold uppercase",
+                    "absolute top-0 max-w-[36%] truncate whitespace-nowrap text-[8px] font-semibold uppercase",
                     n.align === "center" && "text-center",
                     n.align === "end" && "text-right"
                   )}
-                  style={{ ...anchorStyle(n.pct, n.align), color: isHighlight ? fg : fgMuted, letterSpacing: "0.06em" }}
+                  style={{ ...anchorStyle(n.pct, n.align), color: isHighlight ? fg : fgMuted, letterSpacing: "0.02em" }}
                 >
                   {n.label}
                 </span>
