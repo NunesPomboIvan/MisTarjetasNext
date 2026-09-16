@@ -160,7 +160,7 @@ export function CardHero({
   const pillBg = `rgba(255,255,255,${isLight ? "0.16" : "0.12"})`;
 
   const ARROW_CLASS = cn(
-    "relative flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors",
+    "relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full transition-colors",
     "hover:bg-white/10 active:bg-white/15",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60",
     // Hit area mínima 44x44 sin agrandar el botón visualmente.
@@ -253,7 +253,7 @@ export function CardHero({
               label trunca con ellipsis si el ancho disponible no alcanza,
               para no empujar el layout ni superponerse con banco/red. */}
           <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1 justify-self-center rounded-full px-0.5"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -264,11 +264,11 @@ export function CardHero({
               className={ARROW_CLASS}
               style={{ color: fgMuted }}
             >
-              <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
             <span
-              className="min-w-0 truncate text-[9px] font-semibold uppercase tabular-nums"
-              style={{ color: fgMuted, letterSpacing: "0.02em" }}
+              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
+              style={{ color: fgMuted, letterSpacing: "0.04em" }}
             >
               {currentPeriod.label}
             </span>
@@ -280,7 +280,7 @@ export function CardHero({
               className={ARROW_CLASS}
               style={{ color: fgMuted }}
             >
-              <ChevronRight className="h-3 w-3" aria-hidden="true" />
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
 
