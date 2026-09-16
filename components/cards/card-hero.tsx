@@ -20,7 +20,7 @@ interface CardHeroProps {
   saldo: number;
   paid: boolean;
   paidDate: string | null;
-  /** "Cierra en 12 días" — se muestra centrado entre el hito anterior y el resaltado. */
+  /** "Cierra en 12 días" — se muestra debajo de la barra, a la altura del avance de hoy. */
   statusText: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
   closePct: number;
@@ -35,6 +35,16 @@ interface CardHeroProps {
   dueReached: boolean;
   /** Hito a resaltar: "close", "due", o null si ya no queda ninguno pendiente. */
   highlightKey: "close" | "due" | null;
+}
+
+const SHORT_MONTHS = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+/** "2026-09" → "SEP 2026". Versión corta de `period.label` solo para el
+ * selector de período: con el nombre completo del mes ("Septiembre 2026")
+ * el pill no deja lugar para el banco/red en el ancho mínimo de mobile. */
+function shortPeriodLabel(periodKey: string): string {
+  const [year, month] = periodKey.split("-");
+  return `${SHORT_MONTHS[Number(month) - 1]} ${year}`;
 }
 
 /** Separa "$ 1.234,56" en símbolo/entero/decimales para achicar el símbolo y los decimales. */
@@ -227,15 +237,11 @@ export function CardHero({
           }}
         />
 
-        {/*
-          1. Encabezado: banco a la izquierda, período centrado, red a la
-          derecha. El shell de la app limita el ancho a max-w-lg (~480px)
-          incluso en desktop, así que en viewports angostos (<640px, todo
-          celular real) el período no entra en la misma fila sin pisar el
-          nombre del banco o el logo: se apila debajo, centrado, y recién
-          desde `sm:` pasa a compartir la fila con banco/red.
-        */}
-        <div className="relative grid grid-cols-2 items-start gap-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)]">
+        {/* 1. Encabezado: banco a la izquierda, período a la misma altura
+            (centrado), red a la derecha. `items-start` alinea los tres por
+            arriba, contra la primera línea del banco — los últimos 4 dígitos
+            cuelgan debajo sin correr esa alineación. */}
+        <div className="relative grid grid-cols-[minmax(0,1.4fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
           <div className="min-w-0">
             {title && (
               <div
@@ -253,15 +259,11 @@ export function CardHero({
             </div>
           </div>
 
-          <div className="min-w-0 order-2 justify-self-end sm:order-3">
-            <CardLogo type={card.type} size="lg" fgColor={fg} />
-          </div>
-
           {/* Selector de período: flechas + label, dentro de una píldora. El
               label trunca con ellipsis si el ancho disponible no alcanza,
               para no empujar el layout ni superponerse con banco/red. */}
           <div
-            className="col-span-2 order-3 inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1 sm:order-2 sm:col-span-1"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -277,8 +279,9 @@ export function CardHero({
             <span
               className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
               style={{ color: fgMuted, letterSpacing: "0.06em" }}
+              title={currentPeriod.label}
             >
-              {currentPeriod.label}
+              {shortPeriodLabel(currentPeriod.key)}
             </span>
             <button
               type="button"
@@ -290,6 +293,10 @@ export function CardHero({
             >
               <ChevronRight className="h-3 w-3" aria-hidden="true" />
             </button>
+          </div>
+
+          <div className="min-w-0 justify-self-end">
+            <CardLogo type={card.type} size="lg" fgColor={fg} />
           </div>
         </div>
 
@@ -340,9 +347,30 @@ export function CardHero({
           />
         </div>
 
-        {/* 3. Línea de tiempo */}
+        {/* 3. Línea de tiempo: etiquetas arriba de la barra, barra con los
+            hitos, días restantes debajo (a la altura del avance de hoy),
+            fechas al final. */}
         <div className="relative mt-4 px-1">
           <div className="relative h-3.5">
+            {nodes.map((n) => {
+              const isHighlight = n.key === highlightKey;
+              return (
+                <span
+                  key={n.key}
+                  className={cn(
+                    "absolute top-0 max-w-[32%] truncate whitespace-nowrap text-[11px] font-semibold uppercase",
+                    n.align === "center" && "text-center",
+                    n.align === "end" && "text-right"
+                  )}
+                  style={{ ...anchorStyle(n.pct, n.align), color: isHighlight ? fg : fgMuted, letterSpacing: "0.06em" }}
+                >
+                  {n.label}
+                </span>
+              );
+            })}
+          </div>
+
+          <div className="relative mt-1.5 h-3.5">
             <div
               className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full"
               style={{ background: `rgba(255,255,255,${isLight ? "0.28" : "0.18"})` }}
@@ -370,50 +398,32 @@ export function CardHero({
             })}
           </div>
 
-          <div className="relative mt-2 h-11">
-            {nodes.map((n) => {
-              const isHighlight = n.key === highlightKey;
-              return (
-                <div
-                  key={n.key}
-                  className={cn(
-                    "absolute top-0 flex max-w-[32%] flex-col overflow-hidden whitespace-nowrap",
-                    n.align === "center" && "items-center",
-                    n.align === "end" && "items-end"
-                  )}
-                  style={anchorStyle(n.pct, n.align)}
-                >
-                  <span
-                    className="max-w-full truncate text-[13px] font-bold tabular-nums"
-                    style={{ color: isHighlight ? fg : fgSecondary }}
-                  >
-                    {n.date}
-                  </span>
-                  <span
-                    className="truncate text-[10px] font-semibold uppercase"
-                    style={{ color: isHighlight ? fg : fgMuted, letterSpacing: "0.06em" }}
-                  >
-                    {n.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Días restantes: centrado entre el hito anterior y el resaltado. */}
+          {/* Días restantes: a la altura del avance de hoy en la barra. */}
           {highlightKey && (
-            <div className="relative mt-1 h-3.5">
+            <div className="relative mt-1.5 h-3">
               <span
                 className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
-                style={{
-                  left: `${highlightKey === "close" ? closePct / 2 : (closePct + 100) / 2}%`,
-                  color: fg,
-                }}
+                style={{ left: `${Math.min(92, Math.max(8, progressPct))}%`, color: fg }}
               >
                 {statusText}
               </span>
             </div>
           )}
+
+          <div className="relative mt-1.5 h-4">
+            {nodes.map((n) => {
+              const isHighlight = n.key === highlightKey;
+              return (
+                <span
+                  key={n.key}
+                  className="absolute top-0 max-w-[32%] truncate whitespace-nowrap text-[13px] font-bold tabular-nums"
+                  style={{ ...anchorStyle(n.pct, n.align), color: isHighlight ? fg : fgSecondary }}
+                >
+                  {n.date}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
