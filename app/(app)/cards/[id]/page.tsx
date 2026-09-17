@@ -107,8 +107,7 @@ export default async function CardDetailPage({
 
   // Acciones de movimientos (Saldo / Gastos / Agregar / menú), en la misma
   // fila que el botón de "Seleccionar" (que acá se muestra solo con el
-  // ícono, sin la palabra — compactSelectToggle más abajo) y que "Filtros"
-  // (agregado por CardExpenseSearchList, ver ese componente). "Pendiente de
+  // ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente de
   // pago" vive en CardHero, debajo del logo de la red. El grupo entero va
   // con `ml-auto` pegado al margen derecho (antes "Agregar" se estiraba
   // para ocupar el espacio libre, dejando el grupo repartido en vez de

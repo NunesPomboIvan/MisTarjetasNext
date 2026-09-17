@@ -21,7 +21,7 @@ import type { SelectableExpenseItem } from "@/components/expenses/selectable-exp
 interface CardExpenseSearchListProps {
   cardId: string;
   items: SelectableExpenseItem[];
-  /** Acciones (Saldo / Gastos / Agregar / menú) para la fila de la toolbar; "Filtros" se agrega delante de estas. */
+  /** Acciones (Saldo / Gastos / Agregar / menú) para la fila de la toolbar. */
   actions?: React.ReactNode;
   /** Si true, el botón de modo multi-selección se muestra solo con el ícono (sin la palabra "Seleccionar"). Default false. */
   compactSelectToggle?: boolean;
@@ -154,72 +154,59 @@ export function CardExpenseSearchList({ cardId, items, actions, compactSelectTog
 
   const hasAnyFilter = activeCount > 0 || query.trim().length > 0;
 
-  // Buscador (se inserta entre la toolbar y la lista). El botón de filtros
-  // vive en la toolbar (ver `actionsWithFiltros` más abajo), junto a
-  // "Seleccionar", Saldo, Gastos, Agregar y el menú.
+  // Buscador + botón de filtros (se inserta entre "Seleccionar" y la lista).
   const searchBar = (
-    <div className="relative">
-      <label htmlFor={searchInputId} className="sr-only">
-        Buscar consumos
-      </label>
-      <Search
-        aria-hidden="true"
-        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-      />
-      <input
-        id={searchInputId}
-        type="search"
-        placeholder="Ej: supermercado, Netflix..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className={cn(
-          "h-10 w-full rounded-[12px] border border-border bg-card pl-9 pr-9 text-[14px] text-foreground placeholder:text-muted-foreground",
-          "focus:outline-none focus:ring-2 focus:ring-primary/40"
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <label htmlFor={searchInputId} className="sr-only">
+          Buscar consumos
+        </label>
+        <Search
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
+        <input
+          id={searchInputId}
+          type="search"
+          placeholder="Ej: supermercado, Netflix..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className={cn(
+            "h-10 w-full rounded-[12px] border border-border bg-card pl-9 pr-9 text-[14px] text-foreground placeholder:text-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-primary/40"
+          )}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Limpiar búsqueda"
+          >
+            <X className="h-4 w-4" />
+          </button>
         )}
-      />
-      {query && (
-        <button
-          type="button"
-          onClick={() => setQuery("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Limpiar búsqueda"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
+      </div>
+      <button
+        type="button"
+        onClick={openSheet}
+        className={cn(
+          "relative inline-flex h-10 flex-shrink-0 items-center gap-1.5 rounded-[12px] border px-3 text-[13px] font-semibold transition-colors",
+          activeCount > 0
+            ? "border-primary/50 bg-primary/10 text-primary"
+            : "border-border bg-card text-foreground/80 hover:text-foreground"
+        )}
+        aria-label="Filtros"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        Filtros
+        {activeCount > 0 && (
+          <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white tabular-nums">
+            {activeCount}
+          </span>
+        )}
+      </button>
     </div>
-  );
-
-  // Botón de filtros, del tamaño del resto de la toolbar (h-8), para que
-  // conviva con "Seleccionar" / Saldo / Gastos / Agregar / menú en la misma
-  // fila en vez de en la fila del buscador.
-  const filtrosButton = (
-    <button
-      type="button"
-      onClick={openSheet}
-      className={cn(
-        "relative inline-flex h-8 flex-shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold transition-colors",
-        activeCount > 0
-          ? "border-primary/50 bg-primary/10 text-primary"
-          : "border-border bg-card text-foreground/80 hover:text-foreground"
-      )}
-      aria-label="Filtros"
-    >
-      <SlidersHorizontal className="h-3.5 w-3.5" />
-      Filtros
-      {activeCount > 0 && (
-        <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white tabular-nums">
-          {activeCount}
-        </span>
-      )}
-    </button>
-  );
-
-  const actionsWithFiltros = (
-    <>
-      {filtrosButton}
-      {actions}
-    </>
   );
 
   const emptyState = (
@@ -239,7 +226,7 @@ export function CardExpenseSearchList({ cardId, items, actions, compactSelectTog
       <SelectableExpenseList
         cardId={cardId}
         items={filtered}
-        actions={actionsWithFiltros}
+        actions={actions}
         compactSelectToggle={compactSelectToggle}
         afterToolbar={searchBar}
         emptyState={emptyState}
