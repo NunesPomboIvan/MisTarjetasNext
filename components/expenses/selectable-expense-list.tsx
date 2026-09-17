@@ -49,6 +49,8 @@ interface SelectableExpenseListProps {
    * misma fila que "Seleccionar" cuando NO se está en modo selección.
    */
   actions?: ReactNode;
+  /** Oculta el botón "Seleccionar" (modo multi-selección) de la toolbar. Default true. */
+  showSelectToggle?: boolean;
 }
 
 /**
@@ -64,6 +66,7 @@ export function SelectableExpenseList({
   afterToolbar,
   emptyState,
   actions,
+  showSelectToggle = true,
 }: SelectableExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -175,7 +178,7 @@ export function SelectableExpenseList({
           </div>
         ) : (
           <div className="flex w-full items-center gap-2 overflow-x-auto pr-4 [&::-webkit-scrollbar]:hidden">
-            {items.length > 0 && (
+            {showSelectToggle && items.length > 0 && (
               <button
                 type="button"
                 onClick={() => setMode(true)}

@@ -8,18 +8,14 @@ import { getPeriodByOffset } from "@/lib/periods/calculate";
 import type { CardForPeriod, Period } from "@/lib/periods/calculate";
 import { getCardPalette, tint, shade } from "@/lib/cards/card-colors";
 import { CardLogo } from "@/components/cards/card-logo";
-import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import type { Card, Currency } from "@/lib/supabase/database.types";
 
 interface CardHeroProps {
   card: Card & CardForPeriod;
-  cardId: string;
   currentPeriod: Period;
   currency?: Currency;
   hideBalance?: boolean;
   saldo: number;
-  paid: boolean;
-  paidDate: string | null;
   /** "Cierra en 12 días" — se muestra centrado entre el hito anterior y el resaltado. */
   statusText: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
@@ -95,13 +91,10 @@ function CardAmount({
  */
 export function CardHero({
   card,
-  cardId,
   currentPeriod,
   currency = "ARS",
   hideBalance = false,
   saldo,
-  paid,
-  paidDate,
   statusText,
   closePct,
   progressPct,
@@ -156,15 +149,6 @@ export function CardHero({
   const name = card.name?.trim();
   const sameAsBank = !!bank && !!name && bank.toLowerCase() === name.toLowerCase();
   const title = bank || name;
-
-  // El nombre del banco achica su letra antes de truncar: con nombres largos
-  // ("Banco de la Nación") el tamaño fijo de 19px lo cortaba con "…" enseguida.
-  const titleSizeClass =
-    !title || title.length <= 10
-      ? "text-[19px]"
-      : title.length <= 16
-      ? "text-[16px]"
-      : "text-[14px]";
 
   const pillBg = `rgba(255,255,255,${isLight ? "0.16" : "0.12"})`;
 
@@ -236,24 +220,15 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco a la izquierda, período centrado, red a la
-            derecha. Columnas de grid simétricas (1fr/auto/1fr) para que el
-            período quede siempre en el centro GEOMÉTRICO real de la tarjeta,
-            sin importar cuánto pese el texto del banco o el logo de la red a
-            cada lado (con flexbox + justify-between el hueco quedaba igual a
-            ambos costados, pero el período se corría del centro cuando un
-            lado pesaba más que el otro — ej. "MACRO" más ancho que el ícono
-            de AMEX). `items-start` alinea los tres por arriba, contra la
-            primera línea del banco — los últimos 4 dígitos cuelgan debajo
-            sin correr esa alineación. */}
-        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-1.5">
+        {/* 1. Encabezado: banco a la izquierda, red a la derecha. El período
+            ya no vive acá (bajó a la fila del monto), así que banco y logo
+            tienen todo el ancho disponible — mismo tamaño para los dos
+            (CardLogo "xl" ≈ mismo alto que el texto de 19px del banco). */}
+        <div className="relative flex items-start justify-between gap-2">
           <div className="min-w-0">
             {title && (
               <div
-                className={cn(
-                  "truncate font-extrabold uppercase leading-tight tracking-wide",
-                  titleSizeClass
-                )}
+                className="truncate text-[19px] font-extrabold uppercase leading-tight tracking-wide"
                 style={{ color: fg }}
               >
                 {title}
@@ -267,44 +242,7 @@ export function CardHero({
             </div>
           </div>
 
-          {/* Selector de período: flechas + label, dentro de una píldora. El
-              label trunca con ellipsis si el ancho disponible no alcanza,
-              para no empujar el layout ni superponerse con banco/red. */}
-          <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
-            style={{ background: pillBg }}
-          >
-            <button
-              type="button"
-              onClick={() => navigate(offset - 1)}
-              aria-label="Período anterior"
-              title={`Ir a ${previousPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <span
-              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
-              style={{ color: fgMuted, letterSpacing: "0.04em" }}
-            >
-              {currentPeriod.label}
-            </span>
-            <button
-              type="button"
-              onClick={() => navigate(offset + 1)}
-              aria-label="Período siguiente"
-              title={`Ir a ${nextPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className="min-w-0 justify-self-end">
-            <CardLogo type={card.type} size="lg" fgColor={fg} />
-          </div>
+          <CardLogo type={card.type} size="xl" fgColor={fg} className="flex-shrink-0" />
         </div>
 
         {card.is_extension && (
@@ -336,7 +274,9 @@ export function CardHero({
           </div>
         )}
 
-        {/* 2. Monto + botón de estado */}
+        {/* 2. Monto + selector de período (ocupa el lugar del botón "Pendiente
+            de pago", que se movió al panel de movimientos). El label trunca
+            con ellipsis si el ancho disponible no alcanza. */}
         <div className="relative mt-3 flex flex-wrap items-center justify-between gap-2">
           <CardAmount
             amount={saldo}
@@ -345,13 +285,37 @@ export function CardHero({
             className="font-display text-[24px] font-extrabold leading-none tabular-nums"
             style={{ letterSpacing: "-0.02em", color: fg }}
           />
-          <CardPeriodPaidToggle
-            tone="onColor"
-            cardId={cardId}
-            periodKey={currentPeriod.key}
-            paid={paid}
-            paidDate={paidDate}
-          />
+          <div
+            className="inline-flex min-w-0 max-w-full flex-shrink-0 items-center gap-1.5 rounded-full px-1"
+            style={{ background: pillBg }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate(offset - 1)}
+              aria-label="Período anterior"
+              title={`Ir a ${previousPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <span
+              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
+              style={{ color: fgMuted, letterSpacing: "0.04em" }}
+            >
+              {currentPeriod.label}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate(offset + 1)}
+              aria-label="Período siguiente"
+              title={`Ir a ${nextPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {/* 3. Línea de tiempo: etiquetas arriba de la barra, barra con los

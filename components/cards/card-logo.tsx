@@ -4,7 +4,7 @@ import type { CardType } from "@/lib/supabase/database.types";
 interface CardLogoProps {
   type: CardType;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   /** Si se pasa, usa ese color para el texto en vez del default */
   fgColor?: string;
 }
@@ -14,6 +14,8 @@ export function CardLogo({ type, className, size = "md", fgColor }: CardLogoProp
     sm: { wrap: "h-6 w-6", text: "text-[10px]", circles: 16 },
     md: { wrap: "h-8 w-8", text: "text-[13px]", circles: 22 },
     lg: { wrap: "h-10 w-10", text: "text-[16px]", circles: 28 },
+    // Mismo tamaño de letra que el nombre del banco en CardHero (19px).
+    xl: { wrap: "h-11 w-11", text: "text-[19px]", circles: 34 },
   };
   const s = sizes[size];
   const fg = fgColor ?? "rgba(255,255,255,0.92)";

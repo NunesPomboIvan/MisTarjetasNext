@@ -6,6 +6,7 @@ import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { CardHero } from "@/components/cards/card-hero";
 import { CardBalanceDialog } from "@/components/cards/card-balance-dialog";
+import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -105,12 +106,23 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Saldo / Agregar / menú). Se renderizan en la
-  // misma fila que "Seleccionar" dentro de la lista. "Agregar" se estira
-  // para ocupar el espacio libre; el menú de 3 puntos (antes en el header,
-  // incluye "Gastos" entre sus opciones) queda pegado al margen derecho.
+  // Acciones de movimientos (Pendiente de pago / Saldo / Agregar / menú). Se
+  // renderizan en el lugar donde antes estaba "Seleccionar" dentro de la
+  // lista — ese botón se oculta acá (showSelectToggle={false} más abajo) y
+  // "Pendiente de pago" ocupa su lugar; el toggle salió de CardHero, que
+  // ahora tiene el selector de período donde antes estaba ese botón.
+  // "Agregar" se estira para ocupar el espacio libre; el menú de 3 puntos
+  // (antes en el header, incluye "Gastos" entre sus opciones) queda pegado
+  // al margen derecho.
   const movimientoActions = (
     <>
+      <CardPeriodPaidToggle
+        tone="neutral"
+        cardId={id}
+        periodKey={period.key}
+        paid={periodPayment?.paid ?? false}
+        paidDate={periodPayment?.paid_date ?? null}
+      />
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}`}
@@ -145,11 +157,8 @@ export default async function CardDetailPage({
           en el popup del botón "Saldo" (CardBalanceDialog), no acá. */}
       <CardHero
         card={card}
-        cardId={id}
         currentPeriod={period}
         saldo={saldo}
-        paid={periodPayment?.paid ?? false}
-        paidDate={periodPayment?.paid_date ?? null}
         statusText={timeline.statusText}
         closePct={timeline.closePct}
         progressPct={timeline.progressPct}
@@ -162,9 +171,9 @@ export default async function CardDetailPage({
         highlightKey={timeline.highlightKey}
       />
 
-      {/* Lista de movimientos del período. Las acciones (Saldo/menú/Agregar)
-          van en la misma fila que "Seleccionar", sin header ni título, para
-          ganar espacio vertical. */}
+      {/* Lista de movimientos del período. Las acciones (Pendiente de
+          pago/Saldo/menú/Agregar) van en el lugar donde antes estaba
+          "Seleccionar", sin header ni título, para ganar espacio vertical. */}
       <section className="space-y-3">
         {periodExpenses.length === 0 ? (
           <>
@@ -185,6 +194,7 @@ export default async function CardDetailPage({
           <CardExpenseSearchList
             cardId={id}
             actions={movimientoActions}
+            showSelectToggle={false}
             items={periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);
               const p = new URLSearchParams({ card_id: id });
