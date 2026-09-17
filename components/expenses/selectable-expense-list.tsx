@@ -49,8 +49,8 @@ interface SelectableExpenseListProps {
    * misma fila que "Seleccionar" cuando NO se está en modo selección.
    */
   actions?: ReactNode;
-  /** Oculta el botón "Seleccionar" (modo multi-selección) de la toolbar. Default true. */
-  showSelectToggle?: boolean;
+  /** Si true, el botón de modo multi-selección se muestra solo con el ícono (sin la palabra "Seleccionar"). Default false. */
+  compactSelectToggle?: boolean;
 }
 
 /**
@@ -66,7 +66,7 @@ export function SelectableExpenseList({
   afterToolbar,
   emptyState,
   actions,
-  showSelectToggle = true,
+  compactSelectToggle = false,
 }: SelectableExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -178,14 +178,19 @@ export function SelectableExpenseList({
           </div>
         ) : (
           <div className="flex w-full items-center gap-2 overflow-x-auto pr-4 [&::-webkit-scrollbar]:hidden">
-            {showSelectToggle && items.length > 0 && (
+            {items.length > 0 && (
               <button
                 type="button"
                 onClick={() => setMode(true)}
-                className="inline-flex h-8 flex-shrink-0 items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground"
+                aria-label="Seleccionar"
+                title="Seleccionar"
+                className={cn(
+                  "inline-flex h-8 flex-shrink-0 items-center gap-1.5 text-[13px] font-medium text-muted-foreground transition-colors active:text-foreground",
+                  compactSelectToggle && "w-8 justify-center px-0"
+                )}
               >
                 <ListChecks className="h-4 w-4" />
-                Seleccionar
+                {!compactSelectToggle && "Seleccionar"}
               </button>
             )}
             {actions}

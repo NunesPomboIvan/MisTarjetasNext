@@ -106,14 +106,13 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Pendiente de pago / Saldo / Agregar / menú). Se
-  // renderizan en el lugar donde antes estaba "Seleccionar" dentro de la
-  // lista — ese botón se oculta acá (showSelectToggle={false} más abajo) y
-  // "Pendiente de pago" ocupa su lugar; el toggle salió de CardHero, que
-  // ahora tiene el selector de período donde antes estaba ese botón.
-  // "Agregar" se estira para ocupar el espacio libre; el menú de 3 puntos
-  // (antes en el header, incluye "Gastos" entre sus opciones) queda pegado
-  // al margen derecho.
+  // Acciones de movimientos (Pendiente de pago / Saldo / Agregar / menú), en
+  // la misma fila que el botón de "Seleccionar" (que acá se muestra solo con
+  // el ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente de
+  // pago" salió de CardHero, que ahora tiene el selector de período en su
+  // lugar. "Agregar" se estira para ocupar el espacio libre; el menú de 3
+  // puntos (antes en el header, incluye "Gastos" entre sus opciones) queda
+  // pegado al margen derecho.
   const movimientoActions = (
     <>
       <CardPeriodPaidToggle
@@ -172,8 +171,8 @@ export default async function CardDetailPage({
       />
 
       {/* Lista de movimientos del período. Las acciones (Pendiente de
-          pago/Saldo/menú/Agregar) van en el lugar donde antes estaba
-          "Seleccionar", sin header ni título, para ganar espacio vertical. */}
+          pago/Saldo/menú/Agregar) van en la misma fila que "Seleccionar",
+          sin header ni título, para ganar espacio vertical. */}
       <section className="space-y-3">
         {periodExpenses.length === 0 ? (
           <>
@@ -194,7 +193,7 @@ export default async function CardDetailPage({
           <CardExpenseSearchList
             cardId={id}
             actions={movimientoActions}
-            showSelectToggle={false}
+            compactSelectToggle
             items={periodExpenses.map((expense) => {
               const instIdx = getInstallmentIndexInPeriod(expense, period);
               const p = new URLSearchParams({ card_id: id });

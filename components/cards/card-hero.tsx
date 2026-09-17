@@ -220,11 +220,15 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco a la izquierda, red a la derecha. El período
-            ya no vive acá (bajó a la fila del monto), así que banco y logo
-            tienen todo el ancho disponible — mismo tamaño para los dos
-            (CardLogo "xl" ≈ mismo alto que el texto de 19px del banco). */}
-        <div className="relative flex items-start justify-between gap-2">
+        {/* 1. Encabezado: banco a la izquierda, período centrado (a la misma
+            altura que el banco), red a la derecha. Columnas de grid
+            simétricas (1fr/auto/1fr) para que el período quede en el centro
+            GEOMÉTRICO real de la tarjeta, sin importar cuánto pese el texto
+            del banco o el logo a cada lado. `items-start` alinea los tres
+            por arriba, contra la primera línea del banco — los últimos 4
+            dígitos cuelgan debajo sin correr esa alineación. Banco y logo al
+            mismo tamaño (CardLogo "xl" ≈ 19px, igual que el texto del banco). */}
+        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-2">
           <div className="min-w-0">
             {title && (
               <div
@@ -242,7 +246,42 @@ export function CardHero({
             </div>
           </div>
 
-          <CardLogo type={card.type} size="xl" fgColor={fg} className="flex-shrink-0" />
+          {/* Selector de período: flechas + label, dentro de una píldora. El
+              label trunca con ellipsis si el ancho disponible no alcanza,
+              para no empujar el layout ni superponerse con banco/red. */}
+          <div
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
+            style={{ background: pillBg }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate(offset - 1)}
+              aria-label="Período anterior"
+              title={`Ir a ${previousPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <span
+              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
+              style={{ color: fgMuted, letterSpacing: "0.04em" }}
+            >
+              {currentPeriod.label}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate(offset + 1)}
+              aria-label="Período siguiente"
+              title={`Ir a ${nextPeriod.label}`}
+              className={ARROW_CLASS}
+              style={{ color: fgMuted }}
+            >
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+
+          <CardLogo type={card.type} size="xl" fgColor={fg} className="justify-self-end" />
         </div>
 
         {card.is_extension && (
@@ -274,10 +313,9 @@ export function CardHero({
           </div>
         )}
 
-        {/* 2. Monto + selector de período (ocupa el lugar del botón "Pendiente
-            de pago", que se movió al panel de movimientos). El label trunca
-            con ellipsis si el ancho disponible no alcanza. */}
-        <div className="relative mt-3 flex flex-wrap items-center justify-between gap-2">
+        {/* 2. Monto, alineado a la derecha (el botón "Pendiente de pago" que
+            vivía acá se movió al panel de movimientos). */}
+        <div className="relative mt-3 flex items-center justify-end">
           <CardAmount
             amount={saldo}
             currency={currency}
@@ -285,37 +323,6 @@ export function CardHero({
             className="font-display text-[24px] font-extrabold leading-none tabular-nums"
             style={{ letterSpacing: "-0.02em", color: fg }}
           />
-          <div
-            className="inline-flex min-w-0 max-w-full flex-shrink-0 items-center gap-1.5 rounded-full px-1"
-            style={{ background: pillBg }}
-          >
-            <button
-              type="button"
-              onClick={() => navigate(offset - 1)}
-              aria-label="Período anterior"
-              title={`Ir a ${previousPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-            <span
-              className="min-w-0 truncate text-[10px] font-semibold uppercase tabular-nums"
-              style={{ color: fgMuted, letterSpacing: "0.04em" }}
-            >
-              {currentPeriod.label}
-            </span>
-            <button
-              type="button"
-              onClick={() => navigate(offset + 1)}
-              aria-label="Período siguiente"
-              title={`Ir a ${nextPeriod.label}`}
-              className={ARROW_CLASS}
-              style={{ color: fgMuted }}
-            >
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
         </div>
 
         {/* 3. Línea de tiempo: etiquetas arriba de la barra, barra con los

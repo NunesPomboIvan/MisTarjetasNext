@@ -23,8 +23,8 @@ interface CardExpenseSearchListProps {
   items: SelectableExpenseItem[];
   /** Acciones (Fijo / Gastos / Agregar) para la fila de la toolbar. */
   actions?: React.ReactNode;
-  /** Oculta el botón "Seleccionar" de la toolbar. Default true. */
-  showSelectToggle?: boolean;
+  /** Si true, el botón de modo multi-selección se muestra solo con el ícono (sin la palabra "Seleccionar"). Default false. */
+  compactSelectToggle?: boolean;
 }
 
 type Tipo = "todos" | "gastos" | "reintegros";
@@ -78,7 +78,7 @@ function countActive(f: Filters): number {
   return n;
 }
 
-export function CardExpenseSearchList({ cardId, items, actions, showSelectToggle }: CardExpenseSearchListProps) {
+export function CardExpenseSearchList({ cardId, items, actions, compactSelectToggle }: CardExpenseSearchListProps) {
   const [query, setQuery] = useState("");
   const searchInputId = useId();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -227,7 +227,7 @@ export function CardExpenseSearchList({ cardId, items, actions, showSelectToggle
         cardId={cardId}
         items={filtered}
         actions={actions}
-        showSelectToggle={showSelectToggle}
+        compactSelectToggle={compactSelectToggle}
         afterToolbar={searchBar}
         emptyState={emptyState}
       />
