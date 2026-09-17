@@ -6,7 +6,6 @@ import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { CardHero } from "@/components/cards/card-hero";
 import { CardBalanceDialog } from "@/components/cards/card-balance-dialog";
-import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import { CardDetailSwipe } from "@/components/cards/card-detail-swipe";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -106,26 +105,18 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Pendiente de pago / Saldo / Agregar / menú), en
-  // la misma fila que el botón de "Seleccionar" (que acá se muestra solo con
-  // el ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente de
-  // pago" salió de CardHero, que ahora tiene el selector de período en su
-  // lugar. El grupo entero va con `ml-auto` pegado al margen derecho (antes
-  // "Agregar" se estiraba para ocupar el espacio libre, dejando el grupo
-  // repartido en vez de agrupado contra el borde); el menú de 3 puntos
-  // (antes en el header, incluye "Gastos" entre sus opciones) queda al
-  // final, pegado al margen. "Agregar" conserva su encogimiento por defecto
-  // (nada de flex-shrink-0) para que en pantallas angostas ceda lugar en vez
-  // de forzar el scroll horizontal de la fila.
+  // Acciones de movimientos (Saldo / Agregar / menú), en la misma fila que
+  // el botón de "Seleccionar" (que acá se muestra solo con el ícono, sin la
+  // palabra — compactSelectToggle más abajo). "Pendiente de pago" vive en
+  // CardHero, debajo del logo de la red. El grupo entero va con `ml-auto`
+  // pegado al margen derecho (antes "Agregar" se estiraba para ocupar el
+  // espacio libre, dejando el grupo repartido en vez de agrupado contra el
+  // borde); el menú de 3 puntos (antes en el header, incluye "Gastos" entre
+  // sus opciones) queda al final, pegado al margen. "Agregar" conserva su
+  // encogimiento por defecto (nada de flex-shrink-0) para que en pantallas
+  // angostas ceda lugar en vez de forzar el scroll horizontal de la fila.
   const movimientoActions = (
     <div className="ml-auto flex min-w-0 items-center gap-2">
-      <CardPeriodPaidToggle
-        tone="neutral"
-        cardId={id}
-        periodKey={period.key}
-        paid={periodPayment?.paid ?? false}
-        paidDate={periodPayment?.paid_date ?? null}
-      />
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}`}
@@ -160,8 +151,11 @@ export default async function CardDetailPage({
           en el popup del botón "Saldo" (CardBalanceDialog), no acá. */}
       <CardHero
         card={card}
+        cardId={id}
         currentPeriod={period}
         saldo={saldo}
+        paid={periodPayment?.paid ?? false}
+        paidDate={periodPayment?.paid_date ?? null}
         statusText={timeline.statusText}
         closePct={timeline.closePct}
         progressPct={timeline.progressPct}
@@ -180,7 +174,7 @@ export default async function CardDetailPage({
       <section className="space-y-3">
         {periodExpenses.length === 0 ? (
           <>
-            <div className="flex items-center gap-2 overflow-x-auto pr-4 [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {movimientoActions}
             </div>
             <EmptyState

@@ -91,7 +91,7 @@ export function CardPeriodPaidToggle({
             : undefined
         }
         className={cn(
-          "relative inline-flex items-center gap-[4px] rounded-full border px-[9px] py-[4px]",
+          "relative inline-flex items-center gap-[4px] whitespace-nowrap rounded-full border px-[9px] py-[4px]",
           "text-[10px] font-semibold tracking-[0.01em] transition-colors duration-200",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           // Hit area mínima 44x44 sin agrandar el chip visualmente.

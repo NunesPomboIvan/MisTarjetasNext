@@ -8,14 +8,18 @@ import { getPeriodByOffset } from "@/lib/periods/calculate";
 import type { CardForPeriod, Period } from "@/lib/periods/calculate";
 import { getCardPalette, tint, shade } from "@/lib/cards/card-colors";
 import { CardLogo } from "@/components/cards/card-logo";
+import { CardPeriodPaidToggle } from "@/components/cards/card-period-paid-toggle";
 import type { Card, Currency } from "@/lib/supabase/database.types";
 
 interface CardHeroProps {
   card: Card & CardForPeriod;
+  cardId: string;
   currentPeriod: Period;
   currency?: Currency;
   hideBalance?: boolean;
   saldo: number;
+  paid: boolean;
+  paidDate: string | null;
   /** "Cierra en 12 días" — se muestra centrado entre el hito anterior y el resaltado. */
   statusText: string;
   /** Posición del nodo "Cierre" en la barra (0–100). */
@@ -91,10 +95,13 @@ function CardAmount({
  */
 export function CardHero({
   card,
+  cardId,
   currentPeriod,
   currency = "ARS",
   hideBalance = false,
   saldo,
+  paid,
+  paidDate,
   statusText,
   closePct,
   progressPct,
@@ -221,16 +228,22 @@ export function CardHero({
         />
 
         {/* 1. Encabezado: banco + últimos 4 a la izquierda (letra bien chica
-            para no competir con el período), período centrado, red a la
-            derecha. Grid (no `absolute`): un grid nunca hace que dos
-            elementos se superpongan — el navegador les da a las columnas el
-            ancho que necesitan y sólo trunca o achica si no entra, así que
-            "Banco Nación" no puede terminar tapado por el período por más
-            angosta que sea la tarjeta (con `absolute` sí pasaba: nada le
-            reservaba lugar al banco, y con nombres reales llegaban a
-            pisarse). `items-center` los alinea contra el más alto de los
-            tres (el logo "xl"). */}
-        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-center gap-2">
+            para no competir con el período), período centrado, red +
+            "Pendiente de pago" apilados a la derecha. Grid (no `absolute`):
+            el navegador le reserva a cada columna el ancho que su contenido
+            necesita y sólo trunca si no entra, así que "Banco Nación" no
+            puede terminar tapado por el período (con `absolute` sí pasaba,
+            porque nada le reservaba lugar al banco). El toggle usa
+            `whitespace-nowrap` para que su ancho real (una sola línea)
+            sea el que se reserva en la columna — si pudiera hacer wrap a 2
+            líneas, el grid subestimaba el ancho necesario y el período se
+            montaba encima. `items-start` (no `items-center`) alinea los
+            tres arriba, contra la primera línea de cada uno: si se
+            centraran contra el alto total de la columna derecha (logo +
+            toggle apilados, más alta que el período), el período quedaba
+            centrado verticalmente en esa columna y su mitad inferior se
+            metía debajo del toggle. */}
+        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-2">
           <div className="min-w-0">
             {title && (
               <div
@@ -280,11 +293,20 @@ export function CardHero({
             </button>
           </div>
 
-          <CardLogo type={card.type} size="xl" fgColor={fg} className="justify-self-end" />
+          <div className="flex flex-col items-end justify-self-end gap-1">
+            <CardLogo type={card.type} size="lg" fgColor={fg} />
+            <CardPeriodPaidToggle
+              tone="onColor"
+              cardId={cardId}
+              periodKey={currentPeriod.key}
+              paid={paid}
+              paidDate={paidDate}
+            />
+          </div>
         </div>
 
-        {/* 2. Monto, alineado a la derecha. */}
-        <div className="relative mt-3 flex items-center justify-end">
+        {/* 2. Monto, alineado a la izquierda. */}
+        <div className="relative mt-3 flex items-center justify-start">
           <CardAmount
             amount={saldo}
             currency={currency}
