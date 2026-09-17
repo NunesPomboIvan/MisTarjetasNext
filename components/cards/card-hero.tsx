@@ -293,26 +293,27 @@ export function CardHero({
             </button>
           </div>
 
-          <div className="flex flex-col items-end justify-self-end gap-1">
+          <div className="justify-self-end">
             <CardLogo type={card.type} size="lg" fgColor={fg} />
-            <CardPeriodPaidToggle
-              tone="onColor"
-              cardId={cardId}
-              periodKey={currentPeriod.key}
-              paid={paid}
-              paidDate={paidDate}
-            />
           </div>
         </div>
 
-        {/* 2. Monto, alineado a la izquierda. */}
-        <div className="relative mt-3 flex items-center justify-start">
+        {/* 2. Monto a la izquierda, "Pendiente de pago" a la altura del
+            saldo (no pegado al tipo de tarjeta). */}
+        <div className="relative mt-3 flex items-center justify-between gap-2">
           <CardAmount
             amount={saldo}
             currency={currency}
             hide={hideBalance}
             className="font-display text-[24px] font-extrabold leading-none tabular-nums"
             style={{ letterSpacing: "-0.02em", color: fg }}
+          />
+          <CardPeriodPaidToggle
+            tone="onColor"
+            cardId={cardId}
+            periodKey={currentPeriod.key}
+            paid={paid}
+            paidDate={paidDate}
           />
         </div>
 
