@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Plus, Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
+import { CardAddExpenseMenu } from "@/components/cards/card-add-expense-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { CardHero } from "@/components/cards/card-hero";
 import { CardBalanceDialog } from "@/components/cards/card-balance-dialog";
@@ -105,34 +104,18 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Saldo / Gastos / Agregar / menú), en la misma
-  // fila que el botón de "Seleccionar" (que acá se muestra solo con el
-  // ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente de
-  // pago" vive en CardHero, debajo del logo de la red. El grupo entero va
-  // con `ml-auto` pegado al margen derecho (antes "Agregar" se estiraba
-  // para ocupar el espacio libre, dejando el grupo repartido en vez de
-  // agrupado contra el borde); el menú de ajustes (antes "Gastos" era una
-  // de sus opciones, ahora es su propio botón) queda al final, pegado al
-  // margen. "Agregar" conserva su encogimiento por defecto (nada de
-  // flex-shrink-0) para que en pantallas angostas ceda lugar en vez de
-  // forzar el scroll horizontal de la fila.
+  // Acciones de movimientos (Saldo / Agregar / menú), en la misma fila que
+  // el botón de "Seleccionar" (que acá se muestra solo con el ícono, sin la
+  // palabra — compactSelectToggle más abajo). "Pendiente de pago" vive en
+  // CardHero, debajo del logo de la red. El grupo entero va con `ml-auto`
+  // pegado al margen derecho (antes "Agregar" se estiraba para ocupar el
+  // espacio libre, dejando el grupo repartido en vez de agrupado contra el
+  // borde). "Agregar" es un solo botón con menú ("Nuevo consumo" / "Nuevo
+  // gasto") en vez de dos botones separados, para no amontonar la fila.
   const movimientoActions = (
     <div className="ml-auto flex min-w-0 items-center gap-2">
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
-      <Link
-        href={`/expenses/new?card_id=${id}&fee=1`}
-        className="inline-flex h-8 min-w-0 flex-shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-      >
-        <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="min-w-0 truncate">Gastos</span>
-      </Link>
-      <Link
-        href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 min-w-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-      >
-        <Plus className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="min-w-0 truncate">Agregar</span>
-      </Link>
+      <CardAddExpenseMenu cardId={id} />
       <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
     </div>
   );
