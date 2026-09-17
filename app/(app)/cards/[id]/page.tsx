@@ -110,11 +110,15 @@ export default async function CardDetailPage({
   // la misma fila que el botón de "Seleccionar" (que acá se muestra solo con
   // el ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente de
   // pago" salió de CardHero, que ahora tiene el selector de período en su
-  // lugar. "Agregar" se estira para ocupar el espacio libre; el menú de 3
-  // puntos (antes en el header, incluye "Gastos" entre sus opciones) queda
-  // pegado al margen derecho.
+  // lugar. El grupo entero va con `ml-auto` pegado al margen derecho (antes
+  // "Agregar" se estiraba para ocupar el espacio libre, dejando el grupo
+  // repartido en vez de agrupado contra el borde); el menú de 3 puntos
+  // (antes en el header, incluye "Gastos" entre sus opciones) queda al
+  // final, pegado al margen. "Agregar" conserva su encogimiento por defecto
+  // (nada de flex-shrink-0) para que en pantallas angostas ceda lugar en vez
+  // de forzar el scroll horizontal de la fila.
   const movimientoActions = (
-    <>
+    <div className="ml-auto flex min-w-0 items-center gap-2">
       <CardPeriodPaidToggle
         tone="neutral"
         cardId={id}
@@ -125,13 +129,13 @@ export default async function CardDetailPage({
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 min-w-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
-        <Plus className="h-3.5 w-3.5" />
-        Agregar
+        <Plus className="h-3.5 w-3.5 flex-shrink-0" />
+        <span className="min-w-0 truncate">Agregar</span>
       </Link>
       <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
-    </>
+    </div>
   );
 
   return (

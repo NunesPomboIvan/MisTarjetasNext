@@ -220,37 +220,16 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: banco a la izquierda, período centrado (a la misma
-            altura que el banco), red a la derecha. Columnas de grid
-            simétricas (1fr/auto/1fr) para que el período quede en el centro
-            GEOMÉTRICO real de la tarjeta, sin importar cuánto pese el texto
-            del banco o el logo a cada lado. `items-start` alinea los tres
-            por arriba, contra la primera línea del banco — los últimos 4
-            dígitos cuelgan debajo sin correr esa alineación. Banco y logo al
-            mismo tamaño (CardLogo "xl" ≈ 19px, igual que el texto del banco). */}
-        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-start gap-2">
-          <div className="min-w-0">
-            {title && (
-              <div
-                className="truncate text-[19px] font-extrabold uppercase leading-tight tracking-wide"
-                style={{ color: fg }}
-              >
-                {title}
-              </div>
-            )}
-            <div
-              className="mt-0.5 truncate text-[12px] tabular-nums"
-              style={{ color: fgSecondary, letterSpacing: "0.08em" }}
-            >
-              •••• {card.last_four}
-            </div>
-          </div>
-
-          {/* Selector de período: flechas + label, dentro de una píldora. El
-              label trunca con ellipsis si el ancho disponible no alcanza,
-              para no empujar el layout ni superponerse con banco/red. */}
+        {/* 1. Encabezado: solo el selector de período, centrado en el ancho
+            total de la tarjeta, con la red pegada al margen derecho. Al
+            posicionar el logo con `absolute` en vez de una tercera columna
+            de grid, el período queda centrado en el 100% del ancho sin que
+            el logo lo corra del centro (y sin depender de que banco/logo
+            pesen lo mismo, que era el problema con la grilla 1fr/auto/1fr
+            cuando el banco vivía acá). */}
+        <div className="relative flex items-center justify-center">
           <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -281,7 +260,41 @@ export function CardHero({
             </button>
           </div>
 
-          <CardLogo type={card.type} size="xl" fgColor={fg} className="justify-self-end" />
+          <CardLogo
+            type={card.type}
+            size="xl"
+            fgColor={fg}
+            className="absolute right-0 top-1/2 -translate-y-1/2"
+          />
+        </div>
+
+        {/* 2. Banco + últimos 4 dígitos (bajaron a la altura del saldo) y
+            monto, a la derecha. */}
+        <div className="relative mt-3 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            {title && (
+              <div
+                className="truncate text-[19px] font-extrabold uppercase leading-tight tracking-wide"
+                style={{ color: fg }}
+              >
+                {title}
+              </div>
+            )}
+            <div
+              className="mt-0.5 truncate text-[12px] tabular-nums"
+              style={{ color: fgSecondary, letterSpacing: "0.08em" }}
+            >
+              •••• {card.last_four}
+            </div>
+          </div>
+
+          <CardAmount
+            amount={saldo}
+            currency={currency}
+            hide={hideBalance}
+            className="font-display text-[24px] font-extrabold leading-none tabular-nums"
+            style={{ letterSpacing: "-0.02em", color: fg }}
+          />
         </div>
 
         {card.is_extension && (
@@ -312,18 +325,6 @@ export function CardHero({
             )}
           </div>
         )}
-
-        {/* 2. Monto, alineado a la derecha (el botón "Pendiente de pago" que
-            vivía acá se movió al panel de movimientos). */}
-        <div className="relative mt-3 flex items-center justify-end">
-          <CardAmount
-            amount={saldo}
-            currency={currency}
-            hide={hideBalance}
-            className="font-display text-[24px] font-extrabold leading-none tabular-nums"
-            style={{ letterSpacing: "-0.02em", color: fg }}
-          />
-        </div>
 
         {/* 3. Línea de tiempo: etiquetas arriba de la barra, barra con los
             hitos, días restantes debajo (a la altura del avance de hoy),
