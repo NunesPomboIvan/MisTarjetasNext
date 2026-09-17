@@ -399,8 +399,9 @@ export function CardHero({
 
           {/* Días restantes: fijo en el punto medio entre el hito anterior y
               el resaltado (no según el avance de hoy, para que no se mueva
-              día a día). */}
-          {highlightKey && (
+              día a día). Solo en el período actual (offset 0): en otros
+              períodos "Cierra en X días" compara contra hoy, que no aplica. */}
+          {highlightKey && offset === 0 && (
             <div className="relative mt-1 h-3">
               <span
                 className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold"
