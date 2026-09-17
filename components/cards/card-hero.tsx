@@ -220,16 +220,36 @@ export function CardHero({
           }}
         />
 
-        {/* 1. Encabezado: solo el selector de período, centrado en el ancho
-            total de la tarjeta, con la red pegada al margen derecho. Al
-            posicionar el logo con `absolute` en vez de una tercera columna
-            de grid, el período queda centrado en el 100% del ancho sin que
-            el logo lo corra del centro (y sin depender de que banco/logo
-            pesen lo mismo, que era el problema con la grilla 1fr/auto/1fr
-            cuando el banco vivía acá). */}
-        <div className="relative flex items-center justify-center">
+        {/* 1. Encabezado: banco + últimos 4 a la izquierda (letra bien chica
+            para no competir con el período), período centrado, red a la
+            derecha. Grid (no `absolute`): un grid nunca hace que dos
+            elementos se superpongan — el navegador les da a las columnas el
+            ancho que necesitan y sólo trunca o achica si no entra, así que
+            "Banco Nación" no puede terminar tapado por el período por más
+            angosta que sea la tarjeta (con `absolute` sí pasaba: nada le
+            reservaba lugar al banco, y con nombres reales llegaban a
+            pisarse). `items-center` los alinea contra el más alto de los
+            tres (el logo "xl"). */}
+        <div className="relative grid grid-cols-[minmax(0,1fr)_minmax(0,auto)_minmax(0,1fr)] items-center gap-2">
+          <div className="min-w-0">
+            {title && (
+              <div
+                className="truncate text-[11px] font-extrabold uppercase leading-tight tracking-wide"
+                style={{ color: fg }}
+              >
+                {title}
+              </div>
+            )}
+            <div
+              className="truncate text-[9px] tabular-nums"
+              style={{ color: fgSecondary, letterSpacing: "0.06em" }}
+            >
+              •••• {card.last_four}
+            </div>
+          </div>
+
           <div
-            className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full px-1"
+            className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
             style={{ background: pillBg }}
           >
             <button
@@ -260,34 +280,11 @@ export function CardHero({
             </button>
           </div>
 
-          <CardLogo
-            type={card.type}
-            size="xl"
-            fgColor={fg}
-            className="absolute right-0 top-1/2 -translate-y-1/2"
-          />
+          <CardLogo type={card.type} size="xl" fgColor={fg} className="justify-self-end" />
         </div>
 
-        {/* 2. Banco + últimos 4 dígitos (bajaron a la altura del saldo) y
-            monto, a la derecha. */}
-        <div className="relative mt-3 flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            {title && (
-              <div
-                className="truncate text-[19px] font-extrabold uppercase leading-tight tracking-wide"
-                style={{ color: fg }}
-              >
-                {title}
-              </div>
-            )}
-            <div
-              className="mt-0.5 truncate text-[12px] tabular-nums"
-              style={{ color: fgSecondary, letterSpacing: "0.08em" }}
-            >
-              •••• {card.last_four}
-            </div>
-          </div>
-
+        {/* 2. Monto, alineado a la derecha. */}
+        <div className="relative mt-3 flex items-center justify-end">
           <CardAmount
             amount={saldo}
             currency={currency}
