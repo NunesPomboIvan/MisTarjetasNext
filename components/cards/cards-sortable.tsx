@@ -175,6 +175,10 @@ function StackedWallet({ items }: { items: CardSortItem[] }) {
             total={total}
             closeLabel={closeLabel}
             dueLabel={dueLabel}
+            compact
+            aspectRatio="2 / 1"
+            minH={165}
+            maxH={175}
           />
         </CardPressWrapper>
       ))}
