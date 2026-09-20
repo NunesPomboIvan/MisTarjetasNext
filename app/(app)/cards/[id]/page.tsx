@@ -131,7 +131,7 @@ export default async function CardDetailPage({
           Gastos
         </Link>
       </div>
-      <div className="-mr-0.5 flex-shrink-0">
+      <div className="mr-0.5 flex-shrink-0">
         <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
       </div>
     </>
