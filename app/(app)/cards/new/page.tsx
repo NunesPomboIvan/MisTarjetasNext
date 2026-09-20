@@ -14,7 +14,7 @@ export default async function NewCardPage({
   const { return: returnParam } = await searchParams;
   const returnTo =
     returnParam && returnParam.startsWith("/") ? returnParam : undefined;
-  const backHref = returnTo ?? "/";
+  const backHref = returnTo ?? "/cards";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

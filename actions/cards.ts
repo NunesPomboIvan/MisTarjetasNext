@@ -241,5 +241,5 @@ export async function deleteCard(id: string): Promise<ActionResult> {
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/cards");
 }
