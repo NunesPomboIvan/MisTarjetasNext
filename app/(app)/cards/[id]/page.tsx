@@ -115,7 +115,7 @@ export default async function CardDetailPage({
     <>
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="-ml-1.5 inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
+        className="-ml-2 inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
         <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
         Nuevo consumo
@@ -124,7 +124,7 @@ export default async function CardDetailPage({
         <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
         <Link
           href={`/expenses/new?card_id=${id}&fee=1`}
-          className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
+          className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
         >
           <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
           Gastos
