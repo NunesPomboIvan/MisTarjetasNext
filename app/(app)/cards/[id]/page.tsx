@@ -107,9 +107,9 @@ export default async function CardDetailPage({
 
   // Acciones de movimientos, en la misma fila que el botón de "Seleccionar"
   // (que acá se muestra solo con el ícono, sin la palabra —
-  // compactSelectToggle más abajo). "Nuevo consumo" va pegado a
-  // "Seleccionar" (a la izquierda); Saldo / Gastos / menú van agrupados
-  // contra el margen derecho con `ml-auto`. "Pendiente de pago" vive en
+  // compactSelectToggle más abajo). Todo va seguido, alineado a la izquierda:
+  // "Nuevo consumo" pegado a "Seleccionar", después Saldo / Gastos / menú.
+  // "Pendiente de pago" vive en
   // CardHero, debajo del logo de la red.
   const movimientoActions = (
     <>
@@ -120,7 +120,7 @@ export default async function CardDetailPage({
         <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
         Nuevo consumo
       </Link>
-      <div className="ml-auto flex flex-shrink-0 items-center gap-1">
+      <div className="flex flex-shrink-0 items-center gap-1">
         <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
         <Link
           href={`/expenses/new?card_id=${id}&fee=1`}
