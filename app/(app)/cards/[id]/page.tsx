@@ -105,24 +105,14 @@ export default async function CardDetailPage({
   const limite = card.credit_limit ?? 0;
   const disponible = Math.max(0, limite - saldo);
 
-  // Acciones de movimientos (Saldo / Gastos / Nuevo consumo / menú), en la
-  // misma fila que el botón de "Seleccionar" (que acá se muestra solo con
-  // el ícono, sin la palabra — compactSelectToggle más abajo). "Pendiente
-  // de pago" vive en CardHero, debajo del logo de la red. El grupo entero
-  // va con `ml-auto` pegado al margen derecho (antes "Agregar" se estiraba
-  // para ocupar el espacio libre, dejando el grupo repartido en vez de
-  // agrupado contra el borde). "Agregar" se renombró a "Nuevo consumo" para
-  // distinguirlo de "Gastos" sin necesidad de un desplegable.
+  // Acciones de movimientos, en la misma fila que el botón de "Seleccionar"
+  // (que acá se muestra solo con el ícono, sin la palabra —
+  // compactSelectToggle más abajo). "Nuevo consumo" va pegado a
+  // "Seleccionar" (a la izquierda); Saldo / Gastos / menú van agrupados
+  // contra el margen derecho con `ml-auto`. "Pendiente de pago" vive en
+  // CardHero, debajo del logo de la red.
   const movimientoActions = (
-    <div className="ml-auto flex items-center gap-1.5">
-      <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
-      <Link
-        href={`/expenses/new?card_id=${id}&fee=1`}
-        className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
-      >
-        <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
-        Gastos
-      </Link>
+    <>
       <Link
         href={`/expenses/new?card_id=${id}`}
         className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
@@ -130,8 +120,18 @@ export default async function CardDetailPage({
         <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
         Nuevo consumo
       </Link>
-      <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
-    </div>
+      <div className="ml-auto flex items-center gap-1.5">
+        <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
+        <Link
+          href={`/expenses/new?card_id=${id}&fee=1`}
+          className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
+        >
+          <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
+          Gastos
+        </Link>
+        <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
+      </div>
+    </>
   );
 
   return (
