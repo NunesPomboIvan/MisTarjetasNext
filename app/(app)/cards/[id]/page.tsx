@@ -107,10 +107,10 @@ export default async function CardDetailPage({
 
   // Acciones de movimientos, en la misma fila que el botón de "Seleccionar"
   // (que acá se muestra solo con el ícono, sin la palabra —
-  // compactSelectToggle más abajo). Todo va seguido, alineado a la izquierda:
-  // "Nuevo consumo" pegado a "Seleccionar", después Saldo / Gastos / menú.
-  // "Pendiente de pago" vive en
-  // CardHero, debajo del logo de la red.
+  // compactSelectToggle más abajo). Los botones van seguidos a la izquierda;
+  // el menú de ajustes va pegado al margen derecho, a la altura del borde de
+  // la tarjeta y de Filtros (`-mr-0.5` compensa el px-0.5 de la toolbar).
+  // "Pendiente de pago" vive en CardHero, debajo del logo de la red.
   const movimientoActions = (
     <>
       <Link
@@ -129,6 +129,8 @@ export default async function CardDetailPage({
           <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
           Gastos
         </Link>
+      </div>
+      <div className="ml-auto -mr-0.5 flex-shrink-0">
         <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
       </div>
     </>
