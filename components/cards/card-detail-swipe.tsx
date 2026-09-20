@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CardDetailSwipeProps {
@@ -32,15 +32,30 @@ export function CardDetailSwipe({
   const startX = React.useRef<number | null>(null);
   const startY = React.useRef<number | null>(null);
 
-  // Usamos replace (no push) para que el swipe entre tarjetas NO acumule
-  // historial: así el botón "volver" respeta el origen de navegación (Home o
-  // listado) en vez de retroceder a la tarjeta vista por swipe.
+  // Ir a la siguiente tarjeta apila historial (push) y anota de cuál venimos
+  // en `trail`. Deslizar hacia atrás vuelve con router.back() si la tarjeta
+  // anterior es de la que veníamos: así el "atrás" va 3 → 2 → 1 → origen
+  // (Inicio). Si la tarjeta no se abrió deslizando (p. ej. se entró directo a
+  // la 3 desde Inicio), se usa replace para que "volver" siga respetando el
+  // origen real.
+  const params = useParams<{ id: string }>();
+  const currentId = params?.id;
+  const trail = React.useRef<string[]>([]);
+
   const goPrev = React.useCallback(() => {
-    if (prevId) router.replace(`/cards/${prevId}`);
+    if (!prevId) return;
+    if (trail.current[trail.current.length - 1] === prevId) {
+      trail.current.pop();
+      router.back();
+    } else {
+      router.replace(`/cards/${prevId}`);
+    }
   }, [prevId, router]);
   const goNext = React.useCallback(() => {
-    if (nextId) router.replace(`/cards/${nextId}`);
-  }, [nextId, router]);
+    if (!nextId) return;
+    if (currentId) trail.current.push(currentId);
+    router.push(`/cards/${nextId}`);
+  }, [nextId, currentId, router]);
 
   React.useEffect(() => {
     if (prevId) router.prefetch(`/cards/${prevId}`);
