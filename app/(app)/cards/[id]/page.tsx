@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, Landmark } from "lucide-react";
+import { Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
@@ -114,21 +114,20 @@ export default async function CardDetailPage({
   // agrupado contra el borde). "Agregar" se renombró a "Nuevo consumo" para
   // distinguirlo de "Gastos" sin necesidad de un desplegable.
   const movimientoActions = (
-    <div className="ml-auto flex min-w-0 items-center gap-2">
+    <div className="ml-auto flex items-center gap-1.5">
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}&fee=1`}
-        className="inline-flex h-8 min-w-0 flex-shrink-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
         <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="min-w-0 truncate">Gastos</span>
+        Gastos
       </Link>
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 min-w-0 items-center gap-1 rounded-full border border-border bg-card px-3 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 flex-shrink-0 items-center whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
       >
-        <Plus className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="min-w-0 truncate">Nuevo consumo</span>
+        Nuevo consumo
       </Link>
       <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
     </div>
