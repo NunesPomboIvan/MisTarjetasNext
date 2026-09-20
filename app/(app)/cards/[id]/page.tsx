@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Landmark } from "lucide-react";
+import { Landmark, ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
@@ -118,15 +118,16 @@ export default async function CardDetailPage({
       <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
       <Link
         href={`/expenses/new?card_id=${id}&fee=1`}
-        className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
       >
         <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
         Gastos
       </Link>
       <Link
         href={`/expenses/new?card_id=${id}`}
-        className="inline-flex h-8 flex-shrink-0 items-center whitespace-nowrap rounded-full border border-border bg-card px-2.5 text-[12px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground min-[380px]:px-2.5 min-[380px]:text-[12px]"
       >
+        <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
         Nuevo consumo
       </Link>
       <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
