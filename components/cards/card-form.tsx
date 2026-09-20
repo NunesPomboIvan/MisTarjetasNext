@@ -166,7 +166,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
           // Edición: volvemos al detalle de la tarjeta (no al listado).
           router.push(`/cards/${card.id}`);
         } else {
-          router.push(result.id ? `/cards/${result.id}` : "/cards");
+          router.push(result.id ? `/cards/${result.id}` : "/");
         }
         // Refresca los server components de la pantalla destino para que
         // muestre los datos recién modificados (período, fechas, etc.).
