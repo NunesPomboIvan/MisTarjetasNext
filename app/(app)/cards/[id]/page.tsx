@@ -107,20 +107,21 @@ export default async function CardDetailPage({
 
   // Acciones de movimientos, en la misma fila que el botón de "Seleccionar"
   // (que acá se muestra solo con el ícono, sin la palabra —
-  // compactSelectToggle más abajo). Los botones van seguidos a la izquierda;
-  // el menú de ajustes va pegado al margen derecho, a la altura del borde de
-  // la tarjeta y de Filtros (`-mr-0.5` compensa el px-0.5 de la toolbar).
+  // compactSelectToggle más abajo). Nuevo consumo / Saldo / Gastos se
+  // reparten todo el ancho libre (`flex-1`, sin huecos), y el menú de
+  // ajustes queda pegado al margen derecho, a la altura del borde de la
+  // tarjeta y de Filtros (`-mr-0.5` compensa el px-0.5 de la toolbar).
   // "Pendiente de pago" vive en CardHero, debajo del logo de la red.
   const movimientoActions = (
     <>
-      <Link
-        href={`/expenses/new?card_id=${id}`}
-        className="-ml-2 inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-      >
-        <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
-        Nuevo consumo
-      </Link>
-      <div className="flex flex-shrink-0 items-center gap-1">
+      <div className="-ml-2 flex min-w-0 flex-1 items-center gap-1 [&>*]:flex-1 [&>*]:justify-center">
+        <Link
+          href={`/expenses/new?card_id=${id}`}
+          className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
+        >
+          <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
+          Nuevo consumo
+        </Link>
         <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
         <Link
           href={`/expenses/new?card_id=${id}&fee=1`}
@@ -130,7 +131,7 @@ export default async function CardDetailPage({
           Gastos
         </Link>
       </div>
-      <div className="ml-auto -mr-0.5 flex-shrink-0">
+      <div className="-mr-0.5 flex-shrink-0">
         <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />
       </div>
     </>
