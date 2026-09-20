@@ -1,14 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Home, CreditCard, Banknote, MoreHorizontal, Plus } from "lucide-react";
+import { Home, Banknote, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GuardedLink } from "./guarded-link";
 import { useNavigationBlocker } from "./navigation-blocker";
 
 const NAV_ITEMS = [
-  { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") || (p.startsWith("/cards") && !p.startsWith("/cards/new")) },
-  { href: "/cards/new", label: "Nueva tarjeta", icon: CreditCard, match: (p: string) => p.startsWith("/cards/new") },
+  { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") || p.startsWith("/cards") },
   { href: "/prestamos", label: "Préstamos", icon: Banknote,       match: (p: string) => p.startsWith("/prestamos") },
   { href: "/more",      label: "Cuenta",    icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/expenses") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
 ] as const;
@@ -86,18 +85,22 @@ export function BottomNav() {
               }}
             />
             <div className="flex items-stretch justify-around gap-1">
-              {/* Items izquierda */}
-              {NAV_ITEMS.slice(0, 2).map((item) => (
-                <NavLink key={item.href} item={item} pathname={pathname} />
-              ))}
+              {/* Items izquierda (mitad de la barra, para que el FAB quede centrado) */}
+              <div className="flex flex-1 items-stretch">
+                {NAV_ITEMS.slice(0, 1).map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </div>
 
               {/* Spacer para el FAB flotante */}
               <div className="w-14 shrink-0" aria-hidden />
 
               {/* Items derecha */}
-              {NAV_ITEMS.slice(2).map((item) => (
-                <NavLink key={item.href} item={item} pathname={pathname} />
-              ))}
+              <div className="flex flex-1 items-stretch">
+                {NAV_ITEMS.slice(1).map((item) => (
+                  <NavLink key={item.href} item={item} pathname={pathname} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
