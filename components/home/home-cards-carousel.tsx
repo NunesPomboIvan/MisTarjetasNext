@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { WalletCard } from "@/components/cards/wallet-card";
@@ -21,6 +21,9 @@ interface HomeCardsCarouselProps {
   maxH?: number;
 }
 
+// Un poco más alta que la proporción ISO (1.586) para que la home respire.
+const CARD_ASPECT = "1.42 / 1";
+
 export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
   // +1 por la tarjeta "Agregar tarjeta" al final del carrusel.
   const slideCount = items.length + 1;
@@ -28,23 +31,42 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  function handleScroll() {
+  // Tarjeta activa = la más visible dentro del carrusel. IntersectionObserver
+  // es más confiable que calcular en onScroll (con snap + inercia en iOS el
+  // scroll puede no reportar la posición final).
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const children = Array.from(el.children) as HTMLElement[];
-    if (children.length === 0) return;
-    const containerCenter = el.scrollLeft + el.clientWidth / 2;
-    let closest = 0;
-    let minDist = Infinity;
-    children.forEach((child, i) => {
-      const childCenter = child.offsetLeft + child.offsetWidth / 2;
-      const dist = Math.abs(childCenter - containerCenter);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = i;
-      }
+    const slides = Array.from(el.children) as HTMLElement[];
+    const ratios = new Map<Element, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) ratios.set(e.target, e.intersectionRatio);
+        let best = 0;
+        let bestRatio = -1;
+        slides.forEach((slide, i) => {
+          const r = ratios.get(slide) ?? 0;
+          if (r > bestRatio) {
+            bestRatio = r;
+            best = i;
+          }
+        });
+        setActiveIndex(best);
+      },
+      { root: el, threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+    slides.forEach((slide) => observer.observe(slide));
+    return () => observer.disconnect();
+  }, [slideCount]);
+
+  function goTo(i: number) {
+    const el = containerRef.current;
+    const slide = el?.children[i] as HTMLElement | undefined;
+    if (!el || !slide) return;
+    el.scrollTo({
+      left: slide.offsetLeft - (el.clientWidth - slide.offsetWidth) / 2,
+      behavior: "smooth",
     });
-    setActiveIndex(closest);
   }
 
   if (items.length === 0) return null;
@@ -55,8 +77,7 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
           para que la siguiente asome como un "peek" parejo en el borde. */}
       <div
         ref={containerRef}
-        onScroll={handleScroll}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1"
+        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -85,6 +106,7 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
                 closeLabel={closeLabel}
                 dueLabel={dueLabel}
                 maxH={maxH}
+                aspectRatio={CARD_ASPECT}
               />
             </CardPressWrapper>
           </div>
@@ -100,7 +122,7 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
             href="/cards/new"
             aria-label="Agregar tarjeta"
             className="focus-ring flex w-full flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-border text-muted-foreground transition-transform duration-150 active:scale-[0.985] dark:border-white/[0.18]"
-            style={{ aspectRatio: "1.586 / 1", minHeight: 170, maxHeight: maxH ?? 240 }}
+            style={{ aspectRatio: CARD_ASPECT, minHeight: 170, maxHeight: maxH ?? 240 }}
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">
               <Plus className="h-5 w-5" strokeWidth={2.4} />
@@ -110,17 +132,26 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
         </div>
       </div>
 
-      {/* Indicadores de paginación */}
+      {/* Indicadores de paginación: siguen al deslizamiento y se pueden tocar
+          para saltar a esa tarjeta (área táctil más grande que el punto). */}
       {multi && (
-        <div className="flex items-center justify-center gap-1.5" aria-hidden>
+        <div className="flex items-center justify-center">
           {Array.from({ length: slideCount }, (_, i) => (
-            <span
+            <button
               key={i}
-              className={cn(
-                "h-1.5 rounded-full transition-all duration-200",
-                i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
-              )}
-            />
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={i < items.length ? `Ir a la tarjeta ${i + 1}` : "Ir a agregar tarjeta"}
+              aria-current={i === activeIndex}
+              className="flex h-6 items-center px-[3px]"
+            >
+              <span
+                className={cn(
+                  "block h-1.5 rounded-full transition-all duration-200",
+                  i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
+                )}
+              />
+            </button>
           ))}
         </div>
       )}

@@ -140,7 +140,7 @@ export default async function DashboardPage() {
           {/* Mis tarjetas */}
           <section className="space-y-2">
             <HomeCardsCarousel
-              maxH={200}
+              maxH={230}
               items={[...cardSummaries]
                 .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed))
                 .map(({ card, currentTotal, currentPeriod }) => ({

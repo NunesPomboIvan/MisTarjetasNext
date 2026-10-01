@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { Money } from "@/components/shared/money";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import { cn } from "@/lib/utils";
@@ -46,7 +45,7 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
             href="/expenses"
             className="text-[12px] font-semibold text-primary transition-opacity active:opacity-70"
           >
-            Ver todos →
+            Ver todos
           </Link>
         )}
       </div>
@@ -107,7 +106,6 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
                       {purchaseLabel(expense.expense_date, today)}
                     </span>
                   </div>
-                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
                 </Link>
               </div>
             );
