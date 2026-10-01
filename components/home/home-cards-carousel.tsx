@@ -82,7 +82,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
   if (items.length === 0) return null;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-1.5">
       {/* Carrusel con swipe horizontal. Cada card ocupa ~86% del viewport
           para que la siguiente asome como un "peek" parejo en el borde. */}
       <div
@@ -155,7 +155,7 @@ export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
               onClick={() => goTo(i)}
               aria-label={i < items.length ? `Ir a la tarjeta ${i + 1}` : "Ir a agregar tarjeta"}
               aria-current={i === activeIndex}
-              className="flex h-6 items-center px-[3px]"
+              className="flex h-5 items-center px-[3px]"
             >
               <span
                 className={cn(

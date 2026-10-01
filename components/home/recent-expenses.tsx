@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Money } from "@/components/shared/money";
 import { parseLocalDate } from "@/lib/periods/calculate";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { differenceInCalendarDays } from "date-fns";
 import type { CardType, Category, Expense } from "@/lib/supabase/database.types";
 
@@ -33,15 +33,13 @@ function cardLabel(card: RecentExpense["card"]): string {
 /** Margen sobre la barra inferior (cubre el botón "+" que sobresale). */
 const BOTTOM_GAP = 24;
 
-const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-
-/** "hoy", "ayer" o formato corto "29 sep" para la fecha de compra. */
+/** "hoy", "ayer" o "29/09/2026" para la fecha de compra. */
 function purchaseLabel(expenseDate: string, today: Date): string {
   const d = parseLocalDate(expenseDate);
   const diff = differenceInCalendarDays(today, d);
   if (diff === 0) return "hoy";
   if (diff === 1) return "ayer";
-  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  return formatDate(d, "dd/MM/yyyy");
 }
 
 interface RecentExpensesProps {
@@ -128,7 +126,7 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
                 <Link
                   href={`/expenses/${expense.id}`}
                   aria-label={`Ver consumo ${expense.description}`}
-                  className="group flex w-full items-center gap-3 py-3 text-left"
+                  className="group flex w-full items-center gap-3 py-2.5 text-left"
                 >
                   <div
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[17px]"

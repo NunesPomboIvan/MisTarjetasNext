@@ -117,11 +117,11 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
-    <div className="flex flex-1 flex-col space-y-6">
+    <div className="flex flex-1 flex-col space-y-4">
       <LockScroll />
       {/* Saludo + selector de titular en la misma fila, altura acotada.
           El icono cambia según sea de día (sol) o de noche (luna). */}
-      <div className="flex min-h-[52px] items-center justify-between gap-3">
+      <div className="flex min-h-[40px] items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {isNight ? (
             <Moon className="h-4 w-4 flex-shrink-0 text-indigo-300" />

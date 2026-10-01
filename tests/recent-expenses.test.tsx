@@ -63,8 +63,8 @@ describe("RecentExpenses", () => {
       />
     );
     expect(screen.getByText("ayer")).toBeInTheDocument();
-    expect(screen.getByText("29 sep")).toBeInTheDocument();
-    expect(screen.getByText("5 ene")).toBeInTheDocument();
+    expect(screen.getByText("29/09/2026")).toBeInTheDocument();
+    expect(screen.getByText("05/01/2026")).toBeInTheDocument();
     expect(screen.getByText("Gold · Mastercard 1234")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /^Ver consumo/ })).toHaveLength(4);
   });
