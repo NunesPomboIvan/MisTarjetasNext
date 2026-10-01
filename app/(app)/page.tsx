@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { CalendarClock, ChevronRight, Moon, Receipt, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
+import { RecentExpenses, type RecentExpense } from "@/components/home/recent-expenses";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs } from "@/lib/periods/calculate";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
@@ -34,13 +34,25 @@ export default async function DashboardPage() {
     .order("created_at");
   if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
-  const [cardsResult, expensesResult] = await Promise.all([
+  // Últimos consumos: por fecha de carga (created_at), acotados al titular
+  // activo vía el join con la tarjeta.
+  let recentQuery = supabase
+    .from("expenses")
+    .select("*, category:categories(*), card:cards!inner(name, bank, titular_id)")
+    .eq("user_id", user!.id)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  if (activeTitularId) recentQuery = recentQuery.eq("card.titular_id", activeTitularId);
+
+  const [cardsResult, expensesResult, recentResult] = await Promise.all([
     cardsQuery,
     supabase.from("expenses").select("*, category:categories(*)").eq("user_id", user!.id).order("expense_date", { ascending: false }),
+    recentQuery,
   ]);
 
   const cards = (cardsResult.data ?? []) as Card[];
   const allExpenses = (expensesResult.data ?? []) as Array<Expense & { category: Category | null }>;
+  const recentExpenses = (recentResult.data ?? []) as unknown as RecentExpense[];
 
   // Para "Próximos pagos" y "Próximo a pagar": usamos getNextDuePeriod
   // (el período cuyo vencimiento no pasó aún).
@@ -90,9 +102,6 @@ export default async function DashboardPage() {
   const titularName = activeTitular?.name?.trim() ?? "";
   const displayName = titularName ? capitalize(titularName.split(/\s+/)[0]) : "";
 
-  const weekdayUpper = formatDate(today, "EEEE").toUpperCase();
-  const dayNumber = formatDate(today, "d");
-  const monthYearUpper = formatDate(today, "MMMM yyyy").toUpperCase();
   const todayKey = format(today, "yyyy-MM-dd");
 
   return (
@@ -143,126 +152,7 @@ export default async function DashboardPage() {
             />
           </section>
 
-          {/* Acceso a vencimientos, sin montos: fecha de hoy + acceso al detalle por período */}
-          <Link
-            href="/vencimientos"
-            aria-label="Ver resumen de períodos"
-            className="glass-card block rounded-[20px] px-5 py-4 transition-transform active:scale-[0.99]"
-          >
-            <div className="flex w-full items-center justify-between gap-3">
-              {/* Izquierda: icono + título + acceso */}
-              <div className="flex min-w-0 items-center gap-3">
-                <div
-                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "#6366f120", color: "#6366f1" }}
-                >
-                  <CalendarClock className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-display text-[16px] font-bold leading-tight text-foreground">
-                    Resumen de Períodos
-                  </p>
-                  <span className="mt-1 inline-flex items-center gap-0.5 text-[12px] font-semibold text-primary">
-                    Ver por período
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </span>
-                </div>
-              </div>
-
-              {/* Derecha: fecha tipo calendario */}
-              <div className="flex flex-shrink-0 flex-col items-end text-right">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  {weekdayUpper}
-                </span>
-                <span className="mt-0.5 font-display text-[28px] font-bold leading-none tabular-nums text-foreground">
-                  {dayNumber}
-                </span>
-                <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {monthYearUpper}
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Accesos: vencimientos, cierre y consumos en una sola card,
-              ordenados de lo más accionable (lo que vence) a lo informativo. */}
-          <section className="space-y-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Tarjetas y préstamos
-            </h2>
-            <div className="glass-card space-y-3 rounded-[20px] px-5 py-4">
-            <Link
-              href="/pagos"
-              aria-label="Ver vencimientos de tarjetas y préstamos"
-              className="group flex w-full items-center gap-3 text-left transition-colors"
-            >
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                style={{ background: "#6366f120", color: "#6366f1" }}
-              >
-                <CalendarClock className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Vencimientos
-                </p>
-                <p className="text-[11.5px] text-muted-foreground">
-                  Tarjetas y préstamos
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-            </Link>
-
-            <div className="h-px bg-border dark:bg-white/[0.16]" />
-
-            <Link
-              href="/cierres"
-              aria-label="Ver cierres de tarjetas"
-              className="group flex w-full items-center gap-3 text-left transition-colors"
-            >
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                style={{ background: "#6366f120", color: "#6366f1" }}
-              >
-                <CalendarClock className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Cierre de tarjetas
-                </p>
-                <p className="text-[11.5px] text-muted-foreground">
-                  Ver cuándo cierra cada tarjeta
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-            </Link>
-
-            <div className="h-px bg-border dark:bg-white/[0.16]" />
-
-            <Link
-              href="/expenses"
-              aria-label="Ver todos tus consumos"
-              className="group flex w-full items-center gap-3 text-left transition-colors"
-            >
-              <div
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
-                style={{ background: "#6366f120", color: "#6366f1" }}
-              >
-                <Receipt className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold leading-tight text-foreground">
-                  Consumos
-                </p>
-                <p className="text-[11.5px] text-muted-foreground">
-                  Ver todos tus movimientos
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
-            </Link>
-          </div>
-          </section>
-
+          <RecentExpenses expenses={recentExpenses} today={todayStart} />
         </>
       )}
     </div>

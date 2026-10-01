@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { CardList } from "@/components/cards/card-list";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { BackButton } from "@/components/shared/back-button";
 
 export const metadata = { title: "Tarjetas" };
 
@@ -27,17 +28,20 @@ export default async function CardsPage() {
     <div className="space-y-5">
       <StickyPageHeader>
         <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
-              Tarjetas
-            </h1>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="inline-flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[11px] font-bold tabular-nums text-primary">
-                {activeCount}
-              </span>
-              <span className="flex-shrink-0 text-[12.5px] font-medium text-muted-foreground">
-                activa{activeCount !== 1 ? "s" : ""}
-              </span>
+          <div className="flex min-w-0 items-center gap-2">
+            <BackButton href="/more" iconOnly />
+            <div className="min-w-0">
+              <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
+                Tarjetas
+              </h1>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <span className="inline-flex h-[18px] min-w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[11px] font-bold tabular-nums text-primary">
+                  {activeCount}
+                </span>
+                <span className="flex-shrink-0 text-[12.5px] font-medium text-muted-foreground">
+                  activa{activeCount !== 1 ? "s" : ""}
+                </span>
+              </div>
             </div>
           </div>
 

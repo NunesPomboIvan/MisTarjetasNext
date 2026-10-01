@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Banknote, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoanList } from "@/components/loans/loan-list";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { PagoRow } from "@/components/vencimientos/pago-row";
 import { nowInArgentina } from "@/lib/utils";
-import { parseLocalDate } from "@/lib/periods/calculate";
-import { startOfDay } from "date-fns";
+import { parseLocalDate, toArs } from "@/lib/periods/calculate";
+import { differenceInCalendarDays, startOfDay } from "date-fns";
 import type { Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Préstamos" };
@@ -57,6 +58,30 @@ export default async function LoansPage() {
   const active = items.filter((i) => !i.loan.archived);
   const archived = items.filter((i) => i.loan.archived);
 
+  // Próximos vencimientos: la próxima cuota pendiente de cada préstamo activo,
+  // ordenadas por fecha (mismo criterio que la pantalla de Vencimientos).
+  const upcoming = active
+    .map(({ loan, totalCount }) => {
+      const next = allInstallments
+        .filter((i) => i.loan_id === loan.id && !i.paid)
+        .sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+      if (!next) return null;
+      const dueDate = parseLocalDate(next.due_date);
+      return {
+        loan,
+        inst: next,
+        totalCount,
+        dueDate,
+        daysUntil: differenceInCalendarDays(dueDate, today),
+        amountArs: toArs(
+          { currency: loan.currency, exchange_rate: next.exchange_rate },
+          Number(next.amount)
+        ),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+
   return (
     <div className="space-y-5">
       <StickyPageHeader>
@@ -90,7 +115,31 @@ export default async function LoansPage() {
           action={{ label: "Nuevo préstamo", href: "/prestamos/new" }}
         />
       ) : (
-        <LoanList active={active} archived={archived} />
+        <>
+          {upcoming.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Próximos vencimientos
+              </h2>
+              <div className="space-y-2.5">
+                {upcoming.map(({ loan, inst, totalCount, dueDate, daysUntil, amountArs }) => (
+                  <PagoRow
+                    key={inst.id}
+                    href={`/prestamos/${loan.id}`}
+                    accent={loan.color || "#6366f1"}
+                    icon={<Banknote className="h-5 w-5" />}
+                    title={loan.bank || loan.description}
+                    suffix={`Cuota ${inst.installment_number}/${totalCount}`}
+                    dueDate={dueDate}
+                    amount={amountArs}
+                    daysUntil={daysUntil}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          <LoanList active={active} archived={archived} />
+        </>
       )}
     </div>
   );

@@ -10,10 +10,19 @@ import * as React from "react";
  */
 export function LockScroll() {
   React.useEffect(() => {
-    const { style } = document.body;
+    const body = document.body;
+    const { style } = body;
     const prevOverflow = style.overflow;
-    style.overflow = "hidden";
+    // Solo bloquea si el contenido entra en pantalla: en pantallas bajas
+    // (p. ej. iPhone SE) la home puede no entrar y tiene que poder scrollear.
+    function update() {
+      style.overflow = prevOverflow;
+      if (body.scrollHeight <= body.clientHeight) style.overflow = "hidden";
+    }
+    update();
+    window.addEventListener("resize", update);
     return () => {
+      window.removeEventListener("resize", update);
       style.overflow = prevOverflow;
     };
   }, []);

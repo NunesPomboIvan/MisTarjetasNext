@@ -1,16 +1,18 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Home, CreditCard, Banknote, MoreHorizontal, Plus } from "lucide-react";
+import { Home, CalendarDays, Banknote, MoreHorizontal, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GuardedLink } from "./guarded-link";
 import { useNavigationBlocker } from "./navigation-blocker";
 
+// El detalle de una tarjeta (/cards/:id) se abre desde el carrusel del inicio;
+// el listado/gestión de tarjetas (/cards) vive en Cuenta.
 const NAV_ITEMS = [
-  { href: "/",          label: "Resumen",   icon: Home,           match: (p: string) => p === "/" || p.startsWith("/cierres") },
-  { href: "/cards",     label: "Tarjetas",  icon: CreditCard,     match: (p: string) => p.startsWith("/cards") },
-  { href: "/prestamos", label: "Préstamos", icon: Banknote,       match: (p: string) => p.startsWith("/prestamos") },
-  { href: "/more",      label: "Cuenta",    icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/expenses") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
+  { href: "/",             label: "Inicio",    icon: Home,           match: (p: string) => p === "/" || p.startsWith("/expenses") || (p.startsWith("/cards/") && !p.startsWith("/cards/new")) },
+  { href: "/vencimientos", label: "Períodos",  icon: CalendarDays,   match: (p: string) => p.startsWith("/vencimientos") },
+  { href: "/prestamos",    label: "Préstamos", icon: Banknote,       match: (p: string) => p.startsWith("/prestamos") },
+  { href: "/more",         label: "Cuenta",    icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p === "/cards" || p.startsWith("/cards/new") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
 ] as const;
 
 export function BottomNav() {

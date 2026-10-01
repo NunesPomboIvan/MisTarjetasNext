@@ -1,6 +1,9 @@
 import Link from "next/link";
 import {
   BarChart3,
+  CalendarClock,
+  CreditCard,
+  Lock,
   DollarSign,
   Settings,
   HelpCircle,
@@ -54,6 +57,13 @@ export default async function MorePage() {
           </p>
         </div>
       </section>
+
+      {/* Tarjetas: gestión (editar, archivar, reordenar), vencimientos y cierres */}
+      <MoreSection title="Tarjetas">
+        <MoreRow href="/cards" icon={<CreditCard className="h-5 w-5" />} label="Mis tarjetas" />
+        <MoreRow href="/pagos" icon={<CalendarClock className="h-5 w-5" />} label="Vencimientos" />
+        <MoreRow href="/cierres" icon={<Lock className="h-5 w-5" />} label="Cierre de tarjetas" last />
+      </MoreSection>
 
       {/* Herramientas: cosas de los datos / finanzas */}
       <MoreSection title="Herramientas">

@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { WalletCard } from "@/components/cards/wallet-card";
 import { CardPressWrapper } from "@/components/cards/card-press-wrapper";
 import { cn } from "@/lib/utils";
@@ -20,7 +22,9 @@ interface HomeCardsCarouselProps {
 }
 
 export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
-  const multi = items.length > 1;
+  // +1 por la tarjeta "Agregar tarjeta" al final del carrusel.
+  const slideCount = items.length + 1;
+  const multi = slideCount > 1;
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -85,14 +89,33 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
             </CardPressWrapper>
           </div>
         ))}
+
+        {/* Último ítem: alta de tarjeta, mismo tamaño que una tarjeta real */}
+        <div
+          data-card-item
+          className="snap-center"
+          style={{ flex: multi ? "0 0 86%" : "0 0 100%" }}
+        >
+          <Link
+            href="/cards/new"
+            aria-label="Agregar tarjeta"
+            className="focus-ring flex w-full flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-border text-muted-foreground transition-transform duration-150 active:scale-[0.985] dark:border-white/[0.18]"
+            style={{ aspectRatio: "1.586 / 1", minHeight: 170, maxHeight: maxH ?? 240 }}
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <Plus className="h-5 w-5" strokeWidth={2.4} />
+            </span>
+            <span className="text-[14px] font-semibold text-foreground">Agregar tarjeta</span>
+          </Link>
+        </div>
       </div>
 
       {/* Indicadores de paginación */}
       {multi && (
         <div className="flex items-center justify-center gap-1.5" aria-hidden>
-          {items.map((item, i) => (
+          {Array.from({ length: slideCount }, (_, i) => (
             <span
-              key={item.card.id}
+              key={i}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-200",
                 i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
