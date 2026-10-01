@@ -3,28 +3,38 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { WalletCard } from "@/components/cards/wallet-card";
+import { CardHero } from "@/components/cards/card-hero";
 import { CardPressWrapper } from "@/components/cards/card-press-wrapper";
 import { cn } from "@/lib/utils";
+import type { Period } from "@/lib/periods/calculate";
 import type { Card } from "@/lib/supabase/database.types";
+
+/** Datos de la línea de tiempo del período actual, ya formateados en el servidor. */
+export interface HomeCardTimeline {
+  statusText: string;
+  closePct: number;
+  progressPct: number;
+  lastDueLabel: string;
+  closeLabel: string;
+  dueLabel: string;
+  lastDueReached: boolean;
+  closeReached: boolean;
+  dueReached: boolean;
+  highlightKey: "close" | "due" | null;
+}
 
 export interface HomeCardItem {
   card: Card;
   total: number;
-  closeLabel?: string;
-  dueLabel?: string;
+  period: Period;
+  timeline: HomeCardTimeline;
 }
 
 interface HomeCardsCarouselProps {
   items: HomeCardItem[];
-  /** Altura máxima de cada tarjeta en px (para compactar la home). */
-  maxH?: number;
 }
 
-// Un poco más alta que la proporción ISO (1.586) para que la home respire.
-const CARD_ASPECT = "1.42 / 1";
-
-export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
+export function HomeCardsCarousel({ items }: HomeCardsCarouselProps) {
   // +1 por la tarjeta "Agregar tarjeta" al final del carrusel.
   const slideCount = items.length + 1;
   const multi = slideCount > 1;
@@ -77,7 +87,7 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
           para que la siguiente asome como un "peek" parejo en el borde. */}
       <div
         ref={containerRef}
-        className="relative flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1"
+        className="relative flex items-start snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-1"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -85,44 +95,46 @@ export function HomeCardsCarousel({ items, maxH }: HomeCardsCarouselProps) {
           touchAction: "pan-x",
         }}
       >
-        {items.map(({ card, total, closeLabel, dueLabel }) => (
+        {items.map(({ card, total, period, timeline }) => (
           <div
             key={card.id}
             data-card-item
             className="snap-center"
             style={{ flex: multi ? "0 0 86%" : "0 0 100%" }}
           >
+            {/* Mismo formato que el detalle de la tarjeta (CardHero), sin
+                navegación de período ni "Pendiente de pago". */}
             <CardPressWrapper
               href={`/cards/${card.id}`}
               bank={card.bank || card.name}
               lastFour={card.last_four}
               total={total}
-              className="block transition-transform duration-150 active:scale-[0.985]"
+              className="block rounded-[28px] transition-transform duration-150 active:scale-[0.985]"
             >
-              <WalletCard
+              <CardHero
+                readOnly
                 card={card}
-                total={total}
-                compact
-                closeLabel={closeLabel}
-                dueLabel={dueLabel}
-                maxH={maxH}
-                aspectRatio={CARD_ASPECT}
+                cardId={card.id}
+                currentPeriod={period}
+                saldo={total}
+                paid={false}
+                paidDate={null}
+                {...timeline}
               />
             </CardPressWrapper>
           </div>
         ))}
 
-        {/* Último ítem: alta de tarjeta, mismo tamaño que una tarjeta real */}
+        {/* Último ítem: alta de tarjeta, estirada al alto de la fila */}
         <div
           data-card-item
-          className="snap-center"
+          className="snap-center self-stretch"
           style={{ flex: multi ? "0 0 86%" : "0 0 100%" }}
         >
           <Link
             href="/cards/new"
             aria-label="Agregar tarjeta"
-            className="focus-ring flex w-full flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-border text-muted-foreground transition-transform duration-150 active:scale-[0.985] dark:border-white/[0.18]"
-            style={{ aspectRatio: CARD_ASPECT, minHeight: 170, maxHeight: maxH ?? 240 }}
+            className="focus-ring flex h-full w-full flex-col items-center justify-center gap-2 rounded-[28px] border-2 border-dashed border-border text-muted-foreground transition-transform duration-150 active:scale-[0.985] dark:border-white/[0.18]"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">
               <Plus className="h-5 w-5" strokeWidth={2.4} />

@@ -35,6 +35,11 @@ interface CardHeroProps {
   dueReached: boolean;
   /** Hito a resaltar: "close", "due", o null si ya no queda ninguno pendiente. */
   highlightKey: "close" | "due" | null;
+  /**
+   * Versión de solo lectura (carrusel del inicio): sin navegación de período
+   * ni toggle "Pendiente de pago". Mismo formato y alto que en el detalle.
+   */
+  readOnly?: boolean;
 }
 
 /** Separa "$ 1.234,56" en símbolo/entero/decimales para achicar el símbolo y los decimales. */
@@ -112,6 +117,7 @@ export function CardHero({
   closeReached,
   dueReached,
   highlightKey,
+  readOnly = false,
 }: CardHeroProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -261,6 +267,24 @@ export function CardHero({
             </div>
           </div>
 
+          {readOnly ? (
+            // Sin navegación de período: el centro muestra "Adicional" (si
+            // corresponde) para no sumar una fila y mantener el mismo alto.
+            card.is_extension ? (
+              <span
+                className="justify-self-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"
+                style={{
+                  background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
+                  color: fgMuted,
+                  letterSpacing: "0.14em",
+                }}
+              >
+                Adicional
+              </span>
+            ) : (
+              <div aria-hidden />
+            )
+          ) : (
           <div
             className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
             style={{ background: pillBg }}
@@ -292,6 +316,7 @@ export function CardHero({
               <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </div>
+          )}
 
           <div className="justify-self-end">
             <CardLogo type={card.type} size="lg" fgColor={fg} />
@@ -308,16 +333,18 @@ export function CardHero({
             className="font-display text-[24px] font-extrabold leading-none tabular-nums"
             style={{ letterSpacing: "-0.02em", color: fg }}
           />
-          <CardPeriodPaidToggle
-            tone="onColor"
-            cardId={cardId}
-            periodKey={currentPeriod.key}
-            paid={paid}
-            paidDate={paidDate}
-          />
+          {!readOnly && (
+            <CardPeriodPaidToggle
+              tone="onColor"
+              cardId={cardId}
+              periodKey={currentPeriod.key}
+              paid={paid}
+              paidDate={paidDate}
+            />
+          )}
         </div>
 
-        {card.is_extension && (
+        {card.is_extension && !readOnly && (
           <div className="relative mt-2 flex flex-wrap items-center gap-1.5">
             <span
               className="inline-flex items-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"

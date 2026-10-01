@@ -29,7 +29,7 @@ function expense(id: string, expense_date: string, overrides: Partial<RecentExpe
     created_at: "2026-10-01T12:00:00Z",
     updated_at: "2026-10-01T12:00:00Z",
     category: null,
-    card: { name: "Visa", bank: "Macro", last_four: "4016" },
+    card: { name: "Visa", bank: "Macro", last_four: "4016", type: "visa" },
     ...overrides,
   } as RecentExpense;
 }
@@ -44,7 +44,7 @@ describe("RecentExpenses", () => {
 
   it("muestra un consumo con tarjeta, fecha relativa y link al detalle", () => {
     render(<RecentExpenses expenses={[expense("a", "2026-10-01")]} today={today} />);
-    expect(screen.getByText("Macro •••• 4016")).toBeInTheDocument();
+    expect(screen.getByText("Macro · Visa 4016")).toBeInTheDocument();
     expect(screen.getByText("hoy")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver consumo Consumo a" })).toHaveAttribute("href", "/expenses/a");
     expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/expenses");
@@ -55,7 +55,7 @@ describe("RecentExpenses", () => {
       <RecentExpenses
         expenses={[
           expense("a", "2026-09-30"),
-          expense("b", "2026-09-29", { card: { name: "Gold", bank: null, last_four: "1234" } as RecentExpense["card"] }),
+          expense("b", "2026-09-29", { card: { name: "Gold", bank: null, last_four: "1234", type: "mastercard" } as RecentExpense["card"] }),
           expense("c", "2026-01-05"),
           expense("d", "2025-12-31"),
         ]}
@@ -65,7 +65,7 @@ describe("RecentExpenses", () => {
     expect(screen.getByText("ayer")).toBeInTheDocument();
     expect(screen.getByText("29 sep")).toBeInTheDocument();
     expect(screen.getByText("5 ene")).toBeInTheDocument();
-    expect(screen.getByText("Gold •••• 1234")).toBeInTheDocument();
+    expect(screen.getByText("Gold · Mastercard 1234")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /^Ver consumo/ })).toHaveLength(4);
   });
 });

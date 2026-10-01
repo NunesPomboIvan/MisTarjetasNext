@@ -4,7 +4,15 @@ import { HomeCardsCarousel } from "@/components/home/home-cards-carousel";
 import { DueTodayAlert } from "@/components/home/due-today-alert";
 import { RecentExpenses, type RecentExpense } from "@/components/home/recent-expenses";
 import { EmptyState } from "@/components/shared/empty-state";
-import { getNextDuePeriod, getCurrentPeriod, getNextPayment, getAmountInPeriodArs } from "@/lib/periods/calculate";
+import {
+  getNextDuePeriod,
+  getNextPayment,
+  getAmountInPeriodArs,
+  getPeriodByOffset,
+  getPeriodForDate,
+  getPeriodTimeline,
+  parseLocalDate,
+} from "@/lib/periods/calculate";
 import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
@@ -38,10 +46,11 @@ export default async function DashboardPage() {
   // activo vía el join con la tarjeta.
   let recentQuery = supabase
     .from("expenses")
-    .select("*, category:categories(*), card:cards!inner(name, bank, last_four, titular_id)")
+    .select("*, category:categories(*), card:cards!inner(name, bank, last_four, type, titular_id)")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
-    .limit(4);
+    // La home muestra los que entren en pantalla (RecentExpenses mide).
+    .limit(12);
   if (activeTitularId) recentQuery = recentQuery.eq("card.titular_id", activeTitularId);
 
   const [cardsResult, expensesResult, recentResult] = await Promise.all([
@@ -68,7 +77,10 @@ export default async function DashboardPage() {
     const total = payment?.total ?? 0;
 
     // Período actual (según cierre) para la tarjeta-imagen del carousel.
-    const currentPeriod = getCurrentPeriod(card);
+    // Mismo período y línea de tiempo que el detalle de la tarjeta (offset 0).
+    const currentPeriod = getPeriodByOffset(card, 0);
+    const firstPeriodKey = getPeriodForDate(card, parseLocalDate(card.created_at.slice(0, 10))).key;
+    const timeline = getPeriodTimeline(card, 0, { firstPeriodKey });
     const currentTotal = cardExpenses.reduce((s, e) => s + getAmountInPeriodArs(e, currentPeriod), 0);
 
     // Último uso: fecha del consumo más reciente (allExpenses viene ordenado
@@ -76,7 +88,7 @@ export default async function DashboardPage() {
     // consumos, usamos la fecha de creación para que ordene al final.
     const lastUsed = cardExpenses[0]?.expense_date ?? card.created_at.slice(0, 10);
 
-    return { card, period, total, currentPeriod, currentTotal, lastUsed };
+    return { card, period, total, currentPeriod, currentTotal, timeline, lastUsed };
   });
 
   // Pagos próximos: tarjetas con saldo, ordenadas por fecha de vencimiento.
@@ -140,14 +152,24 @@ export default async function DashboardPage() {
           {/* Mis tarjetas */}
           <section className="space-y-2">
             <HomeCardsCarousel
-              maxH={230}
               items={[...cardSummaries]
                 .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed))
-                .map(({ card, currentTotal, currentPeriod }) => ({
+                .map(({ card, currentTotal, currentPeriod, timeline }) => ({
                   card,
                   total: currentTotal,
-                  closeLabel: formatDate(currentPeriod.end, "d MMM"),
-                  dueLabel: formatDate(currentPeriod.due, "d MMM"),
+                  period: currentPeriod,
+                  timeline: {
+                    statusText: timeline.statusText,
+                    closePct: timeline.closePct,
+                    progressPct: timeline.progressPct,
+                    lastDueLabel: timeline.lastDue ? formatDate(timeline.lastDue, "dd/MM") : "—",
+                    closeLabel: formatDate(timeline.close, "dd/MM"),
+                    dueLabel: formatDate(timeline.due, "dd/MM"),
+                    lastDueReached: timeline.lastDueReached,
+                    closeReached: timeline.closeReached,
+                    dueReached: timeline.dueReached,
+                    highlightKey: timeline.highlightKey,
+                  },
                 }))}
             />
           </section>

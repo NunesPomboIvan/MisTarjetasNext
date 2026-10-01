@@ -69,6 +69,7 @@ export function BottomNav() {
               transparencia: el contenido nunca se lee a través de la barra
               (el telón de fondo de arriba cubre el resto de la zona). */}
           <div
+            data-bottom-bar
             className="relative rounded-[24px] border border-white/[0.08] bg-card px-2 py-1.5"
             style={{
               boxShadow:
