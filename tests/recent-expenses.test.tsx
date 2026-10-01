@@ -39,7 +39,7 @@ describe("RecentExpenses", () => {
     render(<RecentExpenses expenses={[]} today={today} />);
     expect(screen.getByText("Todavía no cargaste consumos")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cargar el primero" })).toHaveAttribute("href", "/nuevo");
-    expect(screen.queryByText("Ver todos →")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ver todos")).not.toBeInTheDocument();
   });
 
   it("muestra un consumo con tarjeta, fecha relativa y link al detalle", () => {
@@ -47,7 +47,7 @@ describe("RecentExpenses", () => {
     expect(screen.getByText("Macro •••• 4016")).toBeInTheDocument();
     expect(screen.getByText("hoy")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver consumo Consumo a" })).toHaveAttribute("href", "/expenses/a");
-    expect(screen.getByRole("link", { name: "Ver todos →" })).toHaveAttribute("href", "/expenses");
+    expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/expenses");
   });
 
   it("usa 'ayer' y el formato corto para fechas anteriores", () => {
