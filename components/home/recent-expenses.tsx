@@ -8,7 +8,7 @@ import type { Category, Expense } from "@/lib/supabase/database.types";
 
 export type RecentExpense = Expense & {
   category: Category | null;
-  card: { name: string; bank: string | null } | null;
+  card: { name: string; bank: string | null; last_four: string | null } | null;
 };
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -65,7 +65,12 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
         ) : (
           expenses.map((expense, i) => {
             const cat = expense.category;
-            const cardName = expense.card ? expense.card.bank || expense.card.name : "";
+            // Banco + últimos 4 dígitos para distinguir tarjetas del mismo banco.
+            const cardLabel = expense.card
+              ? [expense.card.bank || expense.card.name, expense.card.last_four && `•••• ${expense.card.last_four}`]
+                  .filter(Boolean)
+                  .join(" ")
+              : "";
             const amount = expense.recurring ? expense.installment_amount : expense.total_amount;
             return (
               <div key={expense.id}>
@@ -85,19 +90,23 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
                     <p className="truncate text-[14px] font-semibold leading-tight text-foreground">
                       {expense.description}
                     </p>
-                    <p className="truncate text-[11.5px] text-muted-foreground">
-                      {cardName ? `${cardName} · ` : ""}
-                      {purchaseLabel(expense.expense_date, today)}
-                    </p>
-                  </div>
-                  <Money
-                    amount={amount}
-                    currency={expense.currency}
-                    className={cn(
-                      "flex-shrink-0 text-[14px] font-semibold tabular-nums text-foreground",
-                      amount < 0 && "text-emerald-600 dark:text-emerald-400"
+                    {cardLabel && (
+                      <p className="truncate text-[11.5px] text-muted-foreground">{cardLabel}</p>
                     )}
-                  />
+                  </div>
+                  <div className="flex flex-shrink-0 flex-col items-end">
+                    <Money
+                      amount={amount}
+                      currency={expense.currency}
+                      className={cn(
+                        "text-[14px] font-semibold leading-tight tabular-nums text-foreground",
+                        amount < 0 && "text-emerald-600 dark:text-emerald-400"
+                      )}
+                    />
+                    <span className="text-[11.5px] text-muted-foreground">
+                      {purchaseLabel(expense.expense_date, today)}
+                    </span>
+                  </div>
                   <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform group-active:translate-x-0.5" />
                 </Link>
               </div>

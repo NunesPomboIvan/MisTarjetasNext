@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   // activo vía el join con la tarjeta.
   let recentQuery = supabase
     .from("expenses")
-    .select("*, category:categories(*), card:cards!inner(name, bank, titular_id)")
+    .select("*, category:categories(*), card:cards!inner(name, bank, last_four, titular_id)")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: false })
     .limit(4);
