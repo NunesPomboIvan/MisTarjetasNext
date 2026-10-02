@@ -80,8 +80,6 @@ export interface MonthGroup {
   date: Date;
   /** true si es el mes en curso */
   isCurrent: boolean;
-  /** true si tiene al menos un vencimiento ya vencido */
-  hasOverdue: boolean;
   cards: CardVencimiento[];
   loans: LoanVencimiento[];
   cardsTotal: number;
@@ -130,7 +128,6 @@ export function computeUpcomingByMonth({
         key,
         date: new Date(d.getFullYear(), d.getMonth(), 1),
         isCurrent: key === currentMonthKey,
-        hasOverdue: false,
         cards: [],
         loans: [],
         cardsTotal: 0,
@@ -204,7 +201,6 @@ export function computeUpcomingByMonth({
       });
       g.cardsTotal += total;
       g.total += total;
-      if (overdue) g.hasOverdue = true;
     }
   }
 
@@ -238,7 +234,6 @@ export function computeUpcomingByMonth({
     });
     g.loansTotal += amount;
     g.total += amount;
-    if (overdue) g.hasOverdue = true;
   }
 
   const months = [...monthMap.values()].sort((a, b) => a.key.localeCompare(b.key));
