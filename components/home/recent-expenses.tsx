@@ -33,12 +33,12 @@ function cardLabel(card: RecentExpense["card"]): string {
 /** Margen sobre la barra inferior (cubre el botón "+" que sobresale). */
 const BOTTOM_GAP = 24;
 
-/** "hoy", "ayer" o "29/09/2026" para la fecha de compra. */
+/** "Hoy", "Ayer" o "29/09/2026" para la fecha de compra. */
 function purchaseLabel(expenseDate: string, today: Date): string {
   const d = parseLocalDate(expenseDate);
   const diff = differenceInCalendarDays(today, d);
-  if (diff === 0) return "hoy";
-  if (diff === 1) return "ayer";
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Ayer";
   return formatDate(d, "dd/MM/yyyy");
 }
 

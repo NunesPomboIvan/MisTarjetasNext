@@ -57,6 +57,7 @@ export default async function VencimientosPage() {
     (paidPeriods ?? []).map((p) => `${p.card_id}:${p.period_key}`)
   );
 
+  const today = nowInArgentina();
   const { months, grandTotal, cardsGrandTotal, loansGrandTotal } = computeUpcomingByMonth({
     cards: (cards ?? []) as Card[],
     expenses: (expenses ?? []) as Expense[],
@@ -64,7 +65,7 @@ export default async function VencimientosPage() {
     pendingInstallments: (pendingInst ?? []) as LoanInstallment[],
     totalByLoan,
     paidCardPeriods,
-    now: nowInArgentina(),
+    now: today,
   });
 
   if (months.length === 0) {
@@ -81,16 +82,22 @@ export default async function VencimientosPage() {
     // Total y períodos en un único bloque, con el estilo de la lista de
     // "Últimos consumos" de la home.
     <section className="glass-card rounded-[20px] px-5 pb-1">
-      {/* Desglose y total general del rango mostrado, como encabezado del listado */}
-      <div className="pb-3.5 pt-[18px]">
-        <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
+      {/* Total general del rango mostrado (con la fecha de hoy) y su desglose,
+          como encabezado del listado */}
+      <div className="pb-4 pt-[18px]">
+        <div className="flex items-baseline justify-between gap-3">
+          <Money
+            amount={grandTotal}
+            className="min-w-0 truncate font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
+          />
+          <span className="flex-shrink-0 text-[12px] font-medium tabular-nums text-muted-foreground">
+            {formatDate(today, "dd/MM/yyyy")}
+          </span>
+        </div>
+        <div className="mt-2.5 flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
           <TotalPart label="Tarjetas" amount={cardsGrandTotal} />
           <TotalPart label="Préstamos" amount={loansGrandTotal} />
         </div>
-        <Money
-          amount={grandTotal}
-          className="mt-2.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-        />
       </div>
 
       {/* Períodos: cada uno es una fila navegable al detalle */}
@@ -111,7 +118,7 @@ function PeriodRow({ month }: { month: MonthGroup }) {
   return (
     <Link
       href={`/vencimientos/${month.key}`}
-      className="flex w-full items-center gap-3 py-3 text-left"
+      className="flex w-full items-center gap-3 py-4 text-left"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className={cn("truncate text-[14px] leading-tight text-foreground", weight)}>

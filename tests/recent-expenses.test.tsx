@@ -45,7 +45,7 @@ describe("RecentExpenses", () => {
   it("muestra un consumo con tarjeta, fecha relativa y link al detalle", () => {
     render(<RecentExpenses expenses={[expense("a", "2026-10-01")]} today={today} />);
     expect(screen.getByText("Macro · Visa 4016")).toBeInTheDocument();
-    expect(screen.getByText("hoy")).toBeInTheDocument();
+    expect(screen.getByText("Hoy")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver consumo Consumo a" })).toHaveAttribute("href", "/expenses/a");
     expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/expenses");
   });
@@ -62,7 +62,7 @@ describe("RecentExpenses", () => {
         today={today}
       />
     );
-    expect(screen.getByText("ayer")).toBeInTheDocument();
+    expect(screen.getByText("Ayer")).toBeInTheDocument();
     expect(screen.getByText("29/09/2026")).toBeInTheDocument();
     expect(screen.getByText("05/01/2026")).toBeInTheDocument();
     expect(screen.getByText("Gold · Mastercard 1234")).toBeInTheDocument();
