@@ -1,10 +1,5 @@
-import { BackHeaderSkeleton, ListRowsSkeleton } from "@/components/shared/skeletons";
+import { ListRowsSkeleton } from "@/components/shared/skeletons";
 
 export default function Loading() {
-  return (
-    <div className="space-y-4">
-      <BackHeaderSkeleton />
-      <ListRowsSkeleton rows={5} />
-    </div>
-  );
+  return <ListRowsSkeleton rows={5} />;
 }

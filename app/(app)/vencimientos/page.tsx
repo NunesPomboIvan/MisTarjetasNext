@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StackHeader } from "@/components/shared/stack-header";
 import { computeUpcomingByMonth } from "@/lib/vencimientos";
 import type { MonthGroup } from "@/lib/vencimientos";
 import { capitalize, cn, formatDate, nowInArgentina } from "@/lib/utils";
@@ -68,64 +67,54 @@ export default async function VencimientosPage() {
     now: nowInArgentina(),
   });
 
+  if (months.length === 0) {
+    return (
+      <EmptyState
+        icon={<span>📅</span>}
+        title="Sin vencimientos próximos"
+        description="No tenés tarjetas ni cuotas de préstamos por vencer"
+      />
+    );
+  }
+
   return (
-    <div className="space-y-5">
-      <StackHeader backHref="/" />
-
-      {months.length === 0 ? (
-        <EmptyState
-          icon={<span>📅</span>}
-          title="Sin vencimientos próximos"
-          description="No tenés tarjetas ni cuotas de préstamos por vencer"
+    // Total y períodos en un único bloque, con el estilo de la lista de
+    // "Últimos consumos" de la home.
+    <section className="glass-card rounded-[20px] px-5 pb-1">
+      {/* Desglose y total general del rango mostrado, como encabezado del listado */}
+      <div className="pb-3.5 pt-[18px]">
+        <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
+          <TotalPart label="Tarjetas" amount={cardsGrandTotal} />
+          <TotalPart label="Préstamos" amount={loansGrandTotal} />
+        </div>
+        <Money
+          amount={grandTotal}
+          className="mt-2.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
         />
-      ) : (
-        // Total y períodos en un único bloque, con el estilo de la lista de
-        // "Últimos consumos" de la home.
-        <section className="glass-card overflow-hidden rounded-[20px] px-5 pb-1">
-          {/* Total general del rango mostrado, como encabezado del listado */}
-          <div className="pb-3.5 pt-[18px]">
-            <Money
-              amount={grandTotal}
-              className="block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-            />
-            <div className="mt-4 grid grid-cols-2 divide-x divide-border dark:divide-white/[0.16]">
-              <TotalPart label="Tarjetas" amount={cardsGrandTotal} />
-              <TotalPart label="Préstamos" amount={loansGrandTotal} className="pl-4" />
-            </div>
-          </div>
+      </div>
 
-          {/* Períodos: cada uno es una fila navegable al detalle */}
-          {months.map((m) => (
-            <div key={m.key}>
-              <div className="h-px bg-border dark:bg-white/[0.16]" />
-              <PeriodRow month={m} />
-            </div>
-          ))}
-        </section>
-      )}
-    </div>
+      {/* Períodos: cada uno es una fila navegable al detalle */}
+      {months.map((m) => (
+        <div key={m.key}>
+          <div className="h-px bg-border dark:bg-white/[0.16]" />
+          <PeriodRow month={m} />
+        </div>
+      ))}
+    </section>
   );
 }
 
 function PeriodRow({ month }: { month: MonthGroup }) {
   const label = capitalize(formatDate(month.date, "MMMM yyyy"));
+  // El período actual se resalta con negrita y el badge "Actual".
+  const weight = month.isCurrent ? "font-bold" : "font-semibold";
   return (
     <Link
       href={`/vencimientos/${month.key}`}
-      className={cn(
-        "flex w-full items-center gap-3 py-3 text-left",
-        // El período actual se resalta con una franja de fondo a todo el ancho
-        // del contenedor y texto en negrita (sin color de acento).
-        month.isCurrent && "-mx-5 w-auto bg-foreground/[0.05] px-5 dark:bg-white/[0.07]"
-      )}
+      className="flex w-full items-center gap-3 py-3 text-left"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <span
-          className={cn(
-            "truncate text-[14px] leading-tight text-foreground",
-            month.isCurrent ? "font-bold" : "font-semibold"
-          )}
-        >
+        <span className={cn("truncate text-[14px] leading-tight text-foreground", weight)}>
           {label}
         </span>
         {month.isCurrent && (
@@ -136,26 +125,18 @@ function PeriodRow({ month }: { month: MonthGroup }) {
       </div>
       <Money
         amount={month.total}
-        className={cn(
-          "flex-shrink-0 text-[14px] leading-tight tabular-nums text-foreground",
-          month.isCurrent ? "font-bold" : "font-semibold"
-        )}
+        className={cn("flex-shrink-0 text-[14px] leading-tight tabular-nums text-foreground", weight)}
       />
     </Link>
   );
 }
 
-/** Parte del desglose del total: etiqueta chica arriba y monto debajo. */
-function TotalPart({ label, amount, className }: { label: string; amount: number; className?: string }) {
+/** Parte del desglose del total: "Tarjetas: $ X". */
+function TotalPart({ label, amount }: { label: string; amount: number }) {
   return (
-    <div className={cn("min-w-0", className)}>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </p>
-      <Money
-        amount={amount}
-        className="mt-1 block truncate text-[15px] font-semibold tabular-nums text-foreground"
-      />
-    </div>
+    <span className="min-w-0 truncate">
+      {label}:{" "}
+      <Money amount={amount} className="font-semibold tabular-nums text-foreground" />
+    </span>
   );
 }
