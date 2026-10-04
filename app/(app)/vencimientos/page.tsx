@@ -188,9 +188,8 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
   );
 }
 
-/** "↑ 14%" / "↓ 9%" / "= 0%". */
+/** "↑ 14%" / "↓ 9%". */
 function changeLabel(change: number): string {
-  if (change === 0) return "= 0%";
   return `${change > 0 ? "↑" : "↓"} ${Math.abs(change)}%`;
 }
 
@@ -207,16 +206,13 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
         <span className={cn("truncate text-[14px] leading-tight text-foreground", weight)}>
           {label}
         </span>
-        {/* Variación contra el mes anterior: subir es rojo, bajar verde. */}
-        {change !== null && (
+        {/* Variación contra el mes anterior: subir es rojo, bajar verde; sin
+            diferencia no se muestra. */}
+        {change !== null && change !== 0 && (
           <span
             className={cn(
               "flex-shrink-0 text-[12px] font-medium leading-tight tabular-nums",
-              change > 0
-                ? "text-destructive"
-                : change < 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-muted-foreground"
+              change > 0 ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
             )}
           >
             {changeLabel(change)}
