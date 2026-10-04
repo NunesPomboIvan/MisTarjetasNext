@@ -124,7 +124,7 @@ export default async function DashboardPage() {
       <div className="flex min-h-[40px] items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           {isNight ? (
-            <Moon className="h-4 w-4 flex-shrink-0 text-indigo-300" />
+            <Moon className="h-4 w-4 flex-shrink-0 text-[#8DB3E6]" />
           ) : (
             <Sun className="h-4 w-4 flex-shrink-0 text-amber-400" />
           )}

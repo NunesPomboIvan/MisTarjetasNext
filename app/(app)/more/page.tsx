@@ -44,7 +44,7 @@ export default async function MorePage() {
       <section className="flex items-center gap-3 rounded-[18px] border border-border bg-card p-4">
         <div
           className="flex h-12 w-12 items-center justify-center rounded-full font-display text-[18px] font-bold text-white"
-          style={{ background: "linear-gradient(135deg, #6366f1, #4338ca)" }}
+          style={{ background: "linear-gradient(135deg, #0055A4, #003F7D)" }}
         >
           {displayInitial ?? <LocalUserInitial fallback="U" />}
         </div>
@@ -126,7 +126,7 @@ function MoreRow({
     >
       <span
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-foreground/70"
-        style={{ background: "rgba(99,102,241,0.10)" }}
+        style={{ background: "rgba(0,85,164,0.10)" }}
       >
         {icon}
       </span>

@@ -67,7 +67,7 @@ export default async function CierresPage() {
           {items.map(({ card, period, total, daysUntilClose }) => {
             const isToday = daysUntilClose <= 0;
             const isUrgent = daysUntilClose <= 1;
-            const accent = card.color || "#6366f1";
+            const accent = card.color || "#0055A4";
             return (
               <Link
                 key={card.id}
@@ -77,7 +77,7 @@ export default async function CierresPage() {
                   backdropFilter: "blur(24px) saturate(180%)",
                   WebkitBackdropFilter: "blur(24px) saturate(180%)",
                   boxShadow:
-                    "0 0 28px -8px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+                    "0 0 28px -8px rgba(91,143,214,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
                 }}
               >
                 <div className="flex items-center gap-3">

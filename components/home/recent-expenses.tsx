@@ -115,7 +115,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                 >
                   <div
                     className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[17px]"
-                    style={{ background: cat ? cat.color_bg : "#6366f120" }}
+                    style={{ background: cat ? cat.color_bg : "#0055A420" }}
                   >
                     {cat?.emoji ?? "🧾"}
                   </div>

@@ -54,10 +54,10 @@ export function BottomNav() {
             className="tap-target absolute left-1/2 top-0 z-20 flex h-[60px] w-[60px] -translate-x-1/2 -translate-y-[32%] items-center justify-center rounded-[16px] text-white backdrop-blur-xl transition-transform active:scale-95"
             style={{
               background:
-                "linear-gradient(135deg, rgba(99,102,241,0.55) 0%, rgba(99,102,241,0.22) 100%)",
-              border: "1px solid rgba(99,102,241,0.55)",
+                "linear-gradient(135deg, rgba(0,85,164,0.55) 0%, rgba(0,85,164,0.22) 100%)",
+              border: "1px solid rgba(0,85,164,0.55)",
               boxShadow:
-                "0 0 20px -2px rgba(99,102,241,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
+                "0 0 20px -2px rgba(0,85,164,0.66), inset 0 1px 0 rgba(255,255,255,0.10)",
               backdropFilter: "blur(20px) saturate(160%)",
               WebkitBackdropFilter: "blur(20px) saturate(160%)",
             }}
@@ -73,7 +73,7 @@ export function BottomNav() {
             className="relative rounded-[24px] border border-white/[0.08] bg-card px-2 py-1.5"
             style={{
               boxShadow:
-                "0 0 36px -4px rgba(129,140,248,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+                "0 0 36px -4px rgba(91,143,214,0.28), 0 14px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
             }}
           >
             {/* Resplandor violeta sobre la barra justo bajo el FAB */}
@@ -84,7 +84,7 @@ export function BottomNav() {
                 left: "50%",
                 transform: "translateX(-50%)",
                 background:
-                  "radial-gradient(ellipse at top, rgba(129,140,248,0.45) 0%, rgba(129,140,248,0.15) 45%, transparent 75%)",
+                  "radial-gradient(ellipse at top, rgba(91,143,214,0.45) 0%, rgba(91,143,214,0.15) 45%, transparent 75%)",
                 filter: "blur(8px)",
               }}
             />

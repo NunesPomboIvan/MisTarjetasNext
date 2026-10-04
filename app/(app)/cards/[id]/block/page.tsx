@@ -37,7 +37,7 @@ export default async function BlockCardPage({ params }: PageProps) {
       <div className="flex flex-col items-center px-4 pt-4 text-center">
         <div
           className="flex h-20 w-20 items-center justify-center rounded-full"
-          style={{ background: "rgba(99,102,241,0.12)" }}
+          style={{ background: "rgba(0,85,164,0.12)" }}
         >
           <Lock className="h-9 w-9 text-primary" />
         </div>

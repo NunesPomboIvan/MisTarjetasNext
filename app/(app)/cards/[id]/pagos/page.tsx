@@ -87,7 +87,7 @@ export default async function CardPagosPage({ params }: PageProps) {
           </div>
           <div
             className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl"
-            style={{ background: "rgba(99,102,241,0.12)" }}
+            style={{ background: "rgba(0,85,164,0.12)" }}
           >
             <CalendarIcon className="h-8 w-8 text-primary" />
           </div>

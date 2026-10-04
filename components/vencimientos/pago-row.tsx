@@ -25,7 +25,7 @@ export function PagoRow({ href, accent, icon, title, suffix, dueDate, amount, da
         backdropFilter: "blur(24px) saturate(180%)",
         WebkitBackdropFilter: "blur(24px) saturate(180%)",
         boxShadow:
-          "0 0 28px -8px rgba(129,140,248,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+          "0 0 28px -8px rgba(91,143,214,0.22), 0 14px 40px -16px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
       }}
     >
       <div className="flex items-center gap-3">

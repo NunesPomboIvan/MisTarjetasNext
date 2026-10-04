@@ -155,9 +155,9 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
               <div
                 className={cn(
                   "w-full rounded-t-[4px]",
-                  b.when === "past" && "bg-[#0055A4]/50",
-                  b.when === "current" && "bg-[#0055A4]",
-                  b.when === "future" && "border border-b-0 border-dashed border-[#0055A4]"
+                  b.when === "past" && "bg-primary/50",
+                  b.when === "current" && "bg-primary",
+                  b.when === "future" && "border border-b-0 border-dashed border-primary"
                 )}
                 style={{ height: `${Math.max((b.total / max) * 100, 4)}%` }}
               />
@@ -166,7 +166,7 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
               className={cn(
                 "text-[10.5px] leading-none",
                 b.when === "current"
-                  ? "font-semibold text-[#0055A4] dark:text-[#5B8FD6]"
+                  ? "font-semibold text-primary"
                   : "text-muted-foreground"
               )}
             >
