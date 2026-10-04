@@ -2,8 +2,6 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { RecentExpenses, type RecentExpense } from "@/components/home/recent-expenses";
 
-const today = new Date(2026, 9, 1); // 1 oct 2026
-
 function expense(id: string, expense_date: string, overrides: Partial<RecentExpense> = {}): RecentExpense {
   return {
     id,
@@ -36,21 +34,21 @@ function expense(id: string, expense_date: string, overrides: Partial<RecentExpe
 
 describe("RecentExpenses", () => {
   it("muestra el estado vacío con acceso a cargar el primero", () => {
-    render(<RecentExpenses expenses={[]} today={today} />);
+    render(<RecentExpenses expenses={[]} />);
     expect(screen.getByText("Todavía no cargaste consumos")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cargar el primero" })).toHaveAttribute("href", "/nuevo");
     expect(screen.queryByText("Ver todos")).not.toBeInTheDocument();
   });
 
-  it("muestra un consumo con tarjeta, fecha relativa y link al detalle", () => {
-    render(<RecentExpenses expenses={[expense("a", "2026-10-01")]} today={today} />);
+  it("muestra un consumo con tarjeta, fecha y link al detalle", () => {
+    render(<RecentExpenses expenses={[expense("a", "2026-10-01")]} />);
     expect(screen.getByText("Macro · Visa 4016")).toBeInTheDocument();
-    expect(screen.getByText("Hoy")).toBeInTheDocument();
+    expect(screen.getByText("01/10/2026")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver consumo Consumo a" })).toHaveAttribute("href", "/expenses/a");
     expect(screen.getByRole("link", { name: "Ver todos" })).toHaveAttribute("href", "/expenses");
   });
 
-  it("usa 'ayer' y el formato corto para fechas anteriores", () => {
+  it("muestra siempre la fecha dd/MM/yyyy (sin Hoy / Ayer)", () => {
     render(
       <RecentExpenses
         expenses={[
@@ -59,10 +57,9 @@ describe("RecentExpenses", () => {
           expense("c", "2026-01-05"),
           expense("d", "2025-12-31"),
         ]}
-        today={today}
       />
     );
-    expect(screen.getByText("Ayer")).toBeInTheDocument();
+    expect(screen.getByText("30/09/2026")).toBeInTheDocument();
     expect(screen.getByText("29/09/2026")).toBeInTheDocument();
     expect(screen.getByText("05/01/2026")).toBeInTheDocument();
     expect(screen.getByText("Gold · Mastercard 1234")).toBeInTheDocument();

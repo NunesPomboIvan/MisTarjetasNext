@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Money } from "@/components/shared/money";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import { cn, formatDate } from "@/lib/utils";
-import { differenceInCalendarDays } from "date-fns";
 import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
 import type { CardType, Category, Expense } from "@/lib/supabase/database.types";
 
@@ -25,19 +24,13 @@ function cardLabel(card: RecentExpense["card"]): string {
 /** Margen sobre la barra inferior (cubre el botón "+" que sobresale). */
 const BOTTOM_GAP = 24;
 
-/** "Hoy", "Ayer" o "29/09/2026" para la fecha de compra. */
-function purchaseLabel(expenseDate: string, today: Date): string {
-  const d = parseLocalDate(expenseDate);
-  const diff = differenceInCalendarDays(today, d);
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Ayer";
-  return formatDate(d, "dd/MM/yyyy");
+/** Fecha de compra en formato "29/09/2026". */
+function purchaseLabel(expenseDate: string): string {
+  return formatDate(parseLocalDate(expenseDate), "dd/MM/yyyy");
 }
 
 interface RecentExpensesProps {
   expenses: RecentExpense[];
-  /** Hoy en zona horaria de Argentina (para "hoy" / "ayer"). */
-  today: Date;
 }
 
 /**
@@ -48,7 +41,7 @@ interface RecentExpensesProps {
  * (revalidatePath("/", "layout")), así que la lista se actualiza sola al
  * cargar, editar o borrar.
  */
-export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
+export function RecentExpenses({ expenses }: RecentExpensesProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const dataKey = expenses.map((e) => e.id).join(",");
   // Cantidad de filas que entran, asociada a la lista y al alto medidos.
@@ -142,7 +135,7 @@ export function RecentExpenses({ expenses, today }: RecentExpensesProps) {
                       )}
                     />
                     <span className="text-[11.5px] text-muted-foreground">
-                      {purchaseLabel(expense.expense_date, today)}
+                      {purchaseLabel(expense.expense_date)}
                     </span>
                   </div>
                 </Link>

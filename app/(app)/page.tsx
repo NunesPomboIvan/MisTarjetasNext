@@ -174,7 +174,7 @@ export default async function DashboardPage() {
             />
           </section>
 
-          <RecentExpenses expenses={recentExpenses} today={todayStart} />
+          <RecentExpenses expenses={recentExpenses} />
         </>
       )}
     </div>
