@@ -84,23 +84,18 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
         nextKey={detail.nextKey}
         isCurrentMonth={detail.isCurrentMonth}
       >
-        <p className="text-[12px] font-medium text-muted-foreground">
-          {detail.paidTotal > 0 ? "Falta pagar" : "Total a pagar"}
-        </p>
-        <Money
-          amount={detail.total}
-          className="mt-0.5 block font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-        />
-        <div className="mt-2 flex items-center gap-4 text-[11.5px] text-muted-foreground">
-          <span>
-            Tarjetas{" "}
+        {/* Sin total general (ya está en el listado de períodos): solo el
+            desglose, con el mismo estilo que en esa pantalla. */}
+        <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
+          <span className="min-w-0 truncate">
+            Tarjetas:{" "}
             <Money
               amount={detail.cardsTotal}
               className="font-semibold tabular-nums text-foreground"
             />
           </span>
-          <span>
-            Préstamos{" "}
+          <span className="min-w-0 truncate">
+            Préstamos:{" "}
             <Money
               amount={detail.loansTotal}
               className="font-semibold tabular-nums text-foreground"

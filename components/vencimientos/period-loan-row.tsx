@@ -31,7 +31,7 @@ export function PeriodLoanRow({ item }: { item: PeriodDetailLoan }) {
             {item.name}
           </p>
           <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-            {item.installmentNumber}/{item.totalInstallments}
+            Cuota: {item.installmentNumber}/{item.totalInstallments}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {relativeDateLabel({ future: "Vence", past: "Venció" }, item.dueDateKey, nowInArgentina())}
