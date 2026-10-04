@@ -48,7 +48,7 @@ export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
       : `/cards/${item.cardId}?offset=${item.offset}`;
 
   return (
-    <div className="flex items-center gap-3 rounded-[14px] border border-border bg-background/40 px-3 py-2.5">
+    <div className="flex items-center gap-3 py-3.5">
       <Link
         href={href}
         className="flex min-w-0 flex-1 items-center gap-3 transition-colors active:opacity-70"

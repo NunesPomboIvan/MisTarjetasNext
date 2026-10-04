@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { BackButton } from "@/components/shared/back-button";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { computePeriodDetail } from "@/lib/vencimientos";
+import { Children } from "react";
 import { nowInArgentina } from "@/lib/utils";
 import { PeriodDetailNav } from "@/components/vencimientos/period-detail-nav";
 import { PeriodCardRow } from "@/components/vencimientos/period-card-row";
@@ -166,7 +167,16 @@ function PeriodBlock({
           className="text-[11.5px] font-semibold tabular-nums text-foreground"
         />
       </div>
-      <div className="space-y-2">{children}</div>
+      {/* Filas en un único bloque separadas por una línea, con el mismo
+          estilo que el listado de períodos. */}
+      <div className="glass-card rounded-[20px] px-4">
+        {Children.toArray(children).map((child, i) => (
+          <div key={i}>
+            {i > 0 && <div className="h-px bg-border dark:bg-white/[0.16]" />}
+            {child}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
