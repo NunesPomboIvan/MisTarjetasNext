@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Banknote } from "lucide-react";
 import { Money } from "@/components/shared/money";
-import { formatLongDate } from "@/lib/utils";
-import { parseLocalDate } from "@/lib/periods/calculate";
+import { nowInArgentina } from "@/lib/utils";
 import { PeriodPaidToggle } from "./period-paid-toggle";
+import { relativeDateLabel } from "./period-card-row";
 import type { PeriodDetailLoan } from "@/lib/vencimientos";
 
 /**
@@ -30,9 +30,11 @@ export function PeriodLoanRow({ item }: { item: PeriodDetailLoan }) {
           <p className="truncate text-[13.5px] font-semibold text-foreground">
             {item.name}
           </p>
+          <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+            {item.installmentNumber}/{item.totalInstallments}
+          </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Cuota {item.installmentNumber} de {item.totalInstallments} · Vence{" "}
-            {formatLongDate(parseLocalDate(item.dueDateKey))}
+            {relativeDateLabel({ future: "Vence", past: "Venció" }, item.dueDateKey, nowInArgentina())}
           </p>
         </div>
       </Link>

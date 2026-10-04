@@ -17,7 +17,7 @@ import type { PeriodDetailCard } from "@/lib/vencimientos";
  * "Cierra en 5 días (24/09/2026)" / "Vence hoy (02/10/2026)" /
  * "Venció hace 2 días (02/10/2026)".
  */
-function relativeDateLabel(
+export function relativeDateLabel(
   verbs: { future: string; past: string },
   dateKey: string,
   today: Date
