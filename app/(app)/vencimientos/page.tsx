@@ -120,10 +120,11 @@ export default async function VencimientosPage() {
       </div>
 
       {/* Períodos: cada uno es una fila navegable al detalle */}
-      {months.map((m) => (
+      {/* El primer período del listado no muestra variación. */}
+      {months.map((m, i) => (
         <div key={m.key}>
           <div className="h-px bg-border dark:bg-white/[0.16]" />
-          <PeriodRow month={m} change={monthOverMonthChange(monthlyTotals, m.key)} />
+          <PeriodRow month={m} change={i === 0 ? null : monthOverMonthChange(monthlyTotals, m.key)} />
         </div>
       ))}
     </section>
@@ -202,22 +203,15 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
       href={`/vencimientos/${month.key}`}
       className="flex w-full items-center gap-3 py-4 text-left"
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={cn("truncate text-[14px] leading-tight text-foreground", weight)}>
-            {label}
-          </span>
-          {month.isCurrent && (
-            <span className="flex-shrink-0 rounded-full border border-foreground/25 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-foreground">
-              Actual
-            </span>
-          )}
-        </div>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <span className={cn("truncate text-[14px] leading-tight text-foreground", weight)}>
+          {label}
+        </span>
         {/* Variación contra el mes anterior: subir es rojo, bajar verde. */}
         {change !== null && (
-          <p
+          <span
             className={cn(
-              "mt-1 text-[12px] font-medium leading-tight tabular-nums",
+              "flex-shrink-0 text-[12px] font-medium leading-tight tabular-nums",
               change > 0
                 ? "text-destructive"
                 : change < 0
@@ -226,7 +220,12 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
             )}
           >
             {changeLabel(change)}
-          </p>
+          </span>
+        )}
+        {month.isCurrent && (
+          <span className="flex-shrink-0 rounded-full border border-foreground/25 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-foreground">
+            Actual
+          </span>
         )}
       </div>
       <Money
