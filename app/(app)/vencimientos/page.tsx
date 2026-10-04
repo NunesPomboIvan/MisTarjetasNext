@@ -142,8 +142,8 @@ interface ChartBar {
 
 /**
  * Mini gráfico de barras: total de cada período (tarjetas + préstamos),
- * proporcional al mayor de los visibles. Pasados en gris, actual en el color
- * de acento y futuros (proyectados) punteados sin relleno. Cada barra navega
+ * proporcional al mayor de los visibles. Todo en azul francés: pasados más
+ * tenues, actual pleno y futuros (proyectados) punteados sin relleno. Cada barra navega
  * al detalle del período.
  */
 function PeriodsChart({ bars }: { bars: ChartBar[] }) {
@@ -163,9 +163,9 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
               <div
                 className={cn(
                   "w-full rounded-t-[4px]",
-                  b.when === "past" && "bg-muted-foreground/45",
-                  b.when === "current" && "bg-primary",
-                  b.when === "future" && "border border-b-0 border-dashed border-muted-foreground/70"
+                  b.when === "past" && "bg-[#0055A4]/50",
+                  b.when === "current" && "bg-[#0055A4]",
+                  b.when === "future" && "border border-b-0 border-dashed border-[#0055A4]"
                 )}
                 style={{ height: `${Math.max((b.total / max) * 100, 4)}%` }}
               />
@@ -173,7 +173,9 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
             <span
               className={cn(
                 "text-[10.5px] leading-none",
-                b.when === "current" ? "font-semibold text-primary" : "text-muted-foreground"
+                b.when === "current"
+                  ? "font-semibold text-[#0055A4] dark:text-[#5B8FD6]"
+                  : "text-muted-foreground"
               )}
             >
               {month}
@@ -183,14 +185,6 @@ function PeriodsChart({ bars }: { bars: ChartBar[] }) {
       })}
     </div>
   );
-}
-
-/** "3 tarjetas · 2 préstamos" (omite la parte en cero). */
-function breakdownLabel(cards: number, loans: number): string {
-  const parts: string[] = [];
-  if (cards > 0) parts.push(`${cards} ${cards === 1 ? "tarjeta" : "tarjetas"}`);
-  if (loans > 0) parts.push(`${loans} ${loans === 1 ? "préstamo" : "préstamos"}`);
-  return parts.join(" · ");
 }
 
 /** "↑ 14%" / "↓ 9%" / "= 0%". */
@@ -203,7 +197,6 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
   const label = capitalize(formatDate(month.date, "MMMM yyyy"));
   // El período actual se resalta con negrita y el badge "Actual".
   const weight = month.isCurrent ? "font-bold" : "font-semibold";
-  const breakdown = breakdownLabel(month.cards.length, month.loans.length);
   return (
     <Link
       href={`/vencimientos/${month.key}`}
@@ -220,9 +213,19 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
             </span>
           )}
         </div>
-        {(breakdown || change !== null) && (
-          <p className="mt-1 truncate text-[12px] leading-tight text-muted-foreground">
-            {[breakdown, change !== null ? changeLabel(change) : ""].filter(Boolean).join(" · ")}
+        {/* Variación contra el mes anterior: subir es rojo, bajar verde. */}
+        {change !== null && (
+          <p
+            className={cn(
+              "mt-1 text-[12px] font-medium leading-tight tabular-nums",
+              change > 0
+                ? "text-destructive"
+                : change < 0
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-muted-foreground"
+            )}
+          >
+            {changeLabel(change)}
           </p>
         )}
       </div>
