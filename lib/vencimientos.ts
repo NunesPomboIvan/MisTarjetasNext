@@ -254,6 +254,81 @@ export function computeUpcomingByMonth({
 }
 
 // ══════════════════════════════════════════════════════════════════
+// TOTALES BRUTOS POR MES (gráfico y variación de /vencimientos)
+// ══════════════════════════════════════════════════════════════════
+
+interface MonthlyTotalsParams {
+  cards: Card[];
+  expenses: Expense[];
+  loans: Loan[];
+  /** TODAS las cuotas (pagadas y no). */
+  allInstallments: LoanInstallment[];
+}
+
+/**
+ * Total de cada mes de vencimiento ("YYYY-MM" → ARS), tarjetas + préstamos,
+ * INCLUYENDO lo ya pagado: es el monto del período, no el saldo pendiente.
+ * Usa la misma ventana y cálculo que `computePeriodDetail`, así el total de
+ * un mes coincide con `total + paidTotal` de su detalle.
+ */
+export function computeMonthlyTotals({
+  cards,
+  expenses,
+  loans,
+  allInstallments,
+}: MonthlyTotalsParams): Map<string, number> {
+  const totals = new Map<string, number>();
+  const add = (key: string, amount: number) =>
+    totals.set(key, (totals.get(key) ?? 0) + amount);
+
+  for (const card of cards) {
+    const cardExpenses = expenses.filter((e) => e.card_id === card.id);
+    for (let off = -DETAIL_PAST_MONTHS; off <= DETAIL_FUTURE_MONTHS; off++) {
+      const period = getPeriodByOffset(card, off);
+      const amount = cardExpenses.reduce(
+        (s, e) => s + getAmountInPeriodArs(e, period),
+        0
+      );
+      if (amount <= 0) continue;
+      add(format(period.due, "yyyy-MM"), amount);
+    }
+  }
+
+  const loanById = new Map(loans.map((l) => [l.id, l]));
+  for (const inst of allInstallments) {
+    const loan = loanById.get(inst.loan_id);
+    if (!loan) continue;
+    add(
+      format(parseLocalDate(inst.due_date), "yyyy-MM"),
+      toArs({ currency: loan.currency, exchange_rate: inst.exchange_rate }, Number(inst.amount))
+    );
+  }
+
+  return totals;
+}
+
+/** Clave "YYYY-MM" desplazada `delta` meses. */
+export function shiftMonthKey(key: string, delta: number): string {
+  const [y, m] = key.split("-").map(Number);
+  const idx = y * 12 + (m - 1) + delta;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Variación porcentual (entera) del total de un mes contra el mes anterior.
+ * null si no hay mes anterior o su total es 0. |variación| < 1% → 0.
+ */
+export function monthOverMonthChange(
+  totals: Map<string, number>,
+  key: string
+): number | null {
+  const prev = totals.get(shiftMonthKey(key, -1)) ?? 0;
+  if (prev <= 0) return null;
+  const pct = (((totals.get(key) ?? 0) - prev) / prev) * 100;
+  return Math.abs(pct) < 1 ? 0 : Math.round(pct);
+}
+
+// ══════════════════════════════════════════════════════════════════
 // DETALLE DE UN PERÍODO (pantalla /vencimientos/[month])
 // ══════════════════════════════════════════════════════════════════
 

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { computeUpcomingByMonth } from "@/lib/vencimientos";
+import { computeUpcomingByMonth, monthOverMonthChange, shiftMonthKey } from "@/lib/vencimientos";
 import type { Card, Expense } from "@/lib/supabase/database.types";
 
 function makeCard(overrides: Partial<Card> = {}): Card {
@@ -126,5 +126,25 @@ describe("computeUpcomingByMonth — consumos recurrentes", () => {
     const matching = allEntries.filter((c) => c.periodKey === "2026-07");
     expect(matching).toHaveLength(1);
     expect(matching[0].amount).toBe(15000);
+  });
+});
+
+describe("variación mes a mes", () => {
+  it("shiftMonthKey cruza años", () => {
+    expect(shiftMonthKey("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonthKey("2026-11", 2)).toBe("2027-01");
+  });
+
+  it("calcula subas, bajas, ~0 y sin mes anterior", () => {
+    const totals = new Map([
+      ["2026-05", 1000],
+      ["2026-06", 1140],
+      ["2026-07", 1037],
+      ["2026-08", 1040],
+    ]);
+    expect(monthOverMonthChange(totals, "2026-06")).toBe(14);
+    expect(monthOverMonthChange(totals, "2026-07")).toBe(-9);
+    expect(monthOverMonthChange(totals, "2026-08")).toBe(0);
+    expect(monthOverMonthChange(totals, "2026-05")).toBeNull();
   });
 });
