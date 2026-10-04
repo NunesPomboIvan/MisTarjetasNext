@@ -60,7 +60,7 @@ export default async function VencimientosPage() {
   );
 
   const today = nowInArgentina();
-  const { months, grandTotal, cardsGrandTotal, loansGrandTotal } = computeUpcomingByMonth({
+  const { months, cardsGrandTotal, loansGrandTotal } = computeUpcomingByMonth({
     cards: (cards ?? []) as Card[],
     expenses: (expenses ?? []) as Expense[],
     loans: (loans ?? []) as Loan[],
@@ -100,21 +100,12 @@ export default async function VencimientosPage() {
     // Total y períodos en un único bloque, con el estilo de la lista de
     // "Últimos consumos" de la home.
     <section className="glass-card mt-2 rounded-[20px] px-5 pb-1">
-      {/* Total general del rango mostrado (con la fecha de hoy) y su desglose,
-          como encabezado del listado */}
+      {/* Pendiente de tarjetas y de préstamos del rango mostrado, como
+          encabezado del listado */}
       <div className="pb-7 pt-[18px]">
-        <div className="flex items-baseline justify-between gap-3">
-          <Money
-            amount={grandTotal}
-            className="min-w-0 truncate font-display text-[28px] font-bold leading-none tracking-tight text-foreground"
-          />
-          <span className="flex-shrink-0 text-[12px] font-medium tabular-nums text-muted-foreground">
-            {formatDate(today, "dd/MM/yyyy")}
-          </span>
-        </div>
-        <div className="mt-2.5 flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
+        <div className="flex items-start justify-between gap-3">
           <TotalPart label="Tarjetas" amount={cardsGrandTotal} />
-          <TotalPart label="Préstamos" amount={loansGrandTotal} />
+          <TotalPart label="Préstamos" amount={loansGrandTotal} className="text-right" />
         </div>
         {chartBars.length > 0 && <PeriodsChart bars={chartBars} />}
       </div>
@@ -232,12 +223,15 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
   );
 }
 
-/** Parte del desglose del total: "Tarjetas: $ X". */
-function TotalPart({ label, amount }: { label: string; amount: number }) {
+/** Pendiente de un tipo: etiqueta gris arriba y monto debajo. */
+function TotalPart({ label, amount, className }: { label: string; amount: number; className?: string }) {
   return (
-    <span className="min-w-0 truncate">
-      {label}:{" "}
-      <Money amount={amount} className="font-semibold tabular-nums text-foreground" />
-    </span>
+    <div className={cn("min-w-0", className)}>
+      <p className="text-[12px] text-muted-foreground">{label}</p>
+      <Money
+        amount={amount}
+        className="mt-1 block truncate font-display text-[20px] font-bold leading-none tracking-tight tabular-nums text-foreground"
+      />
+    </div>
   );
 }
