@@ -5,7 +5,7 @@ import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { computePeriodDetail } from "@/lib/vencimientos";
 import { Children } from "react";
-import { nowInArgentina } from "@/lib/utils";
+import { formatDate, nowInArgentina } from "@/lib/utils";
 import { PeriodDetailNav } from "@/components/vencimientos/period-detail-nav";
 import { PeriodCardRow } from "@/components/vencimientos/period-card-row";
 import { PeriodLoanRow } from "@/components/vencimientos/period-loan-row";
@@ -59,6 +59,11 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
     (paidPeriods ?? []).map((p) => `${p.card_id}:${p.period_key}`)
   );
 
+  const today = nowInArgentina();
+  // En los meses posteriores al actual las fechas de cierre/vencimiento de las
+  // tarjetas todavía no se conocen (son proyectadas): no se muestran.
+  const isFutureMonth = month > formatDate(today, "yyyy-MM");
+
   const detail = computePeriodDetail({
     monthKey: month,
     cards: (cards ?? []) as Card[],
@@ -66,7 +71,7 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
     loans: (loans ?? []) as Loan[],
     allInstallments: (allInst ?? []) as LoanInstallment[],
     paidCardPeriods,
-    now: nowInArgentina(),
+    now: today,
   });
 
   const isEmpty = detail.cards.length === 0 && detail.loans.length === 0;
@@ -121,7 +126,7 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
           {detail.cards.length > 0 && (
             <PeriodBlock>
               {detail.cards.map((c) => (
-                <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} />
+                <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
               ))}
             </PeriodBlock>
           )}

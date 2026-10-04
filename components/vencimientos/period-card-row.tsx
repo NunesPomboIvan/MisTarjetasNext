@@ -35,7 +35,14 @@ function relativeDateLabel(
   return `${rel} (${formatDate(d, "dd/MM/yyyy")})`;
 }
 
-export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
+export function PeriodCardRow({
+  item,
+  showDates = true,
+}: {
+  item: PeriodDetailCard;
+  /** false en períodos futuros: sus fechas de cierre/vencimiento no se conocen. */
+  showDates?: boolean;
+}) {
   const accent = item.accent || "#6366f1";
   const today = nowInArgentina();
   // Igual que en la home: "Macro · Visa 4016" (banco · red + últimos 4).
@@ -69,12 +76,16 @@ export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
               </span>
             )}
           </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {relativeDateLabel({ future: "Cierra", past: "Cerró" }, item.closeDateKey, today)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {relativeDateLabel({ future: "Vence", past: "Venció" }, item.dueDateKey, today)}
-          </p>
+          {showDates && (
+            <>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {relativeDateLabel({ future: "Cierra", past: "Cerró" }, item.closeDateKey, today)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {relativeDateLabel({ future: "Vence", past: "Venció" }, item.dueDateKey, today)}
+              </p>
+            </>
+          )}
         </div>
       </Link>
 
