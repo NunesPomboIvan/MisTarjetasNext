@@ -6,20 +6,12 @@ import { Money } from "@/components/shared/money";
 import { parseLocalDate } from "@/lib/periods/calculate";
 import { cn, formatDate } from "@/lib/utils";
 import { differenceInCalendarDays } from "date-fns";
+import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
 import type { CardType, Category, Expense } from "@/lib/supabase/database.types";
 
 export type RecentExpense = Expense & {
   category: Category | null;
   card: { name: string; bank: string | null; last_four: string | null; type: CardType } | null;
-};
-
-const CARD_TYPE_LABEL: Record<CardType, string> = {
-  visa: "Visa",
-  mastercard: "Mastercard",
-  amex: "Amex",
-  naranja: "Naranja",
-  cabal: "Cabal",
-  other: "",
 };
 
 /** "Macro · Visa 4016": banco, red y últimos 4 dígitos. */

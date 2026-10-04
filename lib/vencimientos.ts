@@ -18,7 +18,7 @@ import {
   parseLocalDate,
 } from "@/lib/periods/calculate";
 import { capitalize, formatDate } from "@/lib/utils";
-import type { Card, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
+import type { Card, CardType, Expense, Loan, LoanInstallment } from "@/lib/supabase/database.types";
 
 /**
  * Hasta cuántos meses hacia adelante proyectamos un consumo recurrente (sin
@@ -338,6 +338,8 @@ export interface PeriodDetailCard {
   cardId: string;
   name: string;
   lastFour: string;
+  /** Red de la tarjeta (Visa, Amex...). */
+  cardType: CardType;
   accent: string;
   /** Fecha de cierre del período de ESA tarjeta, "YYYY-MM-DD". */
   closeDateKey: string;
@@ -445,6 +447,7 @@ export function computePeriodDetail({
         cardId: card.id,
         name: card.bank || card.name,
         lastFour: card.last_four,
+        cardType: card.type,
         accent: card.color || "#6366f1",
         closeDateKey: format(period.end, "yyyy-MM-dd"),
         dueDateKey: format(period.due, "yyyy-MM-dd"),

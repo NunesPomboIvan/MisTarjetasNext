@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { Money } from "@/components/shared/money";
-import { formatLongDate } from "@/lib/utils";
+import { differenceInCalendarDays } from "date-fns";
+import { formatDate, nowInArgentina } from "@/lib/utils";
 import { parseLocalDate } from "@/lib/periods/calculate";
+import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
 import { PeriodPaidToggle } from "./period-paid-toggle";
 import type { PeriodDetailCard } from "@/lib/vencimientos";
 
@@ -11,8 +13,35 @@ import type { PeriodDetailCard } from "@/lib/vencimientos";
  * tarjeta posicionado en ESTE período (via ?offset); el pill de estado togglea
  * el pago del período sin salir de la pantalla.
  */
+/**
+ * "Cierra en 5 días (24/09/2026)" / "Vence hoy (02/10/2026)" /
+ * "Venció hace 2 días (02/10/2026)".
+ */
+function relativeDateLabel(
+  verbs: { future: string; past: string },
+  dateKey: string,
+  today: Date
+): string {
+  const d = parseLocalDate(dateKey);
+  const days = differenceInCalendarDays(d, today);
+  const n = Math.abs(days);
+  const amount = `${n} ${n === 1 ? "día" : "días"}`;
+  const rel =
+    days === 0
+      ? `${verbs.future} hoy`
+      : days > 0
+        ? `${verbs.future} en ${amount}`
+        : `${verbs.past} hace ${amount}`;
+  return `${rel} (${formatDate(d, "dd/MM/yyyy")})`;
+}
+
 export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
   const accent = item.accent || "#6366f1";
+  const today = nowInArgentina();
+  // Igual que en la home: red de la tarjeta + últimos 4 dígitos ("Visa 4016").
+  const brandAndNumber = [CARD_TYPE_LABEL[item.cardType], item.lastFour]
+    .filter(Boolean)
+    .join(" ");
   const href =
     item.offset === 0
       ? `/cards/${item.cardId}`
@@ -34,15 +63,17 @@ export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13.5px] font-semibold text-foreground">
             {item.name}
-            {item.lastFour && (
+            {brandAndNumber && (
               <span className="ml-1.5 text-[11.5px] font-normal tabular-nums text-muted-foreground">
-                •••• {item.lastFour}
+                {brandAndNumber}
               </span>
             )}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Cierre {formatLongDate(parseLocalDate(item.closeDateKey))} · Vence{" "}
-            {formatLongDate(parseLocalDate(item.dueDateKey))}
+            {relativeDateLabel({ future: "Cierra", past: "Cerró" }, item.closeDateKey, today)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {relativeDateLabel({ future: "Vence", past: "Venció" }, item.dueDateKey, today)}
           </p>
         </div>
       </Link>
