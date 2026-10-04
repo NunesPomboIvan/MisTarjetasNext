@@ -38,7 +38,7 @@ function relativeDateLabel(
 export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
   const accent = item.accent || "#6366f1";
   const today = nowInArgentina();
-  // Igual que en la home: red de la tarjeta + últimos 4 dígitos ("Visa 4016").
+  // Igual que en la home: "Macro · Visa 4016" (banco · red + últimos 4).
   const brandAndNumber = [CARD_TYPE_LABEL[item.cardType], item.lastFour]
     .filter(Boolean)
     .join(" ");
@@ -65,7 +65,7 @@ export function PeriodCardRow({ item }: { item: PeriodDetailCard }) {
             {item.name}
             {brandAndNumber && (
               <span className="ml-1.5 text-[11.5px] font-normal tabular-nums text-muted-foreground">
-                {brandAndNumber}
+                · {brandAndNumber}
               </span>
             )}
           </p>
