@@ -103,9 +103,9 @@ export default async function VencimientosPage() {
       {/* Pendiente de tarjetas y de préstamos del rango mostrado, como
           encabezado del listado */}
       <div className="pb-7 pt-[18px]">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
           <TotalPart label="Tarjetas" amount={cardsGrandTotal} />
-          <TotalPart label="Préstamos" amount={loansGrandTotal} className="text-right" />
+          <TotalPart label="Préstamos" amount={loansGrandTotal} />
         </div>
         {chartBars.length > 0 && <PeriodsChart bars={chartBars} />}
       </div>
@@ -223,15 +223,12 @@ function PeriodRow({ month, change }: { month: MonthGroup; change: number | null
   );
 }
 
-/** Pendiente de un tipo: etiqueta gris arriba y monto debajo. */
-function TotalPart({ label, amount, className }: { label: string; amount: number; className?: string }) {
+/** Pendiente de un tipo: "Tarjetas: $ X". */
+function TotalPart({ label, amount }: { label: string; amount: number }) {
   return (
-    <div className={cn("min-w-0", className)}>
-      <p className="text-[12px] text-muted-foreground">{label}</p>
-      <Money
-        amount={amount}
-        className="mt-1 block truncate font-display text-[20px] font-bold leading-none tracking-tight tabular-nums text-foreground"
-      />
-    </div>
+    <span className="min-w-0 truncate">
+      {label}:{" "}
+      <Money amount={amount} className="font-semibold tabular-nums text-foreground" />
+    </span>
   );
 }
