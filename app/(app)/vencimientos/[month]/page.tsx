@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
-import { BackButton } from "@/components/shared/back-button";
-import { StickyPageHeader } from "@/components/shared/sticky-page-header";
 import { computePeriodDetail } from "@/lib/vencimientos";
 import { Children } from "react";
 import { nowInArgentina } from "@/lib/utils";
@@ -75,13 +73,6 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
 
   return (
     <div className="space-y-5">
-      <StickyPageHeader>
-        <div className="flex items-center justify-between gap-3">
-          <BackButton href="/vencimientos" />
-          <div className="h-10 w-10 shrink-0" aria-hidden />
-        </div>
-      </StickyPageHeader>
-
       <PeriodDetailNav
         label={detail.label}
         prevKey={detail.prevKey}
@@ -128,14 +119,14 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
       ) : (
         <div className="space-y-4">
           {detail.cards.length > 0 && (
-            <PeriodBlock label="Tarjetas" subtotal={detail.cardsTotal}>
+            <PeriodBlock>
               {detail.cards.map((c) => (
                 <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} />
               ))}
             </PeriodBlock>
           )}
           {detail.loans.length > 0 && (
-            <PeriodBlock label="Préstamos" subtotal={detail.loansTotal}>
+            <PeriodBlock>
               {detail.loans.map((l) => (
                 <PeriodLoanRow key={l.installmentId} item={l} />
               ))}
@@ -147,36 +138,20 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
   );
 }
 
-function PeriodBlock({
-  label,
-  subtotal,
-  children,
-}: {
-  label: string;
-  subtotal: number;
-  children: React.ReactNode;
-}) {
+/**
+ * Bloque de filas (tarjetas o préstamos) separadas por una línea, con el mismo
+ * estilo que el listado de períodos. Sin título: los subtotales ya están en el
+ * resumen de arriba.
+ */
+function PeriodBlock({ children }: { children: React.ReactNode }) {
   return (
-    <section className="space-y-2">
-      <div className="flex items-baseline justify-between px-0.5">
-        <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          {label}
-        </h2>
-        <Money
-          amount={subtotal}
-          className="text-[11.5px] font-semibold tabular-nums text-foreground"
-        />
-      </div>
-      {/* Filas en un único bloque separadas por una línea, con el mismo
-          estilo que el listado de períodos. */}
-      <div className="glass-card rounded-[20px] px-4">
-        {Children.toArray(children).map((child, i) => (
-          <div key={i}>
-            {i > 0 && <div className="h-px bg-border dark:bg-white/[0.16]" />}
-            {child}
-          </div>
-        ))}
-      </div>
+    <section className="glass-card rounded-[20px] px-4">
+      {Children.toArray(children).map((child, i) => (
+        <div key={i}>
+          {i > 0 && <div className="h-px bg-border dark:bg-white/[0.16]" />}
+          {child}
+        </div>
+      ))}
     </section>
   );
 }
