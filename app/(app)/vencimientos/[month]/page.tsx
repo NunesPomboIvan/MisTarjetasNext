@@ -74,74 +74,64 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
     now: today,
   });
 
-  const isEmpty = detail.cards.length === 0 && detail.loans.length === 0;
+  const rows = [
+    ...detail.cards.map((c) => (
+      <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
+    )),
+    ...detail.loans.map((l) => <PeriodLoanRow key={l.installmentId} item={l} />),
+  ];
 
   return (
     <div className="space-y-5">
-      <PeriodDetailNav
-        label={detail.label}
-        prevKey={detail.prevKey}
-        nextKey={detail.nextKey}
-        isCurrentMonth={detail.isCurrentMonth}
-      >
-        {/* Sin total general (ya está en el listado de períodos): solo el
-            desglose, con el mismo estilo que en esa pantalla. */}
-        <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
-          <span className="min-w-0 truncate">
-            Tarjetas:{" "}
-            <Money
-              amount={detail.cardsTotal}
-              className="font-semibold tabular-nums text-foreground"
-            />
-          </span>
-          <span className="min-w-0 truncate">
-            Préstamos:{" "}
-            <Money
-              amount={detail.loansTotal}
-              className="font-semibold tabular-nums text-foreground"
-            />
-          </span>
-        </div>
-        {detail.paidTotal > 0 && (
-          <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-            Ya pagaste{" "}
-            <Money amount={detail.paidTotal} className="font-semibold tabular-nums" />
-          </p>
-        )}
-      </PeriodDetailNav>
+      <PeriodBlock>
+        <PeriodDetailNav
+          label={detail.label}
+          prevKey={detail.prevKey}
+          nextKey={detail.nextKey}
+          isCurrentMonth={detail.isCurrentMonth}
+        >
+          {/* Sin total general (ya está en el listado de períodos): solo el
+              desglose, con el mismo estilo que en esa pantalla. */}
+          <div className="flex items-baseline justify-between gap-3 text-[12px] text-muted-foreground">
+            <span className="min-w-0 truncate">
+              Tarjetas:{" "}
+              <Money
+                amount={detail.cardsTotal}
+                className="font-semibold tabular-nums text-foreground"
+              />
+            </span>
+            <span className="min-w-0 truncate">
+              Préstamos:{" "}
+              <Money
+                amount={detail.loansTotal}
+                className="font-semibold tabular-nums text-foreground"
+              />
+            </span>
+          </div>
+          {detail.paidTotal > 0 && (
+            <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+              Ya pagaste{" "}
+              <Money amount={detail.paidTotal} className="font-semibold tabular-nums" />
+            </p>
+          )}
+        </PeriodDetailNav>
+        {rows}
+      </PeriodBlock>
 
-      {isEmpty ? (
+      {rows.length === 0 && (
         <EmptyState
           icon={<span>📅</span>}
           title="Sin movimientos"
           description="Este período no tiene tarjetas ni cuotas por pagar"
         />
-      ) : (
-        <div className="space-y-4">
-          {detail.cards.length > 0 && (
-            <PeriodBlock>
-              {detail.cards.map((c) => (
-                <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
-              ))}
-            </PeriodBlock>
-          )}
-          {detail.loans.length > 0 && (
-            <PeriodBlock>
-              {detail.loans.map((l) => (
-                <PeriodLoanRow key={l.installmentId} item={l} />
-              ))}
-            </PeriodBlock>
-          )}
-        </div>
       )}
     </div>
   );
 }
 
 /**
- * Bloque de filas (tarjetas o préstamos) separadas por una línea, con el mismo
- * estilo que el listado de períodos. Sin título: los subtotales ya están en el
- * resumen de arriba.
+ * Card única del detalle: encabezado, tarjetas y préstamos separados por una
+ * línea, con el mismo estilo que el listado de períodos.
  */
 function PeriodBlock({ children }: { children: React.ReactNode }) {
   return (

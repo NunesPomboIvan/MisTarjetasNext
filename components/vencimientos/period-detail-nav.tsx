@@ -19,6 +19,7 @@ interface PeriodDetailNavProps {
  * Moverse entre períodos es cambio de estado, no navegación: usamos
  * `router.replace` + `markReplace()` para no acumular entradas en el stack,
  * así el botón "volver" regresa siempre al origen real.
+ * Sin card propia: va dentro de la card única del detalle, junto a las filas.
  */
 export function PeriodDetailNav({
   label,
@@ -42,7 +43,7 @@ export function PeriodDetailNav({
   }
 
   return (
-    <section className="glass-card rounded-[20px] px-5 py-[18px]">
+    <div className="py-[18px]">
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -77,6 +78,6 @@ export function PeriodDetailNav({
       </div>
 
       <div className="mt-3">{children}</div>
-    </section>
+    </div>
   );
 }
