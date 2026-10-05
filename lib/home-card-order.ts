@@ -1,8 +1,10 @@
 /**
- * Orden de las tarjetas del carrusel del inicio. Se guarda en el
- * `user_metadata` de Supabase (`home_card_order`), así viaja con la cuenta
- * entre dispositivos sin tabla ni migración.
+ * Orden de las tarjetas del carrusel del inicio. Se guarda en una cookie
+ * (como el titular activo): la app no tiene sesión de Supabase Auth, así que
+ * no hay `user_metadata` donde guardarlo, y así no hace falta migración.
  */
+export const HOME_CARD_ORDER_COOKIE = "home_card_order";
+
 export const HOME_CARD_ORDERS = [
   { value: "last_used",   label: "Último uso",          description: "La que usaste más recientemente primero" },
   { value: "amount_desc", label: "Mayor importe",       description: "Saldo del período actual, de mayor a menor" },

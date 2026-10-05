@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SettingsClient } from "./settings-client";
-import { parseHomeCardOrder } from "@/lib/home-card-order";
+import { cookies } from "next/headers";
+import { HOME_CARD_ORDER_COOKIE, parseHomeCardOrder } from "@/lib/home-card-order";
 
 export const metadata = { title: "Ajustes" };
 
@@ -23,11 +24,13 @@ export default async function SettingsPage() {
       .order("name"),
   ]);
 
+  const cookieStore = await cookies();
+
   return (
     <SettingsClient
       categories={categories ?? []}
       cards={cards ?? []}
-      homeCardOrder={parseHomeCardOrder(user?.user_metadata?.home_card_order)}
+      homeCardOrder={parseHomeCardOrder(cookieStore.get(HOME_CARD_ORDER_COOKIE)?.value)}
     />
   );
 }

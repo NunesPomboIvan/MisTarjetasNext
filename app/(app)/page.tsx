@@ -18,7 +18,8 @@ import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { LockScroll } from "@/components/shared/lock-scroll";
-import { parseHomeCardOrder, sortHomeCards } from "@/lib/home-card-order";
+import { cookies } from "next/headers";
+import { HOME_CARD_ORDER_COOKIE, parseHomeCardOrder, sortHomeCards } from "@/lib/home-card-order";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -118,7 +119,9 @@ export default async function DashboardPage() {
   const todayKey = format(today, "yyyy-MM-dd");
 
   // Orden del carrusel elegido en Ajustes (por defecto, último uso).
-  const homeCardOrder = parseHomeCardOrder(user?.user_metadata?.home_card_order);
+  const homeCardOrder = parseHomeCardOrder(
+    (await cookies()).get(HOME_CARD_ORDER_COOKIE)?.value
+  );
 
   return (
     <div className="flex flex-1 flex-col space-y-4">
