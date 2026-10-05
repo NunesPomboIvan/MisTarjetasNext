@@ -77,7 +77,7 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
   const rows = [
     ...(detail.cards.length > 0
       ? [
-          <SectionTitle key="cards-title">Tarjetas</SectionTitle>,
+          <SectionTitle key="cards-title" first>Tarjetas</SectionTitle>,
           ...detail.cards.map((c) => (
             <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
           )),
@@ -85,7 +85,7 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
       : []),
     ...(detail.loans.length > 0
       ? [
-          <SectionTitle key="loans-title">Préstamos</SectionTitle>,
+          <SectionTitle key="loans-title" first={detail.cards.length === 0}>Préstamos</SectionTitle>,
           ...detail.loans.map((l) => <PeriodLoanRow key={l.installmentId} item={l} />),
         ]
       : []),
@@ -160,9 +160,10 @@ function PeriodBlock({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+/** `first`: va pegado al encabezado del período, con menos aire arriba. */
+function SectionTitle({ children, first }: { children: React.ReactNode; first?: boolean }) {
   return (
-    <h2 className="pb-2 pt-5 font-display text-[15px] font-bold text-foreground">
+    <h2 className={`pb-2 ${first ? "pt-1" : "pt-5"} font-display text-[15px] font-bold text-foreground`}>
       {children}
     </h2>
   );
