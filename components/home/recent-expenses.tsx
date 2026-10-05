@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Money } from "@/components/shared/money";
 import { parseLocalDate } from "@/lib/periods/calculate";
@@ -22,7 +22,7 @@ function cardLabel(card: RecentExpense["card"]): string {
 }
 
 /** Margen sobre la barra inferior (cubre el botón "+" que sobresale). */
-const BOTTOM_GAP = 24;
+const BOTTOM_GAP = 28;
 
 /** Fecha de compra en formato "29/09/2026". */
 function purchaseLabel(expenseDate: string): string {
@@ -65,13 +65,48 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
       setFit({ key: dataKey, count: Math.max(1, count) });
     }
     if (!fit || fit.key !== dataKey) measure();
-
-    function onResize() {
-      setFit(null);
-    }
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
   }, [dataKey, fit]);
+
+  // Al abrir la app el layout todavía se acomoda después de la primera
+  // medición (fuentes, alto del carrusel, alerta de vencimiento, viewport y
+  // safe area de iOS), y la lista quedaba con una fila de más que chocaba con
+  // el "+". Volvemos a medir ante cualquiera de esos cambios: se renderizan
+  // todas las filas y el layout effect de arriba recorta antes del paint.
+  // Se observa lo que está por encima de la lista y la barra (no la lista en
+  // sí), así recortarla no dispara otra medición.
+  useEffect(() => {
+    const list = listRef.current;
+    const section = list?.closest("section");
+    if (!list || !section) return;
+
+    let frame = 0;
+    const remeasure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setFit(null));
+    };
+
+    const observer = new ResizeObserver(remeasure);
+    for (let el = section.previousElementSibling; el; el = el.previousElementSibling) {
+      observer.observe(el);
+    }
+    const bar = document.querySelector<HTMLElement>("[data-bottom-bar]");
+    if (bar) observer.observe(bar);
+
+    window.addEventListener("resize", remeasure);
+    window.addEventListener("load", remeasure);
+    window.addEventListener("pageshow", remeasure);
+    window.visualViewport?.addEventListener("resize", remeasure);
+    document.fonts?.ready.then(remeasure);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", remeasure);
+      window.removeEventListener("load", remeasure);
+      window.removeEventListener("pageshow", remeasure);
+      window.visualViewport?.removeEventListener("resize", remeasure);
+    };
+  }, []);
 
   return (
     <section className="space-y-2">
