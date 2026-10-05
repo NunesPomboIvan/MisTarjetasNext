@@ -4,7 +4,7 @@ import { getActiveTitularId } from "@/lib/titulares/server";
 import { Money } from "@/components/shared/money";
 import { EmptyState } from "@/components/shared/empty-state";
 import { computePeriodDetail } from "@/lib/vencimientos";
-import { Children } from "react";
+import { Children, isValidElement } from "react";
 import { formatDate, nowInArgentina } from "@/lib/utils";
 import { PeriodDetailNav } from "@/components/vencimientos/period-detail-nav";
 import { PeriodCardRow } from "@/components/vencimientos/period-card-row";
@@ -78,7 +78,12 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
     ...detail.cards.map((c) => (
       <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
     )),
-    ...detail.loans.map((l) => <PeriodLoanRow key={l.installmentId} item={l} />),
+    ...(detail.loans.length > 0
+      ? [
+          <SectionTitle key="loans-title">Préstamos</SectionTitle>,
+          ...detail.loans.map((l) => <PeriodLoanRow key={l.installmentId} item={l} />),
+        ]
+      : []),
   ];
 
   return (
@@ -131,17 +136,29 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
 
 /**
  * Card única del detalle: encabezado, tarjetas y préstamos separados por una
- * línea, con el mismo estilo que el listado de períodos.
+ * línea, con el mismo estilo que el listado de períodos. Un título de sección
+ * no lleva línea arriba: solo la que lo separa de sus filas.
  */
 function PeriodBlock({ children }: { children: React.ReactNode }) {
   return (
     <section className="glass-card rounded-[20px] px-4">
-      {Children.toArray(children).map((child, i) => (
-        <div key={i}>
-          {i > 0 && <div className="h-px bg-border dark:bg-white/[0.16]" />}
-          {child}
-        </div>
-      ))}
+      {Children.toArray(children).map((child, i) => {
+        const isTitle = isValidElement(child) && child.type === SectionTitle;
+        return (
+          <div key={i}>
+            {i > 0 && !isTitle && <div className="h-px bg-border dark:bg-white/[0.16]" />}
+            {child}
+          </div>
+        );
+      })}
     </section>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="pb-2 pt-5 font-display text-[15px] font-bold text-foreground">
+      {children}
+    </h2>
   );
 }
