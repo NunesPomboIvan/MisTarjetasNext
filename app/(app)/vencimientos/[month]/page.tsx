@@ -75,9 +75,14 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
   });
 
   const rows = [
-    ...detail.cards.map((c) => (
-      <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
-    )),
+    ...(detail.cards.length > 0
+      ? [
+          <SectionTitle key="cards-title">Tarjetas</SectionTitle>,
+          ...detail.cards.map((c) => (
+            <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
+          )),
+        ]
+      : []),
     ...(detail.loans.length > 0
       ? [
           <SectionTitle key="loans-title">Préstamos</SectionTitle>,

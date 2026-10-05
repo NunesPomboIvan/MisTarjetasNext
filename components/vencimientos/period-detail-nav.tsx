@@ -56,12 +56,12 @@ export function PeriodDetailNav({
         </button>
 
         {/* "Actual" va debajo del mes para que el título quede centrado. */}
-        <div className="flex min-w-0 flex-col items-center">
+        <div className="flex min-w-0 translate-y-1 flex-col items-center gap-1">
           <span className="max-w-full truncate font-display text-[16px] font-bold text-foreground">
             {label}
           </span>
           {isCurrentMonth && (
-            <span className="text-[9px] font-bold uppercase tracking-wider text-primary">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
               Actual
             </span>
           )}
