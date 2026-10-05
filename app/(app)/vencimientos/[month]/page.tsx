@@ -163,7 +163,7 @@ function PeriodBlock({ children }: { children: React.ReactNode }) {
 /** `first`: va pegado al encabezado del período, con menos aire arriba. */
 function SectionTitle({ children, first }: { children: React.ReactNode; first?: boolean }) {
   return (
-    <h2 className={`pb-2 ${first ? "pt-1" : "pt-5"} font-display text-[15px] font-bold text-foreground`}>
+    <h2 className={`pb-2 ${first ? "-mt-2.5" : "pt-5"} font-display text-[15px] font-bold text-foreground`}>
       {children}
     </h2>
   );
