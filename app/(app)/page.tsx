@@ -18,6 +18,7 @@ import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { LockScroll } from "@/components/shared/lock-scroll";
+import { parseHomeCardOrder, sortHomeCards } from "@/lib/home-card-order";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
 export const metadata = { title: "Inicio" };
@@ -116,6 +117,9 @@ export default async function DashboardPage() {
 
   const todayKey = format(today, "yyyy-MM-dd");
 
+  // Orden del carrusel elegido en Ajustes (por defecto, último uso).
+  const homeCardOrder = parseHomeCardOrder(user?.user_metadata?.home_card_order);
+
   return (
     <div className="flex flex-1 flex-col space-y-4">
       <LockScroll />
@@ -152,8 +156,16 @@ export default async function DashboardPage() {
           {/* Mis tarjetas */}
           <section className="space-y-2">
             <HomeCardsCarousel
-              items={[...cardSummaries]
-                .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed))
+              items={sortHomeCards(cardSummaries, homeCardOrder, (c) => ({
+                name: c.card.bank || c.card.name,
+                createdAt: c.card.created_at,
+                lastUsed: c.lastUsed,
+                total: c.currentTotal,
+                close: c.timeline.close,
+                due: c.timeline.due,
+                closeReached: c.timeline.closeReached,
+                dueReached: c.timeline.dueReached,
+              }))
                 .map(({ card, currentTotal, currentPeriod, timeline }) => ({
                   card,
                   total: currentTotal,

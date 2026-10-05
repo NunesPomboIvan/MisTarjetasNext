@@ -31,6 +31,8 @@ import {
   exportCsvTemplate,
   type ExportExpensesFilters,
 } from "@/actions/backup";
+import { setHomeCardOrder } from "@/actions/preferences";
+import { HOME_CARD_ORDERS, type HomeCardOrder } from "@/lib/home-card-order";
 import type { Category, Card } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
 
@@ -127,12 +129,34 @@ type ExportCard = Pick<Card, "id" | "name" | "bank" | "last_four" | "is_extensio
 interface SettingsClientProps {
   categories: Category[];
   cards: ExportCard[];
+  homeCardOrder: HomeCardOrder;
 }
 
-export function SettingsClient({ categories: initialCategories, cards }: SettingsClientProps) {
+export function SettingsClient({
+  categories: initialCategories,
+  cards,
+  homeCardOrder: initialHomeCardOrder,
+}: SettingsClientProps) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // Orden de las tarjetas del inicio: optimista, vuelve atrás si falla.
+  const [homeCardOrder, setHomeCardOrderState] = useState(initialHomeCardOrder);
+  const [, startOrderTransition] = useTransition();
+
+  function handleHomeCardOrder(order: HomeCardOrder) {
+    if (order === homeCardOrder) return;
+    const previous = homeCardOrder;
+    setHomeCardOrderState(order);
+    startOrderTransition(async () => {
+      const res = await setHomeCardOrder(order);
+      if (!res.success) {
+        setHomeCardOrderState(previous);
+        toast.error(res.error);
+      }
+    });
+  }
 
   // Category form state
   const [showNewCat, setShowNewCat] = useState(false);
@@ -394,6 +418,42 @@ export function SettingsClient({ categories: initialCategories, cards }: Setting
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Orden de las tarjetas del inicio */}
+      <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <div>
+          <h2 className="font-semibold">Orden de las tarjetas</h2>
+          <p className="text-xs text-muted-foreground">Cómo se ordenan en el inicio</p>
+        </div>
+        <div role="radiogroup" aria-label="Orden de las tarjetas" className="space-y-1.5">
+          {HOME_CARD_ORDERS.map(({ value, label, description }) => {
+            const selected = homeCardOrder === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => handleHomeCardOrder(value)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all",
+                  selected
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className={cn("text-sm font-medium", selected ? "text-primary" : "text-foreground")}>
+                    {label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+                {selected && <Check className="h-4 w-4 flex-shrink-0 text-primary" />}
+              </button>
+            );
+          })}
         </div>
       </section>
 

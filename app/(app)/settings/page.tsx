@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { SettingsClient } from "./settings-client";
+import { parseHomeCardOrder } from "@/lib/home-card-order";
 
 export const metadata = { title: "Ajustes" };
 
@@ -22,5 +23,11 @@ export default async function SettingsPage() {
       .order("name"),
   ]);
 
-  return <SettingsClient categories={categories ?? []} cards={cards ?? []} />;
+  return (
+    <SettingsClient
+      categories={categories ?? []}
+      cards={cards ?? []}
+      homeCardOrder={parseHomeCardOrder(user?.user_metadata?.home_card_order)}
+    />
+  );
 }
