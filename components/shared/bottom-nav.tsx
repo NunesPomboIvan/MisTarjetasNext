@@ -1,22 +1,34 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Home, CalendarDays, Banknote, MoreHorizontal, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Home, CalendarDays, ReceiptText, MoreHorizontal, Plus } from "lucide-react";
+import { cn, formatDate, nowInArgentina } from "@/lib/utils";
 import { GuardedLink } from "./guarded-link";
 import { useNavigationBlocker } from "./navigation-blocker";
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof Home;
+  match: (p: string) => boolean;
+}
+
 // El detalle de una tarjeta (/cards/:id) se abre desde el carrusel del inicio;
-// el listado/gestión de tarjetas (/cards) vive en Cuenta.
-const NAV_ITEMS = [
-  { href: "/",             label: "Inicio",    icon: Home,           match: (p: string) => p === "/" || p.startsWith("/expenses") || (p.startsWith("/cards/") && !p.startsWith("/cards/new")) },
-  { href: "/vencimientos", label: "Períodos",  icon: CalendarDays,   match: (p: string) => p.startsWith("/vencimientos") },
-  { href: "/prestamos",    label: "Préstamos", icon: Banknote,       match: (p: string) => p.startsWith("/prestamos") },
-  { href: "/more",         label: "Cuenta",    icon: MoreHorizontal, match: (p: string) => p.startsWith("/more") || p === "/cards" || p.startsWith("/cards/new") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
-] as const;
+// el listado/gestión de tarjetas (/cards) y los préstamos viven en Cuenta.
+// "Resumen" es el detalle del período actual; el resto de los períodos
+// (listado y otros meses) cae en "Períodos".
+function buildNavItems(currentPeriodHref: string): NavItem[] {
+  return [
+    { href: "/",               label: "Inicio",   icon: Home,           match: (p) => p === "/" || p.startsWith("/expenses") || (p.startsWith("/cards/") && !p.startsWith("/cards/new")) },
+    { href: "/vencimientos",   label: "Períodos", icon: CalendarDays,   match: (p) => p.startsWith("/vencimientos") && p !== currentPeriodHref },
+    { href: currentPeriodHref, label: "Resumen",  icon: ReceiptText,    match: (p) => p === currentPeriodHref },
+    { href: "/more",           label: "Cuenta",   icon: MoreHorizontal, match: (p) => p.startsWith("/more") || p.startsWith("/prestamos") || p === "/cards" || p.startsWith("/cards/new") || p.startsWith("/settings") || p.startsWith("/stats") || p.startsWith("/pagos") || p.startsWith("/cierres") || p.startsWith("/security") || p.startsWith("/help") },
+  ];
+}
 
 export function BottomNav() {
   const pathname = usePathname() ?? "/";
+  const NAV_ITEMS = buildNavItems(`/vencimientos/${formatDate(nowInArgentina(), "yyyy-MM")}`);
   const router = useRouter();
   const { isBlocked, message } = useNavigationBlocker();
 
@@ -113,7 +125,7 @@ function NavLink({
   item,
   pathname,
 }: {
-  item: (typeof NAV_ITEMS)[number];
+  item: NavItem;
   pathname: string;
 }) {
   const isActive = item.match(pathname);

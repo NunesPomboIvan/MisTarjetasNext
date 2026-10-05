@@ -5,6 +5,7 @@ import { getActiveTitularId } from "@/lib/titulares/server";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoanList } from "@/components/loans/loan-list";
 import { StickyPageHeader } from "@/components/shared/sticky-page-header";
+import { BackButton } from "@/components/shared/back-button";
 import { PagoRow } from "@/components/vencimientos/pago-row";
 import { nowInArgentina } from "@/lib/utils";
 import { parseLocalDate, toArs } from "@/lib/periods/calculate";
@@ -87,6 +88,7 @@ export default async function LoansPage() {
       <StickyPageHeader>
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
+            <BackButton href="/more" iconOnly />
             <h1 className="font-display text-[24px] font-bold tracking-tight text-foreground">
               Préstamos
             </h1>

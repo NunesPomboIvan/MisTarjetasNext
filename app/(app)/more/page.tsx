@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Banknote,
   BarChart3,
   CalendarClock,
   CreditCard,
@@ -63,6 +64,10 @@ export default async function MorePage() {
         <MoreRow href="/cards" icon={<CreditCard className="h-5 w-5" />} label="Mis tarjetas" />
         <MoreRow href="/pagos" icon={<CalendarClock className="h-5 w-5" />} label="Vencimientos" />
         <MoreRow href="/cierres" icon={<Lock className="h-5 w-5" />} label="Cierre de tarjetas" last />
+      </MoreSection>
+
+      <MoreSection title="Préstamos">
+        <MoreRow href="/prestamos" icon={<Banknote className="h-5 w-5" />} label="Mis préstamos" last />
       </MoreSection>
 
       {/* Herramientas: cosas de los datos / finanzas */}
