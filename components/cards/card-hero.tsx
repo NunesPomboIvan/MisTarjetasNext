@@ -259,31 +259,32 @@ export function CardHero({
                 {title}
               </div>
             )}
-            <div
-              className="truncate text-[9px] tabular-nums"
-              style={{ color: fgSecondary, letterSpacing: "0.06em" }}
-            >
-              •••• {card.last_four}
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span
+                className="truncate text-[9px] tabular-nums"
+                style={{ color: fgSecondary, letterSpacing: "0.06em" }}
+              >
+                •••• {card.last_four}
+              </span>
+              {/* Sin navegación de período (home): "Adicional" va junto a los
+                  últimos 4, pegado a la izquierda, sin sumar una fila. */}
+              {readOnly && card.is_extension && (
+                <span
+                  className="shrink-0 rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none"
+                  style={{
+                    background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
+                    color: fgMuted,
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  Adicional
+                </span>
+              )}
             </div>
           </div>
 
           {readOnly ? (
-            // Sin navegación de período: el centro muestra "Adicional" (si
-            // corresponde) para no sumar una fila y mantener el mismo alto.
-            card.is_extension ? (
-              <span
-                className="justify-self-center rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase"
-                style={{
-                  background: `rgba(255,255,255,${isLight ? "0.22" : "0.15"})`,
-                  color: fgMuted,
-                  letterSpacing: "0.14em",
-                }}
-              >
-                Adicional
-              </span>
-            ) : (
-              <div aria-hidden />
-            )
+            <div aria-hidden />
           ) : (
           <div
             className="inline-flex min-w-0 max-w-full items-center gap-1.5 justify-self-center rounded-full px-1"
