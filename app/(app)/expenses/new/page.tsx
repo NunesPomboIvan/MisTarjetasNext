@@ -36,8 +36,6 @@ export default async function NewExpensePage({
     getGlobalExchangeRate(),
   ]);
 
-  const backHref = card_id ? `/cards/${card_id}` : "/";
-
   return (
     <div className="animate-in fade-in slide-in-from-bottom-8 duration-300 ease-out">
       <AddFlow
@@ -45,7 +43,6 @@ export default async function NewExpensePage({
         cards={cardsResult.data ?? []}
         categories={categoriesResult.data ?? []}
         defaultCardId={card_id}
-        backHref={backHref}
         feeMode={fee === "1"}
         recurringMode={recurring === "1"}
         globalRate={globalRate?.rate ?? null}

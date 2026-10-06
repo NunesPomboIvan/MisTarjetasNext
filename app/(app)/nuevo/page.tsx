@@ -36,15 +36,12 @@ export default async function NuevoPage({
     getGlobalExchangeRate(),
   ]);
 
-  const backHref = card_id ? `/cards/${card_id}` : "/";
-
   return (
     <AddFlow
       initialMode={tipo === "prestamo" ? "prestamo" : "consumo"}
       cards={cardsResult.data ?? []}
       categories={categoriesResult.data ?? []}
       defaultCardId={card_id}
-      backHref={backHref}
       globalRate={globalRate?.rate ?? null}
     />
   );

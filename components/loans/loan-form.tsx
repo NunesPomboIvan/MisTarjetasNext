@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
+import { InstallmentPresets } from "@/components/expenses/installment-presets";
+import { AmountHero } from "@/components/shared/amount-hero";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
@@ -34,7 +36,7 @@ interface LoanFormProps {
   /** TC global vigente (ARS por 1 USD) para precargar al elegir USD. null = sin configurar */
   globalRate?: number | null;
   /**
-   * Id del `<form>`: lo usa el tilde ✓ del `AppHeader` (que vive fuera del
+   * Id del `<form>`: lo usa el botón de guardar fijo del shell (que vive fuera del
    * form) para dispararlo con `requestSubmit()`.
    */
   formId?: string;
@@ -104,7 +106,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
       manual.some((m) => m.amount != null));
   useUnsavedChangesGuard(dirty);
 
-  // Habilitación del tilde ✓ del header: campos obligatorios del modo activo
+  // Habilitación del botón de guardar: campos obligatorios del modo activo
   // completos. La validación fina (schema Zod) sigue corriendo en el submit.
   const canSave =
     description.trim() !== "" &&
@@ -276,45 +278,70 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
     });
   }
 
+  const manualTotal = manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null;
+
   return (
     <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-5">
-      {/* Modo de carga: contexto del switch de abajo. Antes vivía como bajada
-          del header; es ayuda de ESTE campo, no de la pantalla entera. */}
-      <p className="text-xs text-muted-foreground">
-        Elegí entre monto total dividido o cargar cada cuota a mano
-      </p>
+      {/* Importe — mismo bloque que Consumo. En "Cuotas manuales" muestra la
+          suma de las cuotas, sin edición. */}
+      <AmountHero
+        value={mode === "simple" ? total : manualTotal}
+        onChange={(v) => {
+          setTotal(v ?? null);
+          clearError("total");
+        }}
+        currency={currency}
+        onCurrencyChange={changeCurrency}
+        readOnly={mode === "manual"}
+        invalid={mode === "simple" && !!errors.total}
+        errorMessage={mode === "simple" ? errors.total : undefined}
+      >
+        {isUsd && (
+          <div className="mx-auto mt-3 max-w-xs text-left">
+            <ExchangeRateField
+              id="loan-exchange-rate"
+              value={exchangeRate}
+              onChange={(v) => {
+                setExchangeRate(v);
+                clearError("exchange_rate");
+              }}
+              equivalentBase={mode === "simple" ? total : manualTotal}
+              globalRate={globalRate}
+              followsGlobal={rateFollowsGlobal}
+              onFollowsGlobalChange={changeRateMode}
+              required
+              invalid={!!errors.exchange_rate}
+              errorMessage={errors.exchange_rate}
+            />
+          </div>
+        )}
+      </AmountHero>
 
-      {/* Tabs Simple / Manual */}
-      <div className="flex rounded-[14px] border border-border bg-muted/40 p-1">
-        <button
-          type="button"
-          onClick={() => setMode("simple")}
-          className={cn(
-            "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
-            mode === "simple"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground"
+      {/* Card única con el resto de los campos — misma estructura que Consumo */}
+      <div className="rounded-2xl border border-border bg-card divide-y divide-border/60 shadow-sm">
+        {/* Descripción — sin título, el placeholder alcanza */}
+        <div className="px-4 py-3">
+          <Input
+            id="description"
+            aria-label="Descripción"
+            placeholder="¿Qué préstamo es? Ej: personal auto"
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearError("description");
+            }}
+            className={cn(
+              "h-11 rounded-xl text-base font-medium",
+              errors.description && "border-destructive"
+            )}
+          />
+          {errors.description && (
+            <p className="mt-1.5 text-xs text-destructive">{errors.description}</p>
           )}
-        >
-          Monto total
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("manual")}
-          className={cn(
-            "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
-            mode === "manual"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground"
-          )}
-        >
-          Cuotas manuales
-        </button>
-      </div>
+        </div>
 
-      {/* Datos del préstamo */}
-      <div className="space-y-4">
-        <div className="space-y-1.5">
+        {/* Banco */}
+        <div className="space-y-2 px-4 py-3">
           <Label htmlFor="bank">Banco o entidad</Label>
           <Input
             id="bank"
@@ -324,29 +351,215 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="description" required>Descripción</Label>
-          <Input
-            id="description"
-            placeholder="Ej: Préstamo personal auto"
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              clearError("description");
-            }}
-            className={cn(errors.description && "border-destructive")}
-          />
-          {errors.description && (
-            <p className="text-xs text-destructive">{errors.description}</p>
-          )}
+        {/* Modo de carga: Monto total / Cuotas manuales */}
+        <div className="space-y-2 px-4 py-3">
+          <div className="flex rounded-[14px] border border-border bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => setMode("simple")}
+              className={cn(
+                "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
+                mode === "simple"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              )}
+            >
+              Monto total
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("manual")}
+              className={cn(
+                "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
+                mode === "manual"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              )}
+            >
+              Cuotas manuales
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Elegí entre monto total dividido o cargar cada cuota a mano
+          </p>
         </div>
 
-        <div className="space-y-1.5">
+        {/* Modo simple: cantidad de cuotas + primer vencimiento + detalle */}
+        {mode === "simple" && (
+          <>
+            <div id="count" tabIndex={-1} className="px-4 py-3 outline-none">
+              <span className="text-sm font-medium text-foreground">
+                Cuotas
+                <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
+              </span>
+              <div className="mt-2">
+                <InstallmentPresets
+                  value={count}
+                  onChange={(n) => {
+                    setCount(n);
+                    clearError("count");
+                  }}
+                  invalid={!!errors.count}
+                />
+              </div>
+              {errors.count && (
+                <p className="mt-1.5 text-xs text-destructive">{errors.count}</p>
+              )}
+            </div>
+
+            <div className="space-y-2 px-4 py-3">
+              <Label required>Vencimiento primera cuota</Label>
+              <DatePickerField
+                value={firstDue}
+                onChange={(v) => {
+                  setFirstDue(v);
+                  clearError("firstDue");
+                }}
+                placeholder="Elegí una fecha"
+                className={cn(errors.firstDue && "border-destructive")}
+              />
+              {errors.firstDue && (
+                <p className="text-xs text-destructive">{errors.firstDue}</p>
+              )}
+            </div>
+
+            {simpleInstallments.length > 0 && (
+              <div className="space-y-2 px-4 py-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Cuotas ({simpleInstallments.length})
+                </p>
+                <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+                  {simpleInstallments.map((i, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 rounded-[12px] border border-border bg-muted/30 p-2"
+                    >
+                      <span className="w-7 shrink-0 text-center text-[12px] font-semibold text-muted-foreground tabular-nums">
+                        {i.installment_number}
+                      </span>
+                      <div className="flex-1">
+                        <AmountInput
+                          value={i.amount}
+                          onChange={(v) => {
+                            setSimpleAmounts((prev) => ({ ...prev, [idx]: v ?? 0 }));
+                            clearError(`simple.${idx}`);
+                          }}
+                          prefix={amountPrefix}
+                          invalid={!!errors[`simple.${idx}`]}
+                        />
+                      </div>
+                      <span className="text-[11px] text-muted-foreground tabular-nums w-[78px] text-right">
+                        {format(new Date(i.due_date + "T00:00:00"), "dd/MM/yyyy")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Modo manual: cada cuota con su monto y vencimiento */}
+        {mode === "manual" && (
+          <div className="space-y-3 px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-foreground">Cuotas</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setManual((prev) => {
+                    const last = prev[prev.length - 1];
+                    const nextDue = last?.due_date
+                      ? format(addMonths(new Date(last.due_date + "T00:00:00"), 1), "yyyy-MM-dd")
+                      : format(new Date(), "yyyy-MM-dd");
+                    return [...prev, { amount: null, due_date: nextDue }];
+                  })
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Cuota
+              </Button>
+            </div>
+
+            {errors.installments && (
+              <p className="text-xs text-destructive">{errors.installments}</p>
+            )}
+
+            <div className="space-y-2">
+              {manual.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-[12px] border border-border bg-muted/30 p-3 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Cuota {idx + 1}
+                    </span>
+                    {manual.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setManual((prev) => prev.filter((_, i) => i !== idx))}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label required className="text-[11px]">Monto</Label>
+                      <AmountInput
+                        value={m.amount}
+                        onChange={(v) => {
+                          setManual((prev) =>
+                            prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
+                          );
+                          clearError(`manual.${idx}.amount`);
+                        }}
+                        prefix={amountPrefix}
+                        invalid={!!errors[`manual.${idx}.amount`]}
+                      />
+                      {errors[`manual.${idx}.amount`] && (
+                        <p className="text-[11px] text-destructive">
+                          {errors[`manual.${idx}.amount`]}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Label required className="text-[11px]">Vencimiento</Label>
+                      <DatePickerField
+                        value={m.due_date}
+                        onChange={(v) => {
+                          setManual((prev) =>
+                            prev.map((it, i) => (i === idx ? { ...it, due_date: v } : it))
+                          );
+                          clearError(`manual.${idx}.due_date`);
+                        }}
+                        className={cn(errors[`manual.${idx}.due_date`] && "border-destructive")}
+                      />
+                      {errors[`manual.${idx}.due_date`] && (
+                        <p className="text-[11px] text-destructive">
+                          {errors[`manual.${idx}.due_date`]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Fecha de emisión */}
+        <div className="space-y-2 px-4 py-3">
           <Label required>Fecha de emisión</Label>
           <DatePickerField value={issueDate} onChange={setIssueDate} />
         </div>
 
-        <div className="space-y-2">
+        {/* Color */}
+        <div className="space-y-2 px-4 py-3">
           <Label>Color</Label>
           <div className="flex flex-wrap items-center gap-2">
             <ColorSwatchPicker colors={COLOR_PRESETS} value={color} onChange={setColor} />
@@ -362,267 +575,8 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         </div>
       </div>
 
-      {/* Modo simple */}
-      {mode === "simple" && (
-        <div className="space-y-4 rounded-[16px] border border-border bg-muted/30 p-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="total" required>Importe total del préstamo</Label>
-              <CurrencyToggle value={currency} onChange={changeCurrency} />
-            </div>
-            <AmountInput
-              id="total"
-              value={total}
-              onChange={(v) => {
-                setTotal(v ?? null);
-                clearError("total");
-              }}
-              prefix={amountPrefix}
-              size="lg"
-              invalid={!!errors.total}
-            />
-            {errors.total && (
-              <p className="text-xs text-destructive">{errors.total}</p>
-            )}
-          </div>
-
-          {isUsd && (
-            <ExchangeRateField
-              id="loan-exchange-rate"
-              value={exchangeRate}
-              onChange={(v) => {
-                setExchangeRate(v);
-                clearError("exchange_rate");
-              }}
-              equivalentBase={total}
-              globalRate={globalRate}
-              followsGlobal={rateFollowsGlobal}
-              onFollowsGlobalChange={changeRateMode}
-              required
-              invalid={!!errors.exchange_rate}
-              errorMessage={errors.exchange_rate}
-            />
-          )}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="count" required>Cantidad de cuotas</Label>
-            <Input
-              id="count"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={120}
-              value={count}
-              onChange={(e) => {
-                setCount(parseInt(e.target.value || "0", 10) || 0);
-                clearError("count");
-              }}
-              className={cn(errors.count && "border-destructive")}
-            />
-            {errors.count && (
-              <p className="text-xs text-destructive">{errors.count}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label required>Vencimiento primera cuota</Label>
-            <DatePickerField
-              value={firstDue}
-              onChange={(v) => {
-                setFirstDue(v);
-                clearError("firstDue");
-              }}
-              placeholder="Elegí una fecha"
-              className={cn(errors.firstDue && "border-destructive")}
-            />
-            {errors.firstDue && (
-              <p className="text-xs text-destructive">{errors.firstDue}</p>
-            )}
-          </div>
-
-          {simpleInstallments.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Cuotas ({simpleInstallments.length})
-              </p>
-              <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
-                {simpleInstallments.map((i, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 rounded-[12px] border border-border bg-card p-2"
-                  >
-                    <span className="w-7 shrink-0 text-center text-[12px] font-semibold text-muted-foreground tabular-nums">
-                      {i.installment_number}
-                    </span>
-                    <div className="flex-1">
-                      <AmountInput
-                        value={i.amount}
-                        onChange={(v) => {
-                          setSimpleAmounts((prev) => ({ ...prev, [idx]: v ?? 0 }));
-                          clearError(`simple.${idx}`);
-                        }}
-                        prefix={amountPrefix}
-                        invalid={!!errors[`simple.${idx}`]}
-                      />
-                    </div>
-                    <span className="text-[11px] text-muted-foreground tabular-nums w-[78px] text-right">
-                      {format(new Date(i.due_date + "T00:00:00"), "dd/MM/yyyy")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Modo manual */}
-      {mode === "manual" && (
-        <div className="space-y-3 rounded-[16px] border border-border bg-muted/30 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[13px] font-semibold text-foreground">Cuotas</p>
-            <CurrencyToggle value={currency} onChange={changeCurrency} />
-          </div>
-
-          {isUsd && (
-            <ExchangeRateField
-              id="loan-exchange-rate"
-              value={exchangeRate}
-              onChange={(v) => {
-                setExchangeRate(v);
-                clearError("exchange_rate");
-              }}
-              equivalentBase={manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null}
-              globalRate={globalRate}
-              followsGlobal={rateFollowsGlobal}
-              onFollowsGlobalChange={changeRateMode}
-              required
-              invalid={!!errors.exchange_rate}
-              errorMessage={errors.exchange_rate}
-            />
-          )}
-
-          <div className="flex items-center justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setManual((prev) => {
-                  const last = prev[prev.length - 1];
-                  const nextDue = last?.due_date
-                    ? format(addMonths(new Date(last.due_date + "T00:00:00"), 1), "yyyy-MM-dd")
-                    : format(new Date(), "yyyy-MM-dd");
-                  return [...prev, { amount: null, due_date: nextDue }];
-                })
-              }
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Cuota
-            </Button>
-          </div>
-
-          {errors.installments && (
-            <p className="text-xs text-destructive">{errors.installments}</p>
-          )}
-
-          <div className="space-y-2">
-            {manual.map((m, idx) => (
-              <div
-                key={idx}
-                className="rounded-[12px] border border-border bg-card p-3 space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Cuota {idx + 1}
-                  </span>
-                  {manual.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setManual((prev) => prev.filter((_, i) => i !== idx))}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label required className="text-[11px]">Monto</Label>
-                    <AmountInput
-                      value={m.amount}
-                      onChange={(v) => {
-                        setManual((prev) =>
-                          prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
-                        );
-                        clearError(`manual.${idx}.amount`);
-                      }}
-                      prefix={amountPrefix}
-                      invalid={!!errors[`manual.${idx}.amount`]}
-                    />
-                    {errors[`manual.${idx}.amount`] && (
-                      <p className="text-[11px] text-destructive">
-                        {errors[`manual.${idx}.amount`]}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label required className="text-[11px]">Vencimiento</Label>
-                    <DatePickerField
-                      value={m.due_date}
-                      onChange={(v) => {
-                        setManual((prev) =>
-                          prev.map((it, i) => (i === idx ? { ...it, due_date: v } : it))
-                        );
-                        clearError(`manual.${idx}.due_date`);
-                      }}
-                      className={cn(errors[`manual.${idx}.due_date`] && "border-destructive")}
-                    />
-                    {errors[`manual.${idx}.due_date`] && (
-                      <p className="text-[11px] text-destructive">
-                        {errors[`manual.${idx}.due_date`]}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <RequiredFieldsNote />
-      {/* El guardado vive en el tilde ✓ del AppHeader (dispara este form por id). */}
+      {/* El guardado vive en el botón fijo del shell (dispara este form por id). */}
     </form>
   );
 }
-
-/** Selector compacto de moneda: Pesos (ARS) / Dólares (USD) — mismo patrón que consumos */
-function CurrencyToggle({
-  value,
-  onChange,
-}: {
-  value: "ARS" | "USD";
-  onChange: (v: "ARS" | "USD") => void;
-}) {
-  return (
-    <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-xs font-semibold">
-      {(["ARS", "USD"] as const).map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
-          className={cn(
-            "rounded-md px-2.5 py-1 transition-colors",
-            value === c
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {c === "ARS" ? "$ Pesos" : "US$ Dólar"}
-        </button>
-      ))}
-    </div>
-  );
-}
-

@@ -44,7 +44,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
+    <nav data-bottom-nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pb-safe">
       {/* Telón opaco detrás de toda la zona de la barra: el contenido NO se
           ve por detrás ni en el hueco bajo la barra (incluye el safe area).
           Solo el borde superior tiene unos px de fundido para no cortar seco. */}

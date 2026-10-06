@@ -14,6 +14,8 @@ interface TypeSwitchProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   "aria-label"?: string;
+  /** "pill" (default) o "square": bordes levemente redondeados (8 px / 6 px). */
+  shape?: "pill" | "square";
 }
 
 /**
@@ -34,7 +36,9 @@ export function TypeSwitch<T extends string>({
   value,
   onChange,
   "aria-label": ariaLabel = "Selector de tipo",
+  shape = "pill",
 }: TypeSwitchProps<T>) {
+  const radius = shape === "square" ? "rounded-md" : "rounded-full";
   const activeIndex = Math.max(
     0,
     options.findIndex((o) => o.value === value)
@@ -44,12 +48,18 @@ export function TypeSwitch<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="relative flex h-11 w-full rounded-full border border-white/[0.07] bg-secondary p-1"
+      className={cn(
+        "relative flex h-11 w-full border border-white/[0.07] bg-secondary p-1",
+        shape === "square" ? "rounded-lg" : "rounded-full"
+      )}
     >
       {/* Pill activo deslizante */}
       <span
         aria-hidden
-        className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-primary transition-transform duration-200 ease-out"
+        className={cn(
+          "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] bg-primary transition-transform duration-200 ease-out",
+          radius
+        )}
         style={{
           transform: activeIndex === 1 ? "translateX(100%)" : "translateX(0)",
         }}
@@ -65,7 +75,8 @@ export function TypeSwitch<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "relative z-10 flex-1 rounded-full text-[14px] transition-colors",
+              "relative z-10 flex-1 text-[14px] transition-colors",
+              radius,
               active
                 ? "font-semibold text-primary-foreground"
                 : "font-normal text-muted-foreground"

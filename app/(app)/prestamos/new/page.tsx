@@ -36,7 +36,6 @@ export default async function NewLoanPage() {
       initialMode="prestamo"
       cards={cardsResult.data ?? []}
       categories={categoriesResult.data ?? []}
-      backHref="/prestamos"
       globalRate={globalRate?.rate ?? null}
     />
   );

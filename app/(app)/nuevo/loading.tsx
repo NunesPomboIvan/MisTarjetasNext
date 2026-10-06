@@ -5,14 +5,8 @@ export default function Loading() {
   return (
     <div className="space-y-5">
       {/* Selector segmentado Consumo | Préstamo */}
-      <Skeleton className="h-11 w-full rounded-[14px]" />
+      <Skeleton className="h-11 w-full rounded-lg" />
       <LoadingBar />
-      {/* Header: Cancelar / título / Guardar */}
-      <div className="-mx-4 flex items-center justify-between border-b border-border/50 px-4 py-3">
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-9 w-20 rounded-full" />
-      </div>
       {/* Hero monto */}
       <div className="space-y-3 py-4 text-center">
         <Skeleton className="mx-auto h-3 w-16" />

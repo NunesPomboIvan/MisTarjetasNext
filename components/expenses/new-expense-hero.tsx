@@ -20,7 +20,6 @@ import { useLastCard } from "@/lib/hooks/use-last-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -41,12 +40,13 @@ import {
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { AmountInput } from "./amount-input";
 import { InstallmentPresets } from "./installment-presets";
+import { AmountHero } from "@/components/shared/amount-hero";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { GuardedLink } from "@/components/shared/guarded-link";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { DatePickerField } from "@/components/ui/date-picker-field";
-import { cn, formatAmountInput, unformatAmount, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
 
@@ -61,19 +61,15 @@ interface NewExpenseHeroProps {
   /** Arranca el form como "consumo fijo mensual" (recurrente) */
   recurringMode?: boolean;
   /**
-   * Id del `<form>`: lo usa el tilde ✓ del `AppHeader` (que vive fuera del form)
-   * para dispararlo con `requestSubmit()`.
+   * Id del `<form>`: lo usa el botón de guardar fijo del shell (que vive fuera
+   * del form) para dispararlo con `requestSubmit()`.
    */
   formId?: string;
   /**
-   * Informa al shell (`AddFlow`) el título que corresponde al header y si los
-   * campos obligatorios están completos, para habilitar/deshabilitar el tilde.
+   * Informa al shell (`AddFlow`) si los campos obligatorios están completos,
+   * para habilitar/deshabilitar el botón de guardar.
    */
-  onStateChange?: (state: {
-    canSave: boolean;
-    saving: boolean;
-    title: string;
-  }) => void;
+  onStateChange?: (state: { canSave: boolean; saving: boolean }) => void;
 }
 
 /** Descripciones rápidas para los gastos propios de la tarjeta */
@@ -162,13 +158,12 @@ export function NewExpenseHero({
   const description = watch("description");
   const expenseDate = watch("expense_date");
   const isUsd = currency === "USD";
-  const amountPrefix = isUsd ? "US$" : "$";
 
   useUnsavedChangesGuard(isDirty && !savedOk);
 
-  // Estado para el shell (`AddFlow`): título del header + si el tilde ✓ se
-  // habilita. "Completo" = campos obligatorios del modo activo cargados; la
-  // validación fina sigue corriendo en el submit (schema + duplicados).
+  // Estado para el shell (`AddFlow`): si el botón de guardar se habilita.
+  // "Completo" = campos obligatorios del modo activo cargados; la validación
+  // fina sigue corriendo en el submit (schema + duplicados).
   const canSave = Boolean(
     cardId &&
       (description ?? "").trim() &&
@@ -177,14 +172,9 @@ export function NewExpenseHero({
       expenseDate &&
       (currency !== "USD" || (exchangeRate != null && exchangeRate > 0))
   );
-  const headerTitle = feeMode
-    ? "Gasto de tarjeta"
-    : recurring
-      ? "Consumo fijo mensual"
-      : "Nuevo consumo";
   React.useEffect(() => {
-    onStateChange?.({ canSave, saving: isPending, title: headerTitle });
-  }, [canSave, isPending, headerTitle, onStateChange]);
+    onStateChange?.({ canSave, saving: isPending });
+  }, [canSave, isPending, onStateChange]);
 
   function changeCurrency(next: "ARS" | "USD") {
     setValue("currency", next);
@@ -304,66 +294,56 @@ export function NewExpenseHero({
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-5"
       >
-        {/* Hero: monto */}
-        <div className="halo-warm relative -mx-4 px-4 pt-4 pb-8 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
-              Monto
-              <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
-            </span>
-            <CurrencyToggle value={currency} onChange={changeCurrency} />
-          </div>
-          <Controller
-            control={control}
-            name="total_amount"
-            render={({ field }) => (
-              <HeroAmountInput
-                value={field.value}
-                onChange={(v) => field.onChange(v ?? 0)}
-                invalid={!!errors.total_amount}
-                prefix={amountPrefix}
-              />
-            )}
-          />
-          {errors.total_amount && (
-            <p className="mt-1 text-xs text-destructive">{errors.total_amount.message}</p>
-          )}
-
-          {/* Marcar como devolución (negativo) */}
-          <button
-            type="button"
-            onClick={toggleAmountSign}
-            className={cn(
-              "mt-1 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
-              (totalAmount ?? 0) < 0
-                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                : "border-border bg-muted/50 text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {(totalAmount ?? 0) < 0 ? "− Devolución / reintegro" : "Marcar como devolución"}
-          </button>
-
-          {/* Tipo de cambio (sólo USD) */}
-          {isUsd && (
-            <div className="mx-auto mt-3 max-w-xs text-left">
-              <Controller
-                control={control}
-                name="exchange_rate"
-                render={({ field }) => (
-                  <ExchangeRateField
-                    id="ne-rate"
-                    value={field.value ?? null}
-                    onChange={(v) => field.onChange(v ?? undefined)}
-                    equivalentBase={totalAmount || null}
-                    required
-                    invalid={!!errors.exchange_rate}
-                    errorMessage={errors.exchange_rate?.message}
-                  />
+        {/* Importe — sin título: el elemento principal del formulario */}
+        <Controller
+          control={control}
+          name="total_amount"
+          render={({ field }) => (
+            <AmountHero
+              value={field.value}
+              onChange={(v) => field.onChange(v ?? 0)}
+              currency={currency}
+              onCurrencyChange={changeCurrency}
+              invalid={!!errors.total_amount}
+              errorMessage={errors.total_amount?.message}
+            >
+              {/* Marcar como devolución (negativo) */}
+              <button
+                type="button"
+                onClick={toggleAmountSign}
+                className={cn(
+                  "mt-1 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+                  (totalAmount ?? 0) < 0
+                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "border-border bg-muted/50 text-muted-foreground hover:text-foreground"
                 )}
-              />
-            </div>
+              >
+                {(totalAmount ?? 0) < 0 ? "− Devolución / reintegro" : "Marcar como devolución"}
+              </button>
+
+              {/* Tipo de cambio (sólo USD) */}
+              {isUsd && (
+                <div className="mx-auto mt-3 max-w-xs text-left">
+                  <Controller
+                    control={control}
+                    name="exchange_rate"
+                    render={({ field: rateField }) => (
+                      <ExchangeRateField
+                        id="ne-rate"
+                        value={rateField.value ?? null}
+                        onChange={(v) => rateField.onChange(v ?? undefined)}
+                        equivalentBase={totalAmount || null}
+                        required
+                        invalid={!!errors.exchange_rate}
+                        errorMessage={errors.exchange_rate?.message}
+                      />
+                    )}
+                  />
+                </div>
+              )}
+            </AmountHero>
           )}
-        </div>
+        />
 
         {/* Chips rápidos de gastos de tarjeta */}
         {feeMode && (
@@ -381,37 +361,30 @@ export function NewExpenseHero({
           </div>
         )}
 
-        {/* Comercio — campo prominente, primero a completar */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="ne-description"
-            required
-            className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary"
-          >
-            Comercio
-          </Label>
-          <div className="[&_input]:h-12 [&_input]:rounded-2xl [&_input]:text-base [&_input]:font-medium">
-            <Controller
-              control={control}
-              name="description"
-              render={({ field }) => (
-                <DescriptionAutocomplete
-                  id="ne-description"
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
-                  placeholder="¿Dónde compraste?"
-                  invalid={!!errors.description}
-                />
-              )}
-            />
+        {/* Card única: comercio / tarjeta / cuotas / resto de las opciones */}
+        <div className="rounded-2xl border border-border bg-card divide-y divide-border/60 shadow-sm">
+          {/* Comercio — sin título, el placeholder alcanza */}
+          <div className="px-4 py-3">
+            <div className="[&_input]:h-11 [&_input]:rounded-xl [&_input]:text-base [&_input]:font-medium">
+              <Controller
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <DescriptionAutocomplete
+                    id="ne-description"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="¿Dónde compraste?"
+                    invalid={!!errors.description}
+                  />
+                )}
+              />
+            </div>
+            {errors.description && (
+              <p className="mt-1.5 text-xs text-destructive">{errors.description.message}</p>
+            )}
           </div>
-          {errors.description && (
-            <p className="text-xs text-destructive">{errors.description.message}</p>
-          )}
-        </div>
 
-        {/* Card: tarjeta / cuotas */}
-        <div className="rounded-2xl border border-border bg-card divide-y divide-border/70 shadow-sm">
           {/* Tarjeta */}
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="text-sm font-medium text-foreground">
@@ -445,7 +418,9 @@ export function NewExpenseHero({
                   Consumo fijo mensual
                 </span>
                 <span className="text-[11px] text-muted-foreground">
-                  Se repite todos los meses (ej: seguro del auto)
+                  {recurring && !!totalAmount && totalAmount !== 0
+                    ? `${formatCurrency(totalAmount, currency)} todos los meses`
+                    : "Se repite todos los meses (ej: seguro del auto)"}
                 </span>
               </span>
             </span>
@@ -482,33 +457,21 @@ export function NewExpenseHero({
                   )}
                 />
               </div>
+              {/* Hint: monto por cuota (con descuento activo el detalle por
+                  cuota se muestra en el bloque de distribución, más abajo) */}
+              {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
+                <p className="mt-2 text-right text-xs text-muted-foreground">
+                  {installments} cuotas de{" "}
+                  <span className="font-medium text-foreground">
+                    {formatCurrency(totalAmount / installments, currency)}
+                  </span>
+                </p>
+              )}
             </div>
           )}
-        </div>
-
-        {/* Hint: monto por cuota / mensual (con descuento activo el detalle
-            por cuota se muestra en el bloque de distribución, más abajo) */}
-        {!!totalAmount && totalAmount !== 0 && recurring ? (
-          <p className="-mt-2 text-right text-xs text-muted-foreground">
-            {formatCurrency(totalAmount, currency)} todos los meses
-          </p>
-        ) : !discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 ? (
-          <p className="-mt-2 text-right text-xs text-muted-foreground">
-            {installments} cuotas de{" "}
-            <span className="font-medium text-foreground">
-              {formatCurrency(totalAmount / installments, currency)}
-            </span>
-          </p>
-        ) : null}
-
-        {/* Más opciones */}
-        <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
-          <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
-            Más opciones
-          </span>
 
           {/* Fecha */}
-          <div className="space-y-1.5">
+          <div className="space-y-2 px-4 py-3">
             <Label htmlFor="ne-date" required>Fecha del consumo</Label>
             <Controller
               control={control}
@@ -522,154 +485,150 @@ export function NewExpenseHero({
             )}
           </div>
 
-          <Separator />
-
-          {/* Descuento */}
-          <div className="space-y-2">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={discountActive}
-                onChange={(e) => toggleDiscount(e.target.checked)}
-                className="h-4 w-4 rounded border-border accent-primary"
-              />
-              <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
-            </label>
-
-            {discountActive && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="ne-disc-pct" required className="text-xs">
-                    % descuento
-                  </Label>
-                  <Controller
-                    control={control}
-                    name="discount_percentage"
-                    render={({ field }) => (
-                      <AmountInput
-                        id="ne-disc-pct"
-                        value={field.value ?? null}
-                        onChange={(v) => field.onChange(v ?? undefined)}
-                        prefix={null}
-                        suffix="%"
-                        placeholder="10"
-                      />
-                    )}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ne-disc-cap" className="text-xs">
-                    Tope (opcional)
-                  </Label>
-                  <Controller
-                    control={control}
-                    name="discount_cap"
-                    render={({ field }) => (
-                      <AmountInput
-                        id="ne-disc-cap"
-                        value={field.value ?? null}
-                        onChange={(v) => field.onChange(v ?? undefined)}
-                        placeholder="Sin tope"
-                      />
-                    )}
-                  />
-                </div>
-                {totalAmount > 0 && (
-                  <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
-                    <span className="text-muted-foreground">Precio final</span>
-                    <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
+          <div className="px-4 py-3">
+            {/* Descuento */}
+            <div className="space-y-2">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={discountActive}
+                  onChange={(e) => toggleDiscount(e.target.checked)}
+                  className="h-4 w-4 rounded border-border accent-primary"
+                />
+                <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
+              </label>
+  
+              {discountActive && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="ne-disc-pct" required className="text-xs">
+                      % descuento
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="discount_percentage"
+                      render={({ field }) => (
+                        <AmountInput
+                          id="ne-disc-pct"
+                          value={field.value ?? null}
+                          onChange={(v) => field.onChange(v ?? undefined)}
+                          prefix={null}
+                          suffix="%"
+                          placeholder="10"
+                        />
+                      )}
+                    />
                   </div>
-                )}
-
-                {/* Distribución del descuento entre cuotas — solo con más
-                    de una cuota; con una sola, se aplica directo. */}
-                {installments > 1 && (
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-xs">Cómo aplicar el descuento</Label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setDiscountDistribution("first")}
-                        className={cn(
-                          "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                          discountDistribution === "first"
-                            ? "border-primary bg-primary/10 text-primary shadow-sm"
-                            : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                        )}
-                      >
-                        Aplicar en la primera cuota
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDiscountDistribution("prorated")}
-                        className={cn(
-                          "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                          discountDistribution === "prorated"
-                            ? "border-primary bg-primary/10 text-primary shadow-sm"
-                            : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                        )}
-                      >
-                        Distribuir en todas las cuotas
-                      </button>
+                  <div>
+                    <Label htmlFor="ne-disc-cap" className="text-xs">
+                      Tope (opcional)
+                    </Label>
+                    <Controller
+                      control={control}
+                      name="discount_cap"
+                      render={({ field }) => (
+                        <AmountInput
+                          id="ne-disc-cap"
+                          value={field.value ?? null}
+                          onChange={(v) => field.onChange(v ?? undefined)}
+                          placeholder="Sin tope"
+                        />
+                      )}
+                    />
+                  </div>
+                  {totalAmount > 0 && (
+                    <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
+                      <span className="text-muted-foreground">Precio final</span>
+                      <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
                     </div>
-
-                    {totalAmount > 0 && (() => {
-                      const breakdown = calculateInstallmentBreakdown(
-                        totalAmount,
-                        installments,
-                        discountCalc,
-                        discountDistribution
-                      );
-                      return (
-                        <p className="text-xs text-muted-foreground">
-                          {discountDistribution === "first" ? (
-                            <>
-                              Cuota 1:{" "}
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(breakdown.amounts[0], currency)}
-                              </span>{" "}
-                              · Cuotas 2 a {installments}:{" "}
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(breakdown.amounts[1], currency)}
-                              </span>{" "}
-                              c/u
-                            </>
-                          ) : breakdown.installmentAmounts ? (
-                            <>
-                              Cuotas 1 a {installments - 1}:{" "}
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(breakdown.amounts[0], currency)}
-                              </span>{" "}
-                              · Cuota {installments}:{" "}
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(breakdown.amounts[installments - 1], currency)}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              {installments} cuotas de{" "}
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(breakdown.amounts[0], currency)}
-                              </span>{" "}
-                              c/u
-                            </>
+                  )}
+  
+                  {/* Distribución del descuento entre cuotas — solo con más
+                      de una cuota; con una sola, se aplica directo. */}
+                  {installments > 1 && (
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-xs">Cómo aplicar el descuento</Label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDiscountDistribution("first")}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                            discountDistribution === "first"
+                              ? "border-primary bg-primary/10 text-primary shadow-sm"
+                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
                           )}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
+                        >
+                          Aplicar en la primera cuota
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiscountDistribution("prorated")}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
+                            discountDistribution === "prorated"
+                              ? "border-primary bg-primary/10 text-primary shadow-sm"
+                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                          )}
+                        >
+                          Distribuir en todas las cuotas
+                        </button>
+                      </div>
+  
+                      {totalAmount > 0 && (() => {
+                        const breakdown = calculateInstallmentBreakdown(
+                          totalAmount,
+                          installments,
+                          discountCalc,
+                          discountDistribution
+                        );
+                        return (
+                          <p className="text-xs text-muted-foreground">
+                            {discountDistribution === "first" ? (
+                              <>
+                                Cuota 1:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                · Cuotas 2 a {installments}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[1], currency)}
+                                </span>{" "}
+                                c/u
+                              </>
+                            ) : breakdown.installmentAmounts ? (
+                              <>
+                                Cuotas 1 a {installments - 1}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                · Cuota {installments}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[installments - 1], currency)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {installments} cuotas de{" "}
+                                <span className="font-medium text-foreground">
+                                  {formatCurrency(breakdown.amounts[0], currency)}
+                                </span>{" "}
+                                c/u
+                              </>
+                            )}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          <Separator />
-
           {/* Notas */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ne-notes" className="text-xs">
-              Notas
-            </Label>
+          <div className="space-y-2 px-4 py-3">
+            <Label htmlFor="ne-notes">Notas</Label>
             <Input
               id="ne-notes"
               placeholder="Detalle adicional…"
@@ -819,127 +778,6 @@ function CardSelector({
         </SheetContent>
       </Sheet>
     </>
-  );
-}
-
-interface HeroAmountInputProps {
-  value: number | undefined | null;
-  onChange: (v: number | undefined) => void;
-  invalid?: boolean;
-  prefix?: string;
-}
-
-function HeroAmountInput({ value, onChange, invalid, prefix = "$" }: HeroAmountInputProps) {
-  const [display, setDisplay] = React.useState<string>(() =>
-    value == null || value === 0
-      ? ""
-      : formatAmountInput(String(value).replace(".", ","))
-  );
-
-  // Sync con cambios externos (ej: reset)
-  const [prev, setPrev] = React.useState<number | null | undefined>(value);
-  if (value !== prev) {
-    setPrev(value);
-    const parsed = unformatAmount(display);
-    if (value != null && Math.abs(parsed - value) > 0.001) {
-      setDisplay(
-        value === 0 ? "" : formatAmountInput(value.toFixed(2).replace(".", ","))
-      );
-    }
-  }
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value;
-    // When the display contains thousands-separator dots (e.g. "1.256"), the browser
-    // includes them in e.target.value (e.g. "1.2565" after typing "5"). A single dot
-    // would be misread as a decimal separator. Strip our formatting dots first.
-    const commaIdx = raw.indexOf(",");
-    let cleaned: string;
-    if (commaIdx >= 0) {
-      // Decimal comma present → all dots before it are thousands seps
-      cleaned = raw.slice(0, commaIdx).replace(/\./g, "") + raw.slice(commaIdx);
-    } else {
-      const dotCount = (raw.match(/\./g) ?? []).length;
-      if (dotCount > 1) {
-        // Multiple dots → all thousands seps
-        cleaned = raw.replace(/\./g, "");
-      } else if (dotCount === 1 && display.includes(".")) {
-        // Single dot and we already had a thousands dot → strip it
-        cleaned = raw.replace(/\./g, "");
-      } else {
-        // No dot, or user just typed a decimal dot → pass through (formatAmountInput handles it)
-        cleaned = raw;
-      }
-    }
-    const next = formatAmountInput(cleaned);
-    setDisplay(next);
-    const parsed = unformatAmount(next);
-    onChange(next === "" || next === "-" ? undefined : parsed);
-  }
-
-  const len = display.length || 1;
-  const fontSize =
-    len <= 5  ? 48 :
-    len <= 9  ? 38 :
-    len <= 12 ? 30 :
-    len <= 15 ? 24 : 20;
-
-  return (
-    <div className="relative mt-2 flex min-h-[4rem] items-center justify-center px-8">
-      <span
-        className={cn(
-          "absolute left-6 top-1/2 -translate-y-1/2 select-none font-bold",
-          invalid ? "text-destructive" : "text-muted-foreground"
-        )}
-        style={{ fontSize: 18 }}
-      >
-        {prefix}
-      </span>
-      <input
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        autoFocus
-        placeholder="0"
-        value={display}
-        onChange={handleChange}
-        aria-invalid={invalid}
-        className={cn(
-          "w-full bg-transparent text-center font-bold leading-tight tracking-tight tabular-nums outline-none placeholder:text-foreground/25",
-          invalid ? "text-destructive" : "text-foreground"
-        )}
-        style={{ fontSize } as React.CSSProperties}
-      />
-    </div>
-  );
-}
-
-/** Selector compacto de moneda: Pesos (ARS) / Dólares (USD) */
-function CurrencyToggle({
-  value,
-  onChange,
-}: {
-  value: "ARS" | "USD";
-  onChange: (v: "ARS" | "USD") => void;
-}) {
-  return (
-    <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5 text-[11px] font-bold">
-      {(["ARS", "USD"] as const).map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
-          className={cn(
-            "rounded-md px-2 py-0.5 transition-colors",
-            value === c
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {c === "ARS" ? "$" : "US$"}
-        </button>
-      ))}
-    </div>
   );
 }
 
