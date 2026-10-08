@@ -24,7 +24,7 @@ const noopSubscribe = () => () => {};
 const KEYBOARD_MIN = 120;
 
 /**
- * Botón de guardar de las pantallas de alta: ancho completo, fijo abajo.
+ * Botón de guardar de las pantallas de alta: tilde ✓ redondo, fijo abajo a la derecha.
  * Sin teclado queda apoyado sobre la bottom bar; con el teclado abierto se
  * pega encima del teclado (iOS no achica el layout viewport, así que la
  * posición se calcula con `visualViewport`).
@@ -75,7 +75,7 @@ export function StickySaveBar({ label = "Guardar", enabled, saving, onClick }: S
       className="pointer-events-none fixed inset-x-0 z-[60]"
       style={{ bottom: bottom ?? "calc(7rem + env(safe-area-inset-bottom))" }}
     >
-      <div className="mx-auto w-full max-w-lg px-4">
+      <div className="mx-auto flex w-full max-w-lg justify-end px-4">
         <button
           type="button"
           // Sin esto, el toque saca el foco del input y el teclado se cierra
@@ -84,16 +84,20 @@ export function StickySaveBar({ label = "Guardar", enabled, saving, onClick }: S
           onClick={disabled ? undefined : onClick}
           disabled={disabled}
           aria-label={label}
+          title={label}
           className={cn(
-            "pointer-events-auto flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-semibold transition-transform active:scale-[0.98]",
+            "pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full transition-transform active:scale-95",
             // Siempre opaco: flota sobre el formulario y no debe transparentarlo.
             !enabled && !saving
               ? "border border-border bg-secondary text-muted-foreground"
               : "gradient-primary shadow-brand text-white"
           )}
         >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-          {label}
+          {saving ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Check className="h-6 w-6" strokeWidth={2.6} />
+          )}
         </button>
       </div>
     </div>,

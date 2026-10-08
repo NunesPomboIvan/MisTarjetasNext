@@ -38,7 +38,7 @@ interface FormState {
  *   1. TypeSwitch Consumo | Préstamo
  *   2. Divisoria de 1 px
  *   3. Formulario: importe + card única con el resto de los campos
- *   4. Botón "Guardar" fijo abajo, de ancho completo (`StickySaveBar`)
+ *   4. Tilde ✓ de guardar, fijo abajo a la derecha (`StickySaveBar`)
  *
  * Ambos formularios quedan montados y sólo se alterna cuál se ve con `hidden`,
  * así los datos ya cargados se conservan al ir y volver entre modos. El botón
