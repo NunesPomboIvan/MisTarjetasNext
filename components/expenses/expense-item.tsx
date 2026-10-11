@@ -316,7 +316,7 @@ export function ExpenseItem({
               amount={displayAmount}
               currency={expense.currency}
               size="md"
-              className={cn(displayAmount < 0 && "text-emerald-600 dark:text-emerald-400")}
+              className={cn(displayAmount < 0 && "text-emerald-600/80 dark:text-emerald-300/75")}
             />
           </span>
           <span className="text-[10px] text-muted-foreground">
