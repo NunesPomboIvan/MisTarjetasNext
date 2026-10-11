@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, ChevronDown, Loader2, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus, Repeat, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import {
@@ -733,8 +733,9 @@ function CardSelector({
             onClick={() => onRecurringChange(!recurring)}
             tabIndex={-1}
             aria-hidden
-            className="text-sm font-semibold text-foreground"
+            className="flex items-center gap-2 text-sm font-semibold text-foreground"
           >
+            <Repeat className="h-4 w-4 text-primary" />
             Consumo fijo
           </button>
 

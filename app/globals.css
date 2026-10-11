@@ -76,6 +76,7 @@
   --brand-success: #10b981;
   --app-border: #e5e7eb;
   --halo-light: rgba(0, 85, 164, 0.18);
+  --halo-deep: rgba(0, 35, 149, 0.1);   /* azul francés oscuro — fondo del alta */
 
   /* shadcn tokens */
   --background: #f7f7fb;
@@ -127,6 +128,7 @@
   --brand-success: #10b981;
   --app-border: rgba(255, 255, 255, 0.08);
   --halo-light: rgba(0, 85, 164, 0.25);
+  --halo-deep: rgba(0, 35, 149, 0.3);
 
   --background: #0b0a14;
   --foreground: #f5f5fa;
