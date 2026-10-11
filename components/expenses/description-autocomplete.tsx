@@ -18,7 +18,7 @@ interface DescriptionAutocompleteProps {
  * Input de descripción con autocompletado basado en consumos previos del usuario.
  * - Debounce 250ms
  * - Server action para obtener sugerencias (escala con la base)
- * - Cierra dropdown al elegir o blur
+ * - Cierra dropdown al elegir o al salir del campo (blur)
  */
 export function DescriptionAutocomplete({
   value,
@@ -33,6 +33,7 @@ export function DescriptionAutocomplete({
   const [highlight, setHighlight] = React.useState(-1);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const userTypingRef = React.useRef(false);
+  const focusedRef = React.useRef(false);
   const listboxId = React.useId();
   const activeOptionId =
     open && highlight >= 0 ? `${listboxId}-option-${highlight}` : undefined;
@@ -55,7 +56,9 @@ export function DescriptionAutocomplete({
       // Filtrar exact match para no sugerir lo que ya tipeó
       const filtered = results.filter((r) => r.toLowerCase() !== trimmed.toLowerCase());
       setSuggestions(filtered);
-      setOpen(filtered.length > 0);
+      // Si la respuesta llega cuando ya salió del campo, no abrir: quedaría
+      // tapando el resto del formulario sin forma de cerrarlo.
+      setOpen(filtered.length > 0 && focusedRef.current);
       setHighlight(-1);
     }, 250);
     return () => clearTimeout(handle);
@@ -110,7 +113,17 @@ export function DescriptionAutocomplete({
           onChange(e.target.value);
         }}
         onKeyDown={handleKeyDown}
-        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        onFocus={() => {
+          focusedRef.current = true;
+          if (suggestions.length > 0) setOpen(true);
+        }}
+        // Al salir del campo sin elegir, la lista se cierra (elegir una opción
+        // no saca el foco: su mouseDown hace preventDefault).
+        onBlur={() => {
+          focusedRef.current = false;
+          setOpen(false);
+          setHighlight(-1);
+        }}
         className={cn(invalid && "border-destructive")}
         role="combobox"
         aria-expanded={open}
