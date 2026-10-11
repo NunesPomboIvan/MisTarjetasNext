@@ -37,7 +37,7 @@ interface FormState {
  *
  *   1. TypeSwitch Consumo | Préstamo
  *   2. Divisoria de 1 px
- *   3. Formulario: importe + card única con el resto de los campos
+ *   3. Formulario: importe + una card por campo, sobre un degradé de fondo
  *   4. Tilde ✓ de guardar, fijo abajo a la derecha (`StickySaveBar`)
  *
  * Ambos formularios quedan montados y sólo se alterna cuál se ve con `hidden`,
@@ -73,8 +73,21 @@ export function AddFlow({
   }
 
   return (
-    <div>
-      <div className="space-y-4">
+    // El margen negativo compensa el safe-area que el layout suma dos veces
+    // (padding de `main` + padding de `body`): sin él queda scroll vacío abajo.
+    <div className="relative -mb-[env(safe-area-inset-bottom)]">
+      {/* Fondo: degradé del azul del halo al fondo de la app, de arriba hacia
+          abajo y a todo el ancho; cubre también los paddings del layout. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 -top-[calc(1.5rem+env(safe-area-inset-top))] -bottom-[7.5rem] w-screen -translate-x-1/2"
+        style={{
+          background:
+            "linear-gradient(to bottom, var(--halo-light, rgba(0, 85, 164, 0.18)), transparent)",
+        }}
+      />
+
+      <div className="relative space-y-4">
         {!feeMode && (
           <TypeSwitch
             aria-label="Tipo de carga"
@@ -113,7 +126,7 @@ export function AddFlow({
       </div>
 
       {/* Reserva lugar para que el botón fijo no tape el final del form. */}
-      <div aria-hidden className="h-16" />
+      <div aria-hidden className="h-8" />
 
       {!(mode === "consumo" && cards.length === 0) && (
         <StickySaveBar

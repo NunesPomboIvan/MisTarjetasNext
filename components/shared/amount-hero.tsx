@@ -33,7 +33,7 @@ export function AmountHero({
   children,
 }: AmountHeroProps) {
   return (
-    <div className="halo-warm relative -mx-4 px-4 pt-2 pb-5 text-center">
+    <div className="relative -mx-4 px-4 pt-2 pb-5 text-center">
       <div className="flex justify-center">
         <CurrencyToggle value={currency} onChange={onCurrencyChange} />
       </div>

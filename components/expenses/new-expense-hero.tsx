@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, ChevronDown, Loader2, Plus, Repeat, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import {
@@ -44,10 +44,27 @@ import { AmountHero } from "@/components/shared/amount-hero";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { GuardedLink } from "@/components/shared/guarded-link";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
-import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { cn, formatCurrency } from "@/lib/utils";
+import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
 import type { Card, Category } from "@/lib/supabase/database.types";
+
+/**
+ * Formato de card de los campos del formulario: el mismo del botón "Marcar
+ * como devolución" (borde + fondo tenue), con esquinas más cuadradas.
+ */
+const FIELD_CARD = "rounded-md border border-border bg-muted/50 dark:bg-muted/50";
+/** Tipografía de los títulos chicos dentro/encima de una card. */
+const FIELD_LABEL = "text-[11px] font-semibold text-muted-foreground";
+/** Envuelve un `<Input>` de otro componente para que tome el formato de card. */
+const FIELD_INPUT =
+  "[&_input]:h-11 [&_input]:rounded-md [&_input:not(.border-destructive)]:border-border [&_input]:bg-muted/50 dark:[&_input]:bg-muted/50 [&_input]:px-3 [&_input]:text-base [&_input]:font-semibold";
+
+/** "Visa · Macro 4016": red, separador, nombre y últimos 4 dígitos. */
+function cardLabel(card: Card): string {
+  const rest = [card.name, card.last_four].filter(Boolean).join(" ");
+  return [CARD_TYPE_LABEL[card.type], rest].filter(Boolean).join(" · ");
+}
 
 
 interface NewExpenseHeroProps {
@@ -292,7 +309,7 @@ export function NewExpenseHero({
       <form
         id={formId}
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-5"
+        className="space-y-3"
       >
         {/* Importe — sin título: el elemento principal del formulario */}
         <Controller
@@ -312,7 +329,7 @@ export function NewExpenseHero({
                 type="button"
                 onClick={toggleAmountSign}
                 className={cn(
-                  "mt-1 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+                  "mt-1 inline-flex items-center gap-1 rounded-md border px-3 py-1 text-[11px] font-semibold transition-colors",
                   (totalAmount ?? 0) < 0
                     ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                     : "border-border bg-muted/50 text-muted-foreground hover:text-foreground"
@@ -361,284 +378,249 @@ export function NewExpenseHero({
           </div>
         )}
 
-        {/* Card única: comercio / tarjeta / cuotas / resto de las opciones */}
-        <div className="rounded-2xl border border-border bg-card divide-y divide-border/60 shadow-sm">
-          {/* Comercio — sin título, el placeholder alcanza */}
-          <div className="px-4 py-3">
-            <div className="[&_input]:h-11 [&_input]:rounded-xl [&_input]:text-base [&_input]:font-medium">
+        {/* Negocio — sin título, el placeholder alcanza */}
+        <div>
+          <div className={FIELD_INPUT}>
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <DescriptionAutocomplete
+                  id="ne-description"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  placeholder="Negocio"
+                  invalid={!!errors.description}
+                />
+              )}
+            />
+          </div>
+          {errors.description && (
+            <p className="mt-1.5 text-xs text-destructive">{errors.description.message}</p>
+          )}
+        </div>
+
+        {/* Tarjeta + consumo fijo (recurrente) */}
+        <Controller
+          control={control}
+          name="card_id"
+          render={({ field }) => (
+            <CardSelector
+              cards={cards}
+              value={field.value}
+              onChange={field.onChange}
+              error={!!errors.card_id}
+              recurring={!!recurring}
+              onRecurringChange={toggleRecurring}
+            />
+          )}
+        />
+
+        {/* Cuotas — ocultas para consumos fijos */}
+        {!recurring && (
+          <div className={cn(FIELD_CARD, "px-3 py-2.5")}>
+            <span className={FIELD_LABEL}>Cuotas</span>
+            <div className="mt-2">
               <Controller
                 control={control}
-                name="description"
+                name="installments"
                 render={({ field }) => (
-                  <DescriptionAutocomplete
-                    id="ne-description"
-                    value={field.value ?? ""}
+                  <InstallmentPresets
+                    value={field.value ?? 1}
                     onChange={field.onChange}
-                    placeholder="¿Dónde compraste?"
-                    invalid={!!errors.description}
+                    invalid={!!errors.installments}
                   />
                 )}
               />
             </div>
-            {errors.description && (
-              <p className="mt-1.5 text-xs text-destructive">{errors.description.message}</p>
+            {/* Hint: monto por cuota (con descuento activo el detalle por
+                cuota se muestra en el bloque de distribución, más abajo) */}
+            {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
+              <p className="mt-2 text-right text-xs text-muted-foreground">
+                {installments} cuotas de{" "}
+                <span className="font-medium text-foreground">
+                  {formatCurrency(totalAmount / installments, currency)}
+                </span>
+              </p>
             )}
           </div>
+        )}
 
-          {/* Tarjeta */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm font-medium text-foreground">
-              Tarjeta
-              <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
-            </span>
-            <Controller
-              control={control}
-              name="card_id"
-              render={({ field }) => (
-                <CardSelector
-                  cards={cards}
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={!!errors.card_id}
-                />
-              )}
-            />
-          </div>
-
-          {/* Consumo fijo mensual (recurrente) */}
-          <button
-            type="button"
-            onClick={() => toggleRecurring(!recurring)}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-          >
-            <span className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-primary" />
-              <span className="flex flex-col">
-                <span className="text-sm font-medium text-foreground">
-                  Consumo fijo mensual
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  {recurring && !!totalAmount && totalAmount !== 0
-                    ? `${formatCurrency(totalAmount, currency)} todos los meses`
-                    : "Se repite todos los meses (ej: seguro del auto)"}
-                </span>
-              </span>
-            </span>
-            <span
-              aria-hidden
-              className={cn(
-                "relative h-6 w-10 shrink-0 rounded-full transition-colors",
-                recurring ? "bg-primary" : "bg-muted-foreground/30"
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-                  recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
-                )}
+        {/* Fecha — sin título */}
+        <div>
+          <Controller
+            control={control}
+            name="expense_date"
+            render={({ field }) => (
+              <DatePickerField
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                className={cn(FIELD_CARD, "h-11 px-3 font-semibold")}
               />
-            </span>
-          </button>
+            )}
+          />
+          {errors.expense_date && (
+            <p className="mt-1.5 text-xs text-destructive">{errors.expense_date.message}</p>
+          )}
+        </div>
 
-          {/* Cuotas — ocultas para consumos fijos mensuales */}
-          {!recurring && (
-            <div className="px-4 py-3">
-              <span className="text-sm font-medium text-foreground">Cuotas</span>
-              <div className="mt-2">
+        {/* Promociones y descuentos */}
+        <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2.5 px-3 py-3")}>
+          <input
+            type="checkbox"
+            checked={discountActive}
+            onChange={(e) => toggleDiscount(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
+          <span className="text-sm font-semibold text-foreground">Promociones y Descuentos</span>
+        </label>
+
+        {discountActive && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="ne-disc-pct" required className={FIELD_LABEL}>
+                % descuento
+              </Label>
+              <div className={FIELD_INPUT}>
                 <Controller
                   control={control}
-                  name="installments"
+                  name="discount_percentage"
                   render={({ field }) => (
-                    <InstallmentPresets
-                      value={field.value ?? 1}
-                      onChange={field.onChange}
-                      invalid={!!errors.installments}
+                    <AmountInput
+                      id="ne-disc-pct"
+                      value={field.value ?? null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      prefix={null}
+                      suffix="%"
+                      placeholder="10"
                     />
                   )}
                 />
               </div>
-              {/* Hint: monto por cuota (con descuento activo el detalle por
-                  cuota se muestra en el bloque de distribución, más abajo) */}
-              {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
-                <p className="mt-2 text-right text-xs text-muted-foreground">
-                  {installments} cuotas de{" "}
-                  <span className="font-medium text-foreground">
-                    {formatCurrency(totalAmount / installments, currency)}
-                  </span>
-                </p>
-              )}
             </div>
-          )}
+            <div className="space-y-1">
+              <Label htmlFor="ne-disc-cap" className={FIELD_LABEL}>
+                Tope (opcional)
+              </Label>
+              <div className={FIELD_INPUT}>
+                <Controller
+                  control={control}
+                  name="discount_cap"
+                  render={({ field }) => (
+                    <AmountInput
+                      id="ne-disc-cap"
+                      value={field.value ?? null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      placeholder="Sin tope"
+                    />
+                  )}
+                />
+              </div>
+            </div>
+            {totalAmount > 0 && (
+              <div
+                className={cn(
+                  FIELD_CARD,
+                  "col-span-2 flex justify-between px-3 py-2.5 text-xs font-semibold"
+                )}
+              >
+                <span className="text-muted-foreground">Precio final</span>
+                <span className="text-foreground">{formatCurrency(finalPrice, currency)}</span>
+              </div>
+            )}
 
-          {/* Fecha */}
-          <div className="space-y-2 px-4 py-3">
-            <Label htmlFor="ne-date" required>Fecha del consumo</Label>
-            <Controller
-              control={control}
-              name="expense_date"
-              render={({ field }) => (
-                <DatePickerField value={field.value ?? ""} onChange={field.onChange} />
-              )}
-            />
-            {errors.expense_date && (
-              <p className="text-xs text-destructive">{errors.expense_date.message}</p>
+            {/* Distribución del descuento entre cuotas — solo con más
+                de una cuota; con una sola, se aplica directo. */}
+            {installments > 1 && (
+              <div className="col-span-2 space-y-1.5">
+                <span className={cn(FIELD_LABEL, "block")}>Cómo aplicar el descuento</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountDistribution("first")}
+                    className={cn(
+                      "rounded-md border px-3 py-2.5 text-left text-xs font-semibold transition-all",
+                      discountDistribution === "first"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    Aplicar en la primera cuota
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountDistribution("prorated")}
+                    className={cn(
+                      "rounded-md border px-3 py-2.5 text-left text-xs font-semibold transition-all",
+                      discountDistribution === "prorated"
+                        ? "border-primary bg-primary/10 text-primary shadow-sm"
+                        : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    Distribuir en todas las cuotas
+                  </button>
+                </div>
+
+                {totalAmount > 0 && (() => {
+                  const breakdown = calculateInstallmentBreakdown(
+                    totalAmount,
+                    installments,
+                    discountCalc,
+                    discountDistribution
+                  );
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      {discountDistribution === "first" ? (
+                        <>
+                          Cuota 1:{" "}
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(breakdown.amounts[0], currency)}
+                          </span>{" "}
+                          · Cuotas 2 a {installments}:{" "}
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(breakdown.amounts[1], currency)}
+                          </span>{" "}
+                          c/u
+                        </>
+                      ) : breakdown.installmentAmounts ? (
+                        <>
+                          Cuotas 1 a {installments - 1}:{" "}
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(breakdown.amounts[0], currency)}
+                          </span>{" "}
+                          · Cuota {installments}:{" "}
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(breakdown.amounts[installments - 1], currency)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          {installments} cuotas de{" "}
+                          <span className="font-medium text-foreground">
+                            {formatCurrency(breakdown.amounts[0], currency)}
+                          </span>{" "}
+                          c/u
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
+              </div>
             )}
           </div>
+        )}
 
-          <div className="px-4 py-3">
-            {/* Descuento */}
-            <div className="space-y-2">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={discountActive}
-                  onChange={(e) => toggleDiscount(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-primary"
-                />
-                <span className="text-sm font-medium">Aplicar descuento / reintegro</span>
-              </label>
-  
-              {discountActive && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="ne-disc-pct" required className="text-xs">
-                      % descuento
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="discount_percentage"
-                      render={({ field }) => (
-                        <AmountInput
-                          id="ne-disc-pct"
-                          value={field.value ?? null}
-                          onChange={(v) => field.onChange(v ?? undefined)}
-                          prefix={null}
-                          suffix="%"
-                          placeholder="10"
-                        />
-                      )}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="ne-disc-cap" className="text-xs">
-                      Tope (opcional)
-                    </Label>
-                    <Controller
-                      control={control}
-                      name="discount_cap"
-                      render={({ field }) => (
-                        <AmountInput
-                          id="ne-disc-cap"
-                          value={field.value ?? null}
-                          onChange={(v) => field.onChange(v ?? undefined)}
-                          placeholder="Sin tope"
-                        />
-                      )}
-                    />
-                  </div>
-                  {totalAmount > 0 && (
-                    <div className="col-span-2 flex justify-between rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs">
-                      <span className="text-muted-foreground">Precio final</span>
-                      <span className="font-semibold">{formatCurrency(finalPrice, currency)}</span>
-                    </div>
-                  )}
-  
-                  {/* Distribución del descuento entre cuotas — solo con más
-                      de una cuota; con una sola, se aplica directo. */}
-                  {installments > 1 && (
-                    <div className="col-span-2 space-y-1.5">
-                      <Label className="text-xs">Cómo aplicar el descuento</Label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setDiscountDistribution("first")}
-                          className={cn(
-                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                            discountDistribution === "first"
-                              ? "border-primary bg-primary/10 text-primary shadow-sm"
-                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                          )}
-                        >
-                          Aplicar en la primera cuota
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDiscountDistribution("prorated")}
-                          className={cn(
-                            "rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-all",
-                            discountDistribution === "prorated"
-                              ? "border-primary bg-primary/10 text-primary shadow-sm"
-                              : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                          )}
-                        >
-                          Distribuir en todas las cuotas
-                        </button>
-                      </div>
-  
-                      {totalAmount > 0 && (() => {
-                        const breakdown = calculateInstallmentBreakdown(
-                          totalAmount,
-                          installments,
-                          discountCalc,
-                          discountDistribution
-                        );
-                        return (
-                          <p className="text-xs text-muted-foreground">
-                            {discountDistribution === "first" ? (
-                              <>
-                                Cuota 1:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                · Cuotas 2 a {installments}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[1], currency)}
-                                </span>{" "}
-                                c/u
-                              </>
-                            ) : breakdown.installmentAmounts ? (
-                              <>
-                                Cuotas 1 a {installments - 1}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                · Cuota {installments}:{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[installments - 1], currency)}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                {installments} cuotas de{" "}
-                                <span className="font-medium text-foreground">
-                                  {formatCurrency(breakdown.amounts[0], currency)}
-                                </span>{" "}
-                                c/u
-                              </>
-                            )}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Notas */}
-          <div className="space-y-2 px-4 py-3">
-            <Label htmlFor="ne-notes">Notas</Label>
-            <Input
-              id="ne-notes"
-              placeholder="Detalle adicional…"
-              {...register("notes")}
-            />
-          </div>
-        </div>
+        {/* Información adicional — sin título, el placeholder alcanza */}
+        <Input
+          id="ne-notes"
+          aria-label="Información adicional"
+          placeholder="Información adicional"
+          className={cn(FIELD_CARD, "h-11 px-3 font-semibold")}
+          {...register("notes")}
+        />
 
         {/* Categoría */}
-        <div className="space-y-3">
+        <div className="space-y-3 pt-2">
           <span className="block text-[10.5px] font-semibold uppercase tracking-[0.22em] text-primary">
             Categoría
           </span>
@@ -658,8 +640,6 @@ export function NewExpenseHero({
             )}
           />
         </div>
-
-        <RequiredFieldsNote />
       </form>
 
       {/* Diálogo: posible duplicado */}
@@ -706,36 +686,80 @@ function CardSelector({
   value,
   onChange,
   error,
+  recurring,
+  onRecurringChange,
 }: {
   cards: Card[];
   value: string;
   onChange: (v: string) => void;
   error?: boolean;
+  recurring: boolean;
+  onRecurringChange: (next: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const selected = cards.find((c) => c.id === value);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "flex items-center gap-2 text-sm font-medium transition-colors",
-          error ? "text-destructive" : "text-foreground"
+      <div className={cn(FIELD_CARD, "px-3 py-2.5", error && "border-destructive")}>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onRecurringChange(!recurring)}
+            tabIndex={-1}
+            aria-hidden
+            className="shrink-0 text-sm font-semibold text-foreground"
+          >
+            Consumo fijo
+          </button>
+
+          {/* Selector de tarjeta: la flechita queda pegada a "Consumo fijo" */}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Elegir tarjeta"
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold transition-colors",
+              error ? "text-destructive" : "text-foreground"
+            )}
+          >
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="ml-auto flex min-w-0 items-center gap-2">
+              {selected && (
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: selected.color }}
+                />
+              )}
+              <span className="truncate">
+                {selected ? cardLabel(selected) : "Seleccioná"}
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={recurring}
+            aria-label="Consumo fijo"
+            onClick={() => onRecurringChange(!recurring)}
+            className={cn(
+              "relative h-6 w-10 shrink-0 rounded-full transition-colors",
+              recurring ? "bg-primary" : "bg-muted-foreground/30"
+            )}
+          >
+            <span
+              className={cn(
+                "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
+              )}
+            />
+          </button>
+        </div>
+        {recurring && (
+          <p className={cn(FIELD_LABEL, "mt-1.5")}>Se repetirá en los siguientes meses</p>
         )}
-      >
-        {selected && (
-          <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: selected.color }}
-          />
-        )}
-        <span className="max-w-[160px] truncate">
-          {selected ? `${selected.name} ··${selected.last_four}` : "Seleccioná"}
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-      </button>
+      </div>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" showCloseButton={false} className="pb-safe px-0">
@@ -754,10 +778,9 @@ function CardSelector({
                   className="h-3.5 w-3.5 shrink-0 rounded-full"
                   style={{ backgroundColor: c.color }}
                 />
-                <span className="flex-1 text-[15px] font-medium text-foreground">
-                  {c.name}
+                <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-foreground">
+                  {cardLabel(c)}
                 </span>
-                <span className="text-xs text-muted-foreground">····{c.last_four}</span>
                 {value === c.id && (
                   <span className="text-[13px] font-bold text-primary">✓</span>
                 )}
