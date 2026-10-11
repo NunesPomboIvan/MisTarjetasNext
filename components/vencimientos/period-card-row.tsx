@@ -38,10 +38,13 @@ export function relativeDateLabel(
 export function PeriodCardRow({
   item,
   showDates = true,
+  hidePaidAmount = false,
 }: {
   item: PeriodDetailCard;
   /** false en períodos futuros: sus fechas de cierre/vencimiento no se conocen. */
   showDates?: boolean;
+  /** true en el Resumen (período actual): lo ya pagado no muestra su importe. */
+  hidePaidAmount?: boolean;
 }) {
   const accent = item.accent || "#6366f1";
   const today = nowInArgentina();
@@ -90,10 +93,12 @@ export function PeriodCardRow({
       </Link>
 
       <div className="flex flex-shrink-0 flex-col items-end gap-1">
-        <Money
-          amount={item.amount}
-          className="block text-[14px] font-semibold tabular-nums text-foreground"
-        />
+        {!(hidePaidAmount && item.status === "paid") && (
+          <Money
+            amount={item.amount}
+            className="block text-[14px] font-semibold tabular-nums text-foreground"
+          />
+        )}
         <PeriodPaidToggle
           kind="card"
           cardId={item.cardId}

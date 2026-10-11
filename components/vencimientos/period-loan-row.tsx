@@ -10,7 +10,14 @@ import type { PeriodDetailLoan } from "@/lib/vencimientos";
  * Fila de préstamo en el detalle de período. El cuerpo navega al préstamo; el
  * pill de estado togglea el pago de la cuota sin salir de la pantalla.
  */
-export function PeriodLoanRow({ item }: { item: PeriodDetailLoan }) {
+export function PeriodLoanRow({
+  item,
+  hidePaidAmount = false,
+}: {
+  item: PeriodDetailLoan;
+  /** true en el Resumen (período actual): lo ya pagado no muestra su importe. */
+  hidePaidAmount?: boolean;
+}) {
   const accent = item.accent || "#6366f1";
 
   return (
@@ -40,10 +47,12 @@ export function PeriodLoanRow({ item }: { item: PeriodDetailLoan }) {
       </Link>
 
       <div className="flex flex-shrink-0 flex-col items-end gap-1">
-        <Money
-          amount={item.amount}
-          className="block text-[14px] font-semibold tabular-nums text-foreground"
-        />
+        {!(hidePaidAmount && item.status === "paid") && (
+          <Money
+            amount={item.amount}
+            className="block text-[14px] font-semibold tabular-nums text-foreground"
+          />
+        )}
         <PeriodPaidToggle
           kind="loan"
           installmentId={item.installmentId}

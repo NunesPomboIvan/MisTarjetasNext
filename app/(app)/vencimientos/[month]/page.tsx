@@ -79,14 +79,25 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
       ? [
           <SectionTitle key="cards-title" first>Tarjetas</SectionTitle>,
           ...detail.cards.map((c) => (
-            <PeriodCardRow key={`${c.cardId}:${c.periodKey}`} item={c} showDates={!isFutureMonth} />
+            <PeriodCardRow
+              key={`${c.cardId}:${c.periodKey}`}
+              item={c}
+              showDates={!isFutureMonth}
+              hidePaidAmount={detail.isCurrentMonth}
+            />
           )),
         ]
       : []),
     ...(detail.loans.length > 0
       ? [
           <SectionTitle key="loans-title" first={detail.cards.length === 0}>Préstamos</SectionTitle>,
-          ...detail.loans.map((l) => <PeriodLoanRow key={l.installmentId} item={l} />),
+          ...detail.loans.map((l) => (
+            <PeriodLoanRow
+              key={l.installmentId}
+              item={l}
+              hidePaidAmount={detail.isCurrentMonth}
+            />
+          )),
         ]
       : []),
   ];
@@ -118,7 +129,8 @@ export default async function PeriodDetailPage({ params }: PeriodDetailPageProps
               />
             </span>
           </div>
-          {detail.paidTotal > 0 && (
+          {/* En el Resumen (período actual) no figura el importe de lo ya pagado. */}
+          {!detail.isCurrentMonth && detail.paidTotal > 0 && (
             <p className="mt-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
               Ya pagaste{" "}
               <Money amount={detail.paidTotal} className="font-semibold tabular-nums" />
