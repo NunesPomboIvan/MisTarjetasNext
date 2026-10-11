@@ -59,6 +59,9 @@ const FIELD_LABEL = "text-[11px] font-semibold text-muted-foreground";
 /** Envuelve un `<Input>` de otro componente para que tome el formato de card. */
 const FIELD_INPUT =
   "[&_input]:h-11 [&_input]:rounded-md [&_input:not(.border-destructive)]:border-border [&_input]:bg-muted/50 dark:[&_input]:bg-muted/50 [&_input]:px-3 [&_input]:text-base [&_input]:font-semibold";
+/** Igual que FIELD_INPUT pero con el formato compacto de los botones de distribución. */
+const FIELD_INPUT_SM =
+  "[&_input]:h-[2.375rem] [&_input]:rounded-md [&_input:not(.border-destructive)]:border-border [&_input]:bg-muted/50 dark:[&_input]:bg-muted/50 [&_input]:px-3 [&_input]:text-xs [&_input]:font-semibold [&_span]:text-xs [&_span]:font-semibold";
 
 /** "Visa · Macro 4016": red, separador, nombre y últimos 4 dígitos. */
 function cardLabel(card: Card): string {
@@ -483,7 +486,7 @@ export function NewExpenseHero({
                 <Label htmlFor="ne-disc-pct" required className={FIELD_LABEL}>
                   % descuento
                 </Label>
-                <div className={FIELD_INPUT}>
+                <div className={FIELD_INPUT_SM}>
                   <Controller
                     control={control}
                     name="discount_percentage"
@@ -504,7 +507,7 @@ export function NewExpenseHero({
                 <Label htmlFor="ne-disc-cap" className={FIELD_LABEL}>
                   Tope (opcional)
                 </Label>
-                <div className={FIELD_INPUT}>
+                <div className={FIELD_INPUT_SM}>
                   <Controller
                     control={control}
                     name="discount_cap"
@@ -535,7 +538,6 @@ export function NewExpenseHero({
                   de una cuota; con una sola, se aplica directo. */}
               {installments > 1 && (
                 <div className="col-span-2 space-y-1.5">
-                  <span className={cn(FIELD_LABEL, "block")}>Cómo aplicar el descuento</span>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -547,7 +549,7 @@ export function NewExpenseHero({
                           : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                       )}
                     >
-                      Aplicar en la primera cuota
+                      Aplicar en la primera
                     </button>
                     <button
                       type="button"
@@ -559,7 +561,7 @@ export function NewExpenseHero({
                           : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                       )}
                     >
-                      Distribuir en todas las cuotas
+                      Distribuir en todas
                     </button>
                   </div>
 
@@ -617,7 +619,7 @@ export function NewExpenseHero({
             id="ne-notes"
             aria-label="Información adicional"
             placeholder="Información adicional"
-            className={cn(FIELD_CARD, "h-11 px-3 font-semibold")}
+            className={cn(FIELD_CARD, "h-[2.375rem] px-3 text-xs font-semibold md:text-xs")}
             {...register("notes")}
           />
         </div>
