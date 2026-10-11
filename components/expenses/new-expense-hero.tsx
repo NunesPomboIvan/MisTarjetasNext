@@ -382,7 +382,7 @@ export function NewExpenseHero({
         )}
 
         {/* Recuadro del formulario: una card por campo adentro */}
-        <div className="space-y-3 rounded-lg border border-border bg-card p-3 shadow-sm">
+        <div className="space-y-3 rounded-lg border border-border bg-transparent p-3">
           {/* Negocio — sin título, el placeholder alcanza */}
           <div>
             <div className={FIELD_INPUT}>
