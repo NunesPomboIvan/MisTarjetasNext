@@ -76,14 +76,15 @@ export function AddFlow({
     // El margen negativo compensa el safe-area que el layout suma dos veces
     // (padding de `main` + padding de `body`): sin él queda scroll vacío abajo.
     <div className="relative -mb-[env(safe-area-inset-bottom)]">
-      {/* Fondo: degradé del azul del halo al fondo de la app, de arriba hacia
-          abajo y a todo el ancho; cubre también los paddings del layout. */}
+      {/* Fondo: degradé que arranca y termina en el fondo de la app y deja
+          asomar apenas el azul del halo en el medio, a todo el ancho; cubre
+          también los paddings del layout. */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 -top-[calc(1.5rem+env(safe-area-inset-top))] -bottom-[7.5rem] w-screen -translate-x-1/2"
         style={{
           background:
-            "linear-gradient(to bottom, var(--halo-light, rgba(0, 85, 164, 0.18)), transparent)",
+            "linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--halo-light, rgba(0, 85, 164, 0.18)) 70%, transparent) 45%, transparent 100%)",
         }}
       />
 
