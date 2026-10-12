@@ -388,7 +388,7 @@ export function NewExpenseHero({
                     id="ne-description"
                     value={field.value ?? ""}
                     onChange={field.onChange}
-                    placeholder="Negocio"
+                    placeholder="Ingresar el nombre del local..."
                     invalid={!!errors.description}
                   />
                 )}
@@ -600,7 +600,7 @@ export function NewExpenseHero({
           <Input
             id="ne-notes"
             aria-label="Información adicional"
-            placeholder="Información adicional"
+            placeholder="Ingresar información adicional..."
             className={FIELD_ROW}
             {...register("notes")}
           />
@@ -688,8 +688,26 @@ function CardSelector({
 
   return (
     <>
-      {/* Tarjeta y consumo fijo, en la misma línea */}
+      {/* Consumo fijo y tarjeta, en la misma línea */}
       <div className="flex gap-2">
+        {/* Consumo fijo: se prende y apaga tocándolo */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={recurring}
+          onClick={() => onRecurringChange(!recurring)}
+          className={cn(
+            FIELD_ROW,
+            "flex shrink-0 items-center gap-1.5 transition-colors",
+            recurring
+              ? "border-primary bg-primary/10 text-primary dark:bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Repeat className="shrink-0 text-primary" />
+          Consumo fijo
+        </button>
+
         {/* Selector de tarjeta: nombre + flechita */}
         <button
           type="button"
@@ -711,24 +729,6 @@ function CardSelector({
             {selected ? cardLabel(selected) : "Seleccioná"}
           </span>
           <ChevronDown className="shrink-0 text-muted-foreground" />
-        </button>
-
-        {/* Consumo fijo: se prende y apaga tocándolo */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={recurring}
-          onClick={() => onRecurringChange(!recurring)}
-          className={cn(
-            FIELD_ROW,
-            "flex shrink-0 items-center gap-1.5 transition-colors",
-            recurring
-              ? "border-primary bg-primary/10 text-primary dark:bg-primary/10"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Repeat className="shrink-0" />
-          Consumo fijo
         </button>
       </div>
       {recurring && (

@@ -23,7 +23,7 @@ export function InstallmentPresets({
   size = "default",
 }: InstallmentPresetsProps) {
   const sm = size === "sm";
-  const shape = sm ? "h-9 rounded-md px-1 text-xs whitespace-nowrap" : "h-9 rounded-lg px-2 text-sm";
+  const shape = sm ? "h-9 rounded-lg px-1 text-xs whitespace-nowrap" : "h-9 rounded-lg px-2 text-sm";
   const idle = cn(
     "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
     sm ? "bg-transparent" : "bg-card"
