@@ -45,23 +45,17 @@ import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { GuardedLink } from "@/components/shared/guarded-link";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import {
+  FIELD_BUTTON,
+  FIELD_CARD,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_ROW,
+  fieldOption,
+} from "@/components/shared/field-styles";
 import { cn, formatCurrency } from "@/lib/utils";
 import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
 import type { Card, Category } from "@/lib/supabase/database.types";
-
-/**
- * Formato de card de los campos del formulario: el mismo del botón "Marcar
- * como devolución" (borde + fondo tenue), con esquinas más cuadradas.
- */
-const FIELD_CARD = "rounded-md border border-border bg-muted/50 dark:bg-muted/50";
-/** Tipografía de los títulos chicos dentro/encima de una card. */
-const FIELD_LABEL = "text-[11px] font-semibold text-muted-foreground";
-/** Envuelve un `<Input>` de otro componente para que tome el formato de card. */
-const FIELD_INPUT =
-  "[&_input]:h-11 [&_input]:rounded-md [&_input:not(.border-destructive)]:border-border [&_input]:bg-muted/50 dark:[&_input]:bg-muted/50 [&_input]:px-3 [&_input]:text-base [&_input]:font-semibold";
-/** Igual que FIELD_INPUT pero con el formato compacto de los botones de distribución. */
-const FIELD_INPUT_SM =
-  "[&_input]:h-[2.375rem] [&_input]:rounded-md [&_input:not(.border-destructive)]:border-border [&_input]:bg-muted/50 dark:[&_input]:bg-muted/50 [&_input]:px-3 [&_input]:text-xs [&_input]:font-semibold [&_span]:text-xs [&_span]:font-semibold";
 
 /** "Visa · Macro 4016": red, separador, nombre y últimos 4 dígitos. */
 function cardLabel(card: Card): string {
@@ -332,10 +326,10 @@ export function NewExpenseHero({
                 type="button"
                 onClick={toggleAmountSign}
                 className={cn(
-                  "mt-1 inline-flex items-center gap-1 rounded-md border px-3 py-1 text-[11px] font-semibold transition-colors",
-                  (totalAmount ?? 0) < 0
-                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                    : "border-border bg-muted/50 text-muted-foreground hover:text-foreground"
+                  FIELD_BUTTON,
+                  "mt-1",
+                  (totalAmount ?? 0) < 0 &&
+                    "border-emerald-500/40 bg-emerald-500/15 text-emerald-600 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-400"
                 )}
               >
                 {(totalAmount ?? 0) < 0 ? "− Devolución / reintegro" : "Marcar como devolución"}
@@ -424,9 +418,9 @@ export function NewExpenseHero({
 
           {/* Cuotas — ocultas para consumos fijos */}
           {!recurring && (
-            <div className={cn(FIELD_CARD, "px-3 py-2.5")}>
+            <div className={cn(FIELD_CARD, "px-3 py-1.5")}>
               <span className={FIELD_LABEL}>Cuotas</span>
-              <div className="mt-2">
+              <div className="mt-1">
                 <Controller
                   control={control}
                   name="installments"
@@ -435,6 +429,7 @@ export function NewExpenseHero({
                       value={field.value ?? 1}
                       onChange={field.onChange}
                       invalid={!!errors.installments}
+                      size="sm"
                     />
                   )}
                 />
@@ -442,7 +437,7 @@ export function NewExpenseHero({
               {/* Hint: monto por cuota (con descuento activo el detalle por
                   cuota se muestra en el bloque de distribución, más abajo) */}
               {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
-                <p className="mt-2 text-right text-xs text-muted-foreground">
+                <p className="mt-1.5 text-right text-[11px] text-muted-foreground">
                   {installments} cuotas de{" "}
                   <span className="font-medium text-foreground">
                     {formatCurrency(totalAmount / installments, currency)}
@@ -461,7 +456,7 @@ export function NewExpenseHero({
                 <DatePickerField
                   value={field.value ?? ""}
                   onChange={field.onChange}
-                  className={cn(FIELD_CARD, "h-11 px-3 font-semibold")}
+                  className={FIELD_ROW}
                 />
               )}
             />
@@ -471,14 +466,14 @@ export function NewExpenseHero({
           </div>
 
           {/* Promociones y descuentos */}
-          <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2.5 px-3 py-3")}>
+          <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2 px-3 py-1")}>
             <input
               type="checkbox"
               checked={discountActive}
               onChange={(e) => toggleDiscount(e.target.checked)}
-              className="h-4 w-4 rounded border-border accent-primary"
+              className="h-3 w-3 rounded border-border accent-primary"
             />
-            <span className="text-sm font-semibold text-foreground">Promociones y Descuentos</span>
+            <span className="text-[11px] font-semibold text-foreground">Promociones y Descuentos</span>
           </label>
 
           {discountActive && (
@@ -487,7 +482,7 @@ export function NewExpenseHero({
                 <Label htmlFor="ne-disc-pct" required className={FIELD_LABEL}>
                   % descuento
                 </Label>
-                <div className={FIELD_INPUT_SM}>
+                <div className={FIELD_INPUT}>
                   <Controller
                     control={control}
                     name="discount_percentage"
@@ -508,7 +503,7 @@ export function NewExpenseHero({
                 <Label htmlFor="ne-disc-cap" className={FIELD_LABEL}>
                   Tope (opcional)
                 </Label>
-                <div className={FIELD_INPUT_SM}>
+                <div className={FIELD_INPUT}>
                   <Controller
                     control={control}
                     name="discount_cap"
@@ -527,7 +522,7 @@ export function NewExpenseHero({
                 <div
                   className={cn(
                     FIELD_CARD,
-                    "col-span-2 flex justify-between px-3 py-2.5 text-xs font-semibold"
+                    "col-span-2 flex justify-between px-3 py-1 text-[11px] font-semibold"
                   )}
                 >
                   <span className="text-muted-foreground">Precio final</span>
@@ -543,24 +538,14 @@ export function NewExpenseHero({
                     <button
                       type="button"
                       onClick={() => setDiscountDistribution("first")}
-                      className={cn(
-                        "rounded-md border px-3 py-2.5 text-left text-xs font-semibold transition-all",
-                        discountDistribution === "first"
-                          ? "border-primary bg-primary/10 text-primary shadow-sm"
-                          : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                      )}
+                      className={fieldOption(discountDistribution === "first")}
                     >
                       Aplicar en la primera
                     </button>
                     <button
                       type="button"
                       onClick={() => setDiscountDistribution("prorated")}
-                      className={cn(
-                        "rounded-md border px-3 py-2.5 text-left text-xs font-semibold transition-all",
-                        discountDistribution === "prorated"
-                          ? "border-primary bg-primary/10 text-primary shadow-sm"
-                          : "border-border bg-muted/50 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                      )}
+                      className={fieldOption(discountDistribution === "prorated")}
                     >
                       Distribuir en todas
                     </button>
@@ -574,7 +559,7 @@ export function NewExpenseHero({
                       discountDistribution
                     );
                     return (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[11px] text-muted-foreground">
                         {discountDistribution === "first" ? (
                           <>
                             Cuota 1:{" "}
@@ -620,7 +605,7 @@ export function NewExpenseHero({
             id="ne-notes"
             aria-label="Información adicional"
             placeholder="Información adicional"
-            className={cn(FIELD_CARD, "h-[2.375rem] px-3 text-xs font-semibold md:text-xs")}
+            className={FIELD_ROW}
             {...register("notes")}
           />
         </div>
@@ -707,38 +692,38 @@ function CardSelector({
 
   return (
     <>
-      <div className={cn(FIELD_CARD, "px-3 py-2.5", error && "border-destructive")}>
+      <div className={cn(FIELD_CARD, "px-3 py-1", error && "border-destructive")}>
         {/* Selector de tarjeta: nombre + flechita */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Elegir tarjeta"
           className={cn(
-            "flex w-full items-center gap-2 text-left text-sm font-semibold transition-colors",
+            "flex w-full items-center gap-2 text-left text-[11px] font-semibold transition-colors",
             error ? "text-destructive" : "text-foreground"
           )}
         >
           {selected && (
             <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: selected.color }}
             />
           )}
           <span className="min-w-0 flex-1 truncate">
             {selected ? cardLabel(selected) : "Seleccioná"}
           </span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
         </button>
 
-        <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-border/60 pt-2.5">
+        <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/60 pt-1">
           <button
             type="button"
             onClick={() => onRecurringChange(!recurring)}
             tabIndex={-1}
             aria-hidden
-            className="flex items-center gap-2 text-sm font-semibold text-foreground"
+            className="flex items-center gap-2 text-[11px] font-semibold text-foreground"
           >
-            <Repeat className="h-4 w-4 text-primary" />
+            <Repeat className="h-3 w-3 text-primary" />
             Consumo fijo
           </button>
 
@@ -749,20 +734,20 @@ function CardSelector({
             aria-label="Consumo fijo"
             onClick={() => onRecurringChange(!recurring)}
             className={cn(
-              "relative h-6 w-10 shrink-0 rounded-full transition-colors",
+              "relative h-[1.125rem] w-8 shrink-0 rounded-full transition-colors",
               recurring ? "bg-primary" : "bg-muted-foreground/30"
             )}
           >
             <span
               className={cn(
-                "absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-                recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
+                "absolute left-0 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+                recurring ? "translate-x-4" : "translate-x-0.5"
               )}
             />
           </button>
         </div>
         {recurring && (
-          <p className={cn(FIELD_LABEL, "mt-1.5")}>Se repetirá en los siguientes meses</p>
+          <p className={cn(FIELD_LABEL, "mt-1")}>Se repetirá en los siguientes meses</p>
         )}
       </div>
 

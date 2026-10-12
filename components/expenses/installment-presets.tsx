@@ -9,9 +9,22 @@ interface InstallmentPresetsProps {
   value: number;
   onChange: (n: number) => void;
   invalid?: boolean;
+  /** sm = formato compacto de los formularios de alta (letra de 11px, poco alto). */
+  size?: "default" | "sm";
 }
 
-export function InstallmentPresets({ value, onChange, invalid }: InstallmentPresetsProps) {
+export function InstallmentPresets({
+  value,
+  onChange,
+  invalid,
+  size = "default",
+}: InstallmentPresetsProps) {
+  const sm = size === "sm";
+  const shape = sm ? "h-[1.625rem] rounded-md text-[11px]" : "h-9 rounded-lg text-sm";
+  const idle = cn(
+    "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+    sm ? "bg-muted/50" : "bg-card"
+  );
   const isPreset = PRESETS.includes(value as (typeof PRESETS)[number]);
   const [otherActive, setOtherActive] = React.useState(!isPreset && value > 1);
 
@@ -47,10 +60,9 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
             type="button"
             onClick={() => { setOtherActive(false); onChange(n); }}
             className={cn(
-              "h-9 w-full rounded-lg border px-2 text-sm font-semibold tabular-nums transition-all",
-              active
-                ? "border-primary bg-primary/10 text-primary shadow-sm"
-                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              "w-full border px-2 font-semibold tabular-nums transition-all",
+              shape,
+              active ? "border-primary bg-primary/10 text-primary shadow-sm" : idle,
               invalid && !active && "border-destructive/50"
             )}
           >
@@ -68,7 +80,8 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
           onBlur={handleBlur}
           autoFocus
           className={cn(
-            "h-9 w-full rounded-lg border bg-primary/10 px-2 text-center text-sm font-semibold tabular-nums text-primary outline-none",
+            "w-full border bg-primary/10 px-2 text-center font-semibold tabular-nums text-primary outline-none",
+            shape,
             invalid ? "border-destructive" : "border-primary shadow-sm"
           )}
         />
@@ -79,7 +92,7 @@ export function InstallmentPresets({ value, onChange, invalid }: InstallmentPres
             setOtherActive(true);
             setDraft(value > 0 && !PRESETS.includes(value as (typeof PRESETS)[number]) ? String(value) : "");
           }}
-          className="h-9 w-full rounded-lg border border-border bg-card px-2 text-sm font-semibold text-muted-foreground transition-all hover:border-primary/40 hover:text-foreground"
+          className={cn("w-full border px-2 font-semibold transition-all", shape, idle)}
         >
           +
         </button>

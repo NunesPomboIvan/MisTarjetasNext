@@ -7,7 +7,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { createLoan } from "@/actions/loans";
 import { loanSchema, type LoanFormData } from "@/lib/schemas/loan";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AmountInput } from "@/components/expenses/amount-input";
@@ -18,6 +17,14 @@ import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
 import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
+import {
+  FIELD_BUTTON,
+  FIELD_CARD,
+  FIELD_INPUT,
+  FIELD_LABEL,
+  FIELD_ROW,
+  fieldOption,
+} from "@/components/shared/field-styles";
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
@@ -317,69 +324,59 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         )}
       </AmountHero>
 
-      {/* Card única con el resto de los campos — misma estructura que Consumo */}
-      <div className="glass-card rounded-[20px] divide-y divide-border/60">
+      {/* Recuadro del formulario: una card por campo adentro — misma estructura
+          que Consumo */}
+      <div className="glass-card space-y-3 rounded-[20px] p-3">
         {/* Descripción — sin título, el placeholder alcanza */}
-        <div className="px-4 py-3">
-          <Input
-            id="description"
-            aria-label="Descripción"
-            placeholder="¿Qué préstamo es? Ej: personal auto"
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              clearError("description");
-            }}
-            className={cn(
-              "h-11 rounded-xl text-base font-medium",
-              errors.description && "border-destructive"
-            )}
-          />
+        <div>
+          <div className={FIELD_INPUT}>
+            <Input
+              id="description"
+              aria-label="Descripción"
+              placeholder="¿Qué préstamo es? Ej: personal auto"
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                clearError("description");
+              }}
+              className={cn(errors.description && "border-destructive")}
+            />
+          </div>
           {errors.description && (
             <p className="mt-1.5 text-xs text-destructive">{errors.description}</p>
           )}
         </div>
 
-        {/* Banco */}
-        <div className="space-y-2 px-4 py-3">
-          <Label htmlFor="bank">Banco o entidad</Label>
+        {/* Banco — sin título, el placeholder alcanza */}
+        <div className={FIELD_INPUT}>
           <Input
             id="bank"
-            placeholder="Ej: Galicia, Santander…"
+            aria-label="Banco o entidad"
+            placeholder="Banco o entidad. Ej: Galicia, Santander…"
             value={bank}
             onChange={(e) => setBank(e.target.value)}
           />
         </div>
 
         {/* Modo de carga: Monto total / Cuotas manuales */}
-        <div className="space-y-2 px-4 py-3">
-          <div className="flex rounded-[14px] border border-border bg-muted/40 p-1">
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => setMode("simple")}
-              className={cn(
-                "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
-                mode === "simple"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              )}
+              className={fieldOption(mode === "simple")}
             >
               Monto total
             </button>
             <button
               type="button"
               onClick={() => setMode("manual")}
-              className={cn(
-                "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors",
-                mode === "manual"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              )}
+              className={fieldOption(mode === "manual")}
             >
               Cuotas manuales
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Elegí entre monto total dividido o cargar cada cuota a mano
           </p>
         </div>
@@ -387,28 +384,35 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         {/* Modo simple: cantidad de cuotas + primer vencimiento + detalle */}
         {mode === "simple" && (
           <>
-            <div id="count" tabIndex={-1} className="px-4 py-3 outline-none">
-              <span className="text-sm font-medium text-foreground">
-                Cuotas
-                <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
-              </span>
-              <div className="mt-2">
-                <InstallmentPresets
-                  value={count}
-                  onChange={(n) => {
-                    setCount(n);
-                    clearError("count");
-                  }}
-                  invalid={!!errors.count}
-                />
+            <div>
+              <div
+                id="count"
+                tabIndex={-1}
+                className={cn(FIELD_CARD, "px-3 py-1.5 outline-none")}
+              >
+                <span className={FIELD_LABEL}>
+                  Cuotas
+                  <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
+                </span>
+                <div className="mt-1">
+                  <InstallmentPresets
+                    value={count}
+                    onChange={(n) => {
+                      setCount(n);
+                      clearError("count");
+                    }}
+                    invalid={!!errors.count}
+                    size="sm"
+                  />
+                </div>
               </div>
               {errors.count && (
                 <p className="mt-1.5 text-xs text-destructive">{errors.count}</p>
               )}
             </div>
 
-            <div className="space-y-2 px-4 py-3">
-              <Label required>Vencimiento primera cuota</Label>
+            <div className="space-y-1">
+              <Label required className={FIELD_LABEL}>Vencimiento primera cuota</Label>
               <DatePickerField
                 value={firstDue}
                 onChange={(v) => {
@@ -416,7 +420,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
                   clearError("firstDue");
                 }}
                 placeholder="Elegí una fecha"
-                className={cn(errors.firstDue && "border-destructive")}
+                className={cn(FIELD_ROW, errors.firstDue && "border-destructive")}
               />
               {errors.firstDue && (
                 <p className="text-xs text-destructive">{errors.firstDue}</p>
@@ -424,20 +428,15 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
             </div>
 
             {simpleInstallments.length > 0 && (
-              <div className="space-y-2 px-4 py-3">
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Cuotas ({simpleInstallments.length})
-                </p>
-                <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+              <div className="space-y-1">
+                <p className={FIELD_LABEL}>Cuotas ({simpleInstallments.length})</p>
+                <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
                   {simpleInstallments.map((i, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 rounded-[12px] border border-border bg-muted/30 p-2"
-                    >
-                      <span className="w-7 shrink-0 text-center text-[12px] font-semibold text-muted-foreground tabular-nums">
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className={cn(FIELD_LABEL, "w-5 shrink-0 text-center tabular-nums")}>
                         {i.installment_number}
                       </span>
-                      <div className="flex-1">
+                      <div className={cn(FIELD_INPUT, "flex-1")}>
                         <AmountInput
                           value={i.amount}
                           onChange={(v) => {
@@ -448,7 +447,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
                           invalid={!!errors[`simple.${idx}`]}
                         />
                       </div>
-                      <span className="text-[11px] text-muted-foreground tabular-nums w-[78px] text-right">
+                      <span className={cn(FIELD_LABEL, "w-[68px] shrink-0 text-right tabular-nums")}>
                         {format(new Date(i.due_date + "T00:00:00"), "dd/MM/yyyy")}
                       </span>
                     </div>
@@ -461,13 +460,12 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
 
         {/* Modo manual: cada cuota con su monto y vencimiento */}
         {mode === "manual" && (
-          <div className="space-y-3 px-4 py-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-foreground">Cuotas</span>
-              <Button
+              <span className={FIELD_LABEL}>Cuotas</span>
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
+                className={FIELD_BUTTON}
                 onClick={() =>
                   setManual((prev) => {
                     const last = prev[prev.length - 1];
@@ -478,9 +476,9 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
                   })
                 }
               >
-                <Plus className="mr-1 h-4 w-4" />
+                <Plus className="h-3 w-3" />
                 Cuota
-              </Button>
+              </button>
             </div>
 
             {errors.installments && (
@@ -489,38 +487,36 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
 
             <div className="space-y-2">
               {manual.map((m, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-[12px] border border-border bg-muted/30 p-3 space-y-2"
-                >
+                <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Cuota {idx + 1}
-                    </span>
+                    <span className={FIELD_LABEL}>Cuota {idx + 1}</span>
                     {manual.length > 1 && (
                       <button
                         type="button"
+                        aria-label={`Quitar cuota ${idx + 1}`}
                         onClick={() => setManual((prev) => prev.filter((_, i) => i !== idx))}
                         className="text-muted-foreground hover:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       </button>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label required className="text-[11px]">Monto</Label>
-                      <AmountInput
-                        value={m.amount}
-                        onChange={(v) => {
-                          setManual((prev) =>
-                            prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
-                          );
-                          clearError(`manual.${idx}.amount`);
-                        }}
-                        prefix={amountPrefix}
-                        invalid={!!errors[`manual.${idx}.amount`]}
-                      />
+                      <Label required className={FIELD_LABEL}>Monto</Label>
+                      <div className={FIELD_INPUT}>
+                        <AmountInput
+                          value={m.amount}
+                          onChange={(v) => {
+                            setManual((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, amount: v ?? null } : it))
+                            );
+                            clearError(`manual.${idx}.amount`);
+                          }}
+                          prefix={amountPrefix}
+                          invalid={!!errors[`manual.${idx}.amount`]}
+                        />
+                      </div>
                       {errors[`manual.${idx}.amount`] && (
                         <p className="text-[11px] text-destructive">
                           {errors[`manual.${idx}.amount`]}
@@ -528,7 +524,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label required className="text-[11px]">Vencimiento</Label>
+                      <Label required className={FIELD_LABEL}>Vencimiento</Label>
                       <DatePickerField
                         value={m.due_date}
                         onChange={(v) => {
@@ -537,7 +533,10 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
                           );
                           clearError(`manual.${idx}.due_date`);
                         }}
-                        className={cn(errors[`manual.${idx}.due_date`] && "border-destructive")}
+                        className={cn(
+                          FIELD_ROW,
+                          errors[`manual.${idx}.due_date`] && "border-destructive"
+                        )}
                       />
                       {errors[`manual.${idx}.due_date`] && (
                         <p className="text-[11px] text-destructive">
@@ -553,15 +552,15 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         )}
 
         {/* Fecha de emisión */}
-        <div className="space-y-2 px-4 py-3">
-          <Label required>Fecha de emisión</Label>
-          <DatePickerField value={issueDate} onChange={setIssueDate} />
+        <div className="space-y-1">
+          <Label required className={FIELD_LABEL}>Fecha de emisión</Label>
+          <DatePickerField value={issueDate} onChange={setIssueDate} className={FIELD_ROW} />
         </div>
 
         {/* Color */}
-        <div className="space-y-2 px-4 py-3">
-          <Label>Color</Label>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className={cn(FIELD_CARD, "px-3 py-1.5")}>
+          <span className={FIELD_LABEL}>Color</span>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
             <ColorSwatchPicker colors={COLOR_PRESETS} value={color} onChange={setColor} />
             <input
               type="color"
