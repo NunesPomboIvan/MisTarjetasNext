@@ -54,14 +54,8 @@ import {
   fieldOption,
 } from "@/components/shared/field-styles";
 import { cn, formatCurrency } from "@/lib/utils";
-import { CARD_TYPE_LABEL } from "@/lib/cards/card-type-label";
+import { cardLabel } from "@/lib/cards/card-type-label";
 import type { Card, Category } from "@/lib/supabase/database.types";
-
-/** "Visa · Macro 4016": red, separador, nombre y últimos 4 dígitos. */
-function cardLabel(card: Card): string {
-  const rest = [card.name, card.last_four].filter(Boolean).join(" ");
-  return [CARD_TYPE_LABEL[card.type], rest].filter(Boolean).join(" · ");
-}
 
 
 interface NewExpenseHeroProps {
@@ -791,6 +785,31 @@ const COLOR_PAIRS = [
   { bg: "#f5f5f4", text: "#57534e", label: "Gris"     },
 ] as const;
 
+/**
+ * Ordena los chips para que entren la mayor cantidad posible por renglón:
+ * de más ancho a más angosto, cada uno va al primer renglón donde todavía
+ * entra (first-fit decreasing). Devuelve los ids en el orden a mostrar.
+ */
+function packChips(
+  chips: { id: string; width: number }[],
+  rowWidth: number,
+  gap: number
+): string[] {
+  const rows: { free: number; ids: string[] }[] = [];
+  for (const chip of [...chips].sort((a, b) => b.width - a.width)) {
+    // +1: offsetWidth redondea, el ancho real puede ser una fracción mayor.
+    const need = chip.width + 1;
+    const row = rows.find((r) => r.free >= need + gap);
+    if (row) {
+      row.free -= need + gap;
+      row.ids.push(chip.id);
+    } else {
+      rows.push({ free: rowWidth - need, ids: [chip.id] });
+    }
+  }
+  return rows.flatMap((r) => r.ids);
+}
+
 interface CategoryGridProps {
   categories: Category[];
   value: string | null;
@@ -802,6 +821,36 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
   const presets = categories.filter((c) => c.is_preset);
   const customs = categories.filter((c) => !c.is_preset);
   const ordered = [...presets, ...customs];
+
+  // Orden compacto de los chips, recalculado con los anchos reales cada vez que
+  // cambia el ancho del contenedor o la lista de categorías.
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [packedIds, setPackedIds] = React.useState<string[] | null>(null);
+  const idsKey = ordered.map((c) => c.id).join(",");
+  React.useEffect(() => {
+    const el = gridRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const rowWidth = el.clientWidth;
+      // Oculto (otro modo del alta activo): no hay anchos que medir.
+      if (!rowWidth) return;
+      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+      const chips = Array.from(
+        el.querySelectorAll<HTMLElement>("[data-category-id]")
+      ).map((chip) => ({ id: chip.dataset.categoryId ?? "", width: chip.offsetWidth }));
+      const next = packChips(chips, rowWidth, gap);
+      setPackedIds((prev) => (prev && prev.join() === next.join() ? prev : next));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [idsKey]);
+
+  const rank = new Map((packedIds ?? []).map((id, i) => [id, i]));
+  const display = packedIds
+    ? [...ordered].sort(
+        (a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)
+      )
+    : ordered;
 
   const [newOpen, setNewOpen] = React.useState(false);
   const [newEmoji, setNewEmoji] = React.useState("✨");
@@ -834,13 +883,14 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        {ordered.map((cat) => {
+      <div ref={gridRef} className="flex flex-wrap gap-2">
+        {display.map((cat) => {
           const isSelected = value === cat.id;
           return (
             <button
               key={cat.id}
               type="button"
+              data-category-id={cat.id}
               onClick={() => onChange(isSelected ? null : cat.id)}
               className={cn(
                 "group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-all active:scale-[0.97]",

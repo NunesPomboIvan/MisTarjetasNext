@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Landmark, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CardActionsMenu } from "@/components/cards/card-actions-menu";
+import { CardSwitcherMenu } from "@/components/cards/card-switcher-menu";
 import { CardExpenseSearchList } from "@/components/cards/card-expense-search-list";
 import { CardHero } from "@/components/cards/card-hero";
 import { CardBalanceDialog } from "@/components/cards/card-balance-dialog";
@@ -48,16 +49,18 @@ export default async function CardDetailPage({
 
   if (!card) notFound();
 
-  // Orden de tarjetas (activas del mismo titular) para navegar con swipe entre detalles.
+  // Tarjetas activas del mismo titular, en orden: para navegar con swipe entre
+  // detalles y para el desplegable "Tarjetas".
   let cardOrderQuery = supabase
     .from("cards")
-    .select("id")
+    .select("id, name, last_four, type, color")
     .eq("user_id", user!.id)
     .eq("archived", false)
     .order("created_at");
   if (card.titular_id) cardOrderQuery = cardOrderQuery.eq("titular_id", card.titular_id);
   const { data: cardOrder } = await cardOrderQuery;
-  const orderedIds = (cardOrder ?? []).map((c) => c.id);
+  const siblingCards = cardOrder ?? [];
+  const orderedIds = siblingCards.map((c) => c.id);
   const currentIndex = orderedIds.indexOf(id);
   const prevId = currentIndex > 0 ? orderedIds[currentIndex - 1] : null;
   const nextId =
@@ -107,10 +110,11 @@ export default async function CardDetailPage({
 
   // Acciones de movimientos, en la misma fila que el botón de "Seleccionar"
   // (que acá se muestra solo con el ícono, sin la palabra —
-  // compactSelectToggle más abajo). Nuevo consumo / Saldo / Gastos se
+  // compactSelectToggle más abajo). Nuevo consumo / Saldo / Tarjetas se
   // reparten todo el ancho libre (`flex-1`, sin huecos), y el menú de
   // ajustes queda pegado al margen derecho, a la altura del borde de la
   // tarjeta y de Filtros (`-mr-0.5` compensa el px-0.5 de la toolbar).
+  // "Gastos de tarjeta" vive dentro de ese menú.
   // "Pendiente de pago" vive en CardHero, debajo del logo de la red.
   const movimientoActions = (
     <>
@@ -123,13 +127,7 @@ export default async function CardDetailPage({
           Nuevo consumo
         </Link>
         <CardBalanceDialog saldo={saldo} limite={limite} disponible={disponible} />
-        <Link
-          href={`/expenses/new?card_id=${id}&fee=1`}
-          className="inline-flex h-8 flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-[11px] font-semibold text-foreground/80 transition-colors hover:text-foreground"
-        >
-          <Landmark className="h-3.5 w-3.5 flex-shrink-0" />
-          Gastos
-        </Link>
+        <CardSwitcherMenu cards={siblingCards} currentId={id} />
       </div>
       <div className="mr-0.5 flex-shrink-0">
         <CardActionsMenu cardId={id} cardName={card.bank || card.name} periodKey={period.key} />

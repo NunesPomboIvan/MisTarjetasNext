@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Settings, Receipt, Calendar, BarChart3, Bell, Lock, Pencil, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
+import { Settings, Receipt, Calendar, BarChart3, Bell, Landmark, Lock, Pencil, Trash2, Loader2, FileSpreadsheet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +84,10 @@ export function CardActionsMenu({ cardId, cardName, periodKey }: CardActionsMenu
           <Settings className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem onClick={go(`/expenses/new?card_id=${cardId}&fee=1`)}>
+            <Landmark className="mr-2 h-4 w-4" />
+            Gastos de tarjeta
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={go(`/cards/${cardId}/movimientos`)}>
             <Receipt className="mr-2 h-4 w-4" />
             Movimientos
