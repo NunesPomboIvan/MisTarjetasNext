@@ -9,7 +9,10 @@ interface InstallmentPresetsProps {
   value: number;
   onChange: (n: number) => void;
   invalid?: boolean;
-  /** sm = formato compacto de los formularios de alta. */
+  /**
+   * sm = formato de los formularios de alta: sin relleno y con la palabra
+   * "cuotas" en cada botón, así el grupo se entiende sin un título arriba.
+   */
   size?: "default" | "sm";
 }
 
@@ -20,10 +23,10 @@ export function InstallmentPresets({
   size = "default",
 }: InstallmentPresetsProps) {
   const sm = size === "sm";
-  const shape = sm ? "h-8 rounded-md text-[13px]" : "h-9 rounded-lg text-sm";
+  const shape = sm ? "h-9 rounded-md px-1 text-xs whitespace-nowrap" : "h-9 rounded-lg px-2 text-sm";
   const idle = cn(
     "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
-    sm ? "bg-muted/50" : "bg-card"
+    sm ? "bg-transparent" : "bg-card"
   );
   const isPreset = PRESETS.includes(value as (typeof PRESETS)[number]);
   const [otherActive, setOtherActive] = React.useState(!isPreset && value > 1);
@@ -51,7 +54,12 @@ export function InstallmentPresets({
   }
 
   return (
-    <div className="grid grid-cols-5 gap-1.5">
+    <div
+      className={cn(
+        "grid gap-1.5",
+        sm ? "grid-cols-[repeat(4,minmax(0,1fr))_3rem]" : "grid-cols-5"
+      )}
+    >
       {PRESETS.map((n) => {
         const active = !otherActive && value === n;
         return (
@@ -60,13 +68,13 @@ export function InstallmentPresets({
             type="button"
             onClick={() => { setOtherActive(false); onChange(n); }}
             className={cn(
-              "w-full border px-2 font-semibold tabular-nums transition-all",
+              "w-full border font-semibold tabular-nums transition-all",
               shape,
               active ? "border-primary bg-primary/10 text-primary shadow-sm" : idle,
               invalid && !active && "border-destructive/50"
             )}
           >
-            {n}
+            {sm ? `${n} ${n === 1 ? "cuota" : "cuotas"}` : n}
           </button>
         );
       })}
@@ -79,8 +87,9 @@ export function InstallmentPresets({
           onChange={(e) => handleDraftChange(e.target.value)}
           onBlur={handleBlur}
           autoFocus
+          aria-label="Cantidad de cuotas"
           className={cn(
-            "w-full border bg-primary/10 px-2 text-center font-semibold tabular-nums text-primary outline-none",
+            "w-full border bg-primary/10 text-center font-semibold tabular-nums text-primary outline-none",
             shape,
             invalid ? "border-destructive" : "border-primary shadow-sm"
           )}
@@ -92,7 +101,8 @@ export function InstallmentPresets({
             setOtherActive(true);
             setDraft(value > 0 && !PRESETS.includes(value as (typeof PRESETS)[number]) ? String(value) : "");
           }}
-          className={cn("w-full border px-2 font-semibold transition-all", shape, idle)}
+          aria-label="Otra cantidad de cuotas"
+          className={cn("w-full border font-semibold transition-all", shape, idle)}
         >
           +
         </button>

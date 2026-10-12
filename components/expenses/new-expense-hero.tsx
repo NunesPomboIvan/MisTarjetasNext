@@ -417,22 +417,19 @@ export function NewExpenseHero({
 
           {/* Cuotas — ocultas para consumos fijos */}
           {!recurring && (
-            <div className={cn(FIELD_CARD, "px-3 py-2")}>
-              <span className={FIELD_LABEL}>Cuotas</span>
-              <div className="mt-1">
-                <Controller
-                  control={control}
-                  name="installments"
-                  render={({ field }) => (
-                    <InstallmentPresets
-                      value={field.value ?? 1}
-                      onChange={field.onChange}
-                      invalid={!!errors.installments}
-                      size="sm"
-                    />
-                  )}
-                />
-              </div>
+            <div>
+              <Controller
+                control={control}
+                name="installments"
+                render={({ field }) => (
+                  <InstallmentPresets
+                    value={field.value ?? 1}
+                    onChange={field.onChange}
+                    invalid={!!errors.installments}
+                    size="sm"
+                  />
+                )}
+              />
               {/* Hint: monto por cuota (con descuento activo el detalle por
                   cuota se muestra en el bloque de distribución, más abajo) */}
               {!discountActive && !!totalAmount && totalAmount !== 0 && installments > 1 && (
@@ -691,15 +688,17 @@ function CardSelector({
 
   return (
     <>
-      <div className={cn(FIELD_CARD, "px-3 py-2", error && "border-destructive")}>
+      {/* Tarjeta y consumo fijo, en la misma línea */}
+      <div className="flex gap-2">
         {/* Selector de tarjeta: nombre + flechita */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Elegir tarjeta"
           className={cn(
-            "flex w-full items-center gap-2 text-left text-[13px] font-semibold transition-colors",
-            error ? "text-destructive" : "text-foreground"
+            FIELD_ROW,
+            "flex min-w-0 flex-1 items-center gap-2 text-left transition-colors",
+            error ? "border-destructive text-destructive" : "text-foreground"
           )}
         >
           {selected && (
@@ -711,44 +710,30 @@ function CardSelector({
           <span className="min-w-0 flex-1 truncate">
             {selected ? cardLabel(selected) : "Seleccioná"}
           </span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown className="shrink-0 text-muted-foreground" />
         </button>
 
-        <div className="mt-2 flex items-center justify-between gap-3 border-t border-border/60 pt-2">
-          <button
-            type="button"
-            onClick={() => onRecurringChange(!recurring)}
-            tabIndex={-1}
-            aria-hidden
-            className="flex items-center gap-2 text-[13px] font-semibold text-foreground"
-          >
-            <Repeat className="h-3.5 w-3.5 text-primary" />
-            Consumo fijo
-          </button>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={recurring}
-            aria-label="Consumo fijo"
-            onClick={() => onRecurringChange(!recurring)}
-            className={cn(
-              "relative h-5 w-9 shrink-0 rounded-full transition-colors",
-              recurring ? "bg-primary" : "bg-muted-foreground/30"
-            )}
-          >
-            <span
-              className={cn(
-                "absolute left-0 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
-                recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
-              )}
-            />
-          </button>
-        </div>
-        {recurring && (
-          <p className={cn(FIELD_LABEL, "mt-1")}>Se repetirá en los siguientes meses</p>
-        )}
+        {/* Consumo fijo: se prende y apaga tocándolo */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={recurring}
+          onClick={() => onRecurringChange(!recurring)}
+          className={cn(
+            FIELD_ROW,
+            "flex shrink-0 items-center gap-1.5 transition-colors",
+            recurring
+              ? "border-primary bg-primary/10 text-primary dark:bg-primary/10"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Repeat className="shrink-0" />
+          Consumo fijo
+        </button>
       </div>
+      {recurring && (
+        <p className={cn(FIELD_LABEL, "-mt-1.5")}>Se repetirá en los siguientes meses</p>
+      )}
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" showCloseButton={false} className="pb-safe px-0">

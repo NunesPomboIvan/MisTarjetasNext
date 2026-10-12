@@ -385,26 +385,16 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         {mode === "simple" && (
           <>
             <div>
-              <div
-                id="count"
-                tabIndex={-1}
-                className={cn(FIELD_CARD, "px-3 py-2 outline-none")}
-              >
-                <span className={FIELD_LABEL}>
-                  Cuotas
-                  <span aria-hidden="true" className="ml-0.5 text-destructive">*</span>
-                </span>
-                <div className="mt-1">
-                  <InstallmentPresets
-                    value={count}
-                    onChange={(n) => {
-                      setCount(n);
-                      clearError("count");
-                    }}
-                    invalid={!!errors.count}
-                    size="sm"
-                  />
-                </div>
+              <div id="count" tabIndex={-1} className="outline-none">
+                <InstallmentPresets
+                  value={count}
+                  onChange={(n) => {
+                    setCount(n);
+                    clearError("count");
+                  }}
+                  invalid={!!errors.count}
+                  size="sm"
+                />
               </div>
               {errors.count && (
                 <p className="mt-1.5 text-xs text-destructive">{errors.count}</p>
