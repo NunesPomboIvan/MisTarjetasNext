@@ -16,7 +16,6 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { ColorSwatchPicker } from "@/components/shared/color-swatch-picker";
 import { ExchangeRateField } from "@/components/shared/exchange-rate-field";
 import { useUnsavedChangesGuard } from "@/components/shared/navigation-blocker";
-import { RequiredFieldsNote } from "@/components/shared/required-fields-note";
 import {
   FIELD_BUTTON,
   FIELD_CARD,
@@ -543,7 +542,8 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
 
         {/* Fecha de emisión */}
         <div className="space-y-1">
-          <Label required className={FIELD_LABEL}>Fecha de emisión</Label>
+          {/* Alineado con el texto de adentro del campo (mismo px-3) */}
+          <Label className={cn(FIELD_LABEL, "pl-3")}>Fecha de emisión</Label>
           <DatePickerField value={issueDate} onChange={setIssueDate} className={FIELD_ROW} />
         </div>
 
@@ -571,7 +571,6 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         </div>
       </div>
 
-      <RequiredFieldsNote />
       {/* El guardado vive en el botón fijo del shell (dispara este form por id). */}
     </form>
   );
