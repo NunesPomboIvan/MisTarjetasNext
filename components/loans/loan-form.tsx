@@ -364,14 +364,14 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
             <button
               type="button"
               onClick={() => setMode("simple")}
-              className={fieldOption(mode === "simple")}
+              className={cn(fieldOption(mode === "simple"), "text-center")}
             >
               Monto total
             </button>
             <button
               type="button"
               onClick={() => setMode("manual")}
-              className={fieldOption(mode === "manual")}
+              className={cn(fieldOption(mode === "manual"), "text-center")}
             >
               Cuotas manuales
             </button>
@@ -550,13 +550,20 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         {/* Color */}
         <div className={cn(FIELD_CARD, "px-3 py-2")}>
           <span className={FIELD_LABEL}>Color</span>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <ColorSwatchPicker colors={COLOR_PRESETS} value={color} onChange={setColor} />
+          {/* Una sola línea: los colores y el personalizado se reparten el
+              ancho y se achican si no entran. */}
+          <div className="mt-1 flex items-center gap-1.5">
+            <ColorSwatchPicker
+              colors={COLOR_PRESETS}
+              value={color}
+              onChange={setColor}
+              className="contents [&_button]:aspect-square [&_button]:h-auto [&_button]:w-auto [&_button]:max-w-8 [&_button]:flex-1"
+            />
             <input
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="h-8 w-8 cursor-pointer rounded-full border-0 bg-transparent p-0"
+              className="aspect-square h-auto w-auto min-w-0 max-w-8 flex-1 cursor-pointer rounded-full border-0 bg-transparent p-0"
               title="Color personalizado"
               aria-label="Elegir color personalizado"
             />
