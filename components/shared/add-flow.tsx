@@ -37,7 +37,7 @@ interface FormState {
  *
  *   1. TypeSwitch Consumo | Préstamo
  *   2. Divisoria de 1 px
- *   3. Formulario: importe + una card por campo, sobre un degradé de fondo
+ *   3. Formulario: importe + una card por campo, sobre el fondo de la app
  *   4. Tilde ✓ de guardar, fijo abajo a la derecha (`StickySaveBar`)
  *
  * Ambos formularios quedan montados y sólo se alterna cuál se ve con `hidden`,
@@ -75,20 +75,8 @@ export function AddFlow({
   return (
     // El margen negativo compensa el safe-area que el layout suma dos veces
     // (padding de `main` + padding de `body`): sin él queda scroll vacío abajo.
-    <div className="relative -mb-[env(safe-area-inset-bottom)]">
-      {/* Fondo: degradé que arranca y termina en el fondo de la app y deja
-          asomar apenas un azul francés oscuro en el medio, a todo el ancho;
-          cubre también los paddings del layout. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 -top-[calc(1.5rem+env(safe-area-inset-top))] -bottom-[7.5rem] w-screen -translate-x-1/2"
-        style={{
-          background:
-            "linear-gradient(to bottom, transparent 0%, var(--halo-deep, rgba(0, 35, 149, 0.1)) 45%, transparent 100%)",
-        }}
-      />
-
-      <div className="relative space-y-4">
+    <div className="-mb-[env(safe-area-inset-bottom)]">
+      <div className="space-y-4">
         {!feeMode && (
           <TypeSwitch
             aria-label="Tipo de carga"

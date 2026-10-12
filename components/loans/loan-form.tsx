@@ -324,9 +324,9 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         )}
       </AmountHero>
 
-      {/* Recuadro del formulario: una card por campo adentro — misma estructura
-          que Consumo */}
-      <div className="glass-card space-y-3 rounded-[20px] p-3">
+      {/* Campos del formulario: una card por campo, sueltas sobre el fondo —
+          misma estructura que Consumo */}
+      <div className="space-y-3">
         {/* Descripción — sin título, el placeholder alcanza */}
         <div>
           <div className={FIELD_INPUT}>
