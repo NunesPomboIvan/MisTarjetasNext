@@ -288,7 +288,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
   const manualTotal = manual.reduce((s, m) => s + (m.amount ?? 0), 0) || null;
 
   return (
-    <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-3">
       {/* Importe — mismo bloque que Consumo. En "Cuotas manuales" muestra la
           suma de las cuotas, sin edición. */}
       <AmountHero
@@ -388,7 +388,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
               <div
                 id="count"
                 tabIndex={-1}
-                className={cn(FIELD_CARD, "px-3 py-1.5 outline-none")}
+                className={cn(FIELD_CARD, "px-3 py-2 outline-none")}
               >
                 <span className={FIELD_LABEL}>
                   Cuotas
@@ -558,7 +558,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
         </div>
 
         {/* Color */}
-        <div className={cn(FIELD_CARD, "px-3 py-1.5")}>
+        <div className={cn(FIELD_CARD, "px-3 py-2")}>
           <span className={FIELD_LABEL}>Color</span>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <ColorSwatchPicker colors={COLOR_PRESETS} value={color} onChange={setColor} />

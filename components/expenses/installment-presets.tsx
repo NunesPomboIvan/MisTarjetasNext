@@ -9,7 +9,7 @@ interface InstallmentPresetsProps {
   value: number;
   onChange: (n: number) => void;
   invalid?: boolean;
-  /** sm = formato compacto de los formularios de alta (letra de 11px, poco alto). */
+  /** sm = formato compacto de los formularios de alta. */
   size?: "default" | "sm";
 }
 
@@ -20,7 +20,7 @@ export function InstallmentPresets({
   size = "default",
 }: InstallmentPresetsProps) {
   const sm = size === "sm";
-  const shape = sm ? "h-[1.625rem] rounded-md text-[11px]" : "h-9 rounded-lg text-sm";
+  const shape = sm ? "h-8 rounded-md text-[13px]" : "h-9 rounded-lg text-sm";
   const idle = cn(
     "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
     sm ? "bg-muted/50" : "bg-card"

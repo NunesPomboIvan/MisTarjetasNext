@@ -417,7 +417,7 @@ export function NewExpenseHero({
 
           {/* Cuotas — ocultas para consumos fijos */}
           {!recurring && (
-            <div className={cn(FIELD_CARD, "px-3 py-1.5")}>
+            <div className={cn(FIELD_CARD, "px-3 py-2")}>
               <span className={FIELD_LABEL}>Cuotas</span>
               <div className="mt-1">
                 <Controller
@@ -465,14 +465,14 @@ export function NewExpenseHero({
           </div>
 
           {/* Promociones y descuentos */}
-          <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2 px-3 py-1")}>
+          <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2 px-3 py-2")}>
             <input
               type="checkbox"
               checked={discountActive}
               onChange={(e) => toggleDiscount(e.target.checked)}
-              className="h-3 w-3 rounded border-border accent-primary"
+              className="h-3.5 w-3.5 rounded border-border accent-primary"
             />
-            <span className="text-[11px] font-semibold text-foreground">Promociones y Descuentos</span>
+            <span className="text-[13px] font-semibold text-foreground">Promociones y Descuentos</span>
           </label>
 
           {discountActive && (
@@ -521,7 +521,7 @@ export function NewExpenseHero({
                 <div
                   className={cn(
                     FIELD_CARD,
-                    "col-span-2 flex justify-between px-3 py-1 text-[11px] font-semibold"
+                    "col-span-2 flex justify-between px-3 py-2 text-[13px] font-semibold"
                   )}
                 >
                   <span className="text-muted-foreground">Precio final</span>
@@ -691,14 +691,14 @@ function CardSelector({
 
   return (
     <>
-      <div className={cn(FIELD_CARD, "px-3 py-1", error && "border-destructive")}>
+      <div className={cn(FIELD_CARD, "px-3 py-2", error && "border-destructive")}>
         {/* Selector de tarjeta: nombre + flechita */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Elegir tarjeta"
           className={cn(
-            "flex w-full items-center gap-2 text-left text-[11px] font-semibold transition-colors",
+            "flex w-full items-center gap-2 text-left text-[13px] font-semibold transition-colors",
             error ? "text-destructive" : "text-foreground"
           )}
         >
@@ -711,18 +711,18 @@ function CardSelector({
           <span className="min-w-0 flex-1 truncate">
             {selected ? cardLabel(selected) : "Seleccioná"}
           </span>
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </button>
 
-        <div className="mt-1 flex items-center justify-between gap-3 border-t border-border/60 pt-1">
+        <div className="mt-2 flex items-center justify-between gap-3 border-t border-border/60 pt-2">
           <button
             type="button"
             onClick={() => onRecurringChange(!recurring)}
             tabIndex={-1}
             aria-hidden
-            className="flex items-center gap-2 text-[11px] font-semibold text-foreground"
+            className="flex items-center gap-2 text-[13px] font-semibold text-foreground"
           >
-            <Repeat className="h-3 w-3 text-primary" />
+            <Repeat className="h-3.5 w-3.5 text-primary" />
             Consumo fijo
           </button>
 
@@ -733,14 +733,14 @@ function CardSelector({
             aria-label="Consumo fijo"
             onClick={() => onRecurringChange(!recurring)}
             className={cn(
-              "relative h-[1.125rem] w-8 shrink-0 rounded-full transition-colors",
+              "relative h-5 w-9 shrink-0 rounded-full transition-colors",
               recurring ? "bg-primary" : "bg-muted-foreground/30"
             )}
           >
             <span
               className={cn(
-                "absolute left-0 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
-                recurring ? "translate-x-4" : "translate-x-0.5"
+                "absolute left-0 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                recurring ? "translate-x-[1.125rem]" : "translate-x-0.5"
               )}
             />
           </button>
