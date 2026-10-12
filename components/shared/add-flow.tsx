@@ -36,9 +36,8 @@ interface FormState {
  * bottom bar):
  *
  *   1. TypeSwitch Consumo | Préstamo
- *   2. Divisoria de 1 px
- *   3. Formulario: importe + una card por campo, sobre el fondo de la app
- *   4. Tilde ✓ de guardar, fijo abajo a la derecha (`StickySaveBar`)
+ *   2. Formulario: importe + una card por campo, sobre el fondo de la app
+ *   3. Tilde ✓ de guardar, fijo abajo a la derecha (`StickySaveBar`)
  *
  * Ambos formularios quedan montados y sólo se alterna cuál se ve con `hidden`,
  * así los datos ya cargados se conservan al ir y volver entre modos. El botón
@@ -89,8 +88,6 @@ export function AddFlow({
             onChange={setMode}
           />
         )}
-
-        <div className="-mx-4 border-t border-border" />
 
         <div hidden={mode !== "consumo"}>
           <NewExpenseHero

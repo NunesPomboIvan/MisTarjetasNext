@@ -333,7 +333,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
             <Input
               id="description"
               aria-label="Descripción"
-              placeholder="¿Qué préstamo es? Ej: personal auto"
+              placeholder="Ingresar descripción..."
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);
@@ -352,7 +352,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
           <Input
             id="bank"
             aria-label="Banco o entidad"
-            placeholder="Banco o entidad. Ej: Galicia, Santander…"
+            placeholder="Ingresar banco o entidad..."
             value={bank}
             onChange={(e) => setBank(e.target.value)}
           />
@@ -401,15 +401,15 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
               )}
             </div>
 
+            {/* Vencimiento de la primera cuota — sin título, el placeholder alcanza */}
             <div className="space-y-1">
-              <Label required className={FIELD_LABEL}>Vencimiento primera cuota</Label>
               <DatePickerField
                 value={firstDue}
                 onChange={(v) => {
                   setFirstDue(v);
                   clearError("firstDue");
                 }}
-                placeholder="Elegí una fecha"
+                placeholder="Vencimiento primera cuota"
                 className={cn(FIELD_ROW, errors.firstDue && "border-destructive")}
               />
               {errors.firstDue && (
