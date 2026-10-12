@@ -318,7 +318,7 @@ export function LoanForm({ globalRate = null, formId, onStateChange }: LoanFormP
       </AmountHero>
 
       {/* Card única con el resto de los campos — misma estructura que Consumo */}
-      <div className="rounded-2xl border border-border bg-transparent divide-y divide-border/60">
+      <div className="glass-card rounded-[20px] divide-y divide-border/60">
         {/* Descripción — sin título, el placeholder alcanza */}
         <div className="px-4 py-3">
           <Input

@@ -381,8 +381,9 @@ export function NewExpenseHero({
           </div>
         )}
 
-        {/* Recuadro del formulario: una card por campo adentro */}
-        <div className="space-y-3 rounded-lg border border-border bg-transparent p-3">
+        {/* Recuadro del formulario: una card por campo adentro, con el mismo
+            bloque glass del listado de Períodos */}
+        <div className="glass-card space-y-3 rounded-[20px] p-3">
           {/* Negocio — sin título, el placeholder alcanza */}
           <div>
             <div className={FIELD_INPUT}>
