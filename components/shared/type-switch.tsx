@@ -14,7 +14,10 @@ interface TypeSwitchProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   "aria-label"?: string;
-  /** "pill" (default) o "square": bordes levemente redondeados (8 px / 6 px). */
+  /**
+   * "pill" (default) o "square": la variante de las pantallas de alta, con el
+   * formato de sus items — sólo borde, sin relleno, y el activo en azul tenue.
+   */
   shape?: "pill" | "square";
 }
 
@@ -38,7 +41,8 @@ export function TypeSwitch<T extends string>({
   "aria-label": ariaLabel = "Selector de tipo",
   shape = "pill",
 }: TypeSwitchProps<T>) {
-  const radius = shape === "square" ? "rounded-md" : "rounded-full";
+  const square = shape === "square";
+  const radius = square ? "rounded-md" : "rounded-full";
   const activeIndex = Math.max(
     0,
     options.findIndex((o) => o.value === value)
@@ -49,15 +53,18 @@ export function TypeSwitch<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "relative flex h-11 w-full border border-white/[0.07] bg-secondary p-1",
-        shape === "square" ? "rounded-lg" : "rounded-full"
+        "relative flex w-full border p-1",
+        square
+          ? "h-9 rounded-lg border-border bg-transparent"
+          : "h-11 rounded-full border-white/[0.07] bg-secondary"
       )}
     >
       {/* Pill activo deslizante */}
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] bg-primary transition-transform duration-200 ease-out",
+          "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] transition-transform duration-200 ease-out",
+          square ? "border border-primary bg-primary/10" : "bg-primary",
           radius
         )}
         style={{
@@ -75,11 +82,16 @@ export function TypeSwitch<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "relative z-10 flex-1 text-[14px] transition-colors",
+              "relative z-10 flex-1 transition-colors",
               radius,
+              square ? "text-[13px] font-semibold" : "text-[14px]",
               active
-                ? "font-semibold text-primary-foreground"
-                : "font-normal text-muted-foreground"
+                ? square
+                  ? "text-primary"
+                  : "font-semibold text-primary-foreground"
+                : square
+                  ? "text-muted-foreground"
+                  : "font-normal text-muted-foreground"
             )}
           >
             {opt.label}

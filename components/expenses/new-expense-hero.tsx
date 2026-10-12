@@ -708,28 +708,27 @@ function CardSelector({
           Consumo fijo
         </button>
 
-        {/* Selector de tarjeta: flechita a la izquierda y el nombre contra el
-            margen derecho */}
+        {/* Selector de tarjeta: nombre + flechita */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Elegir tarjeta"
           className={cn(
             FIELD_ROW,
-            "flex min-w-0 flex-1 items-center gap-2 transition-colors",
+            "flex min-w-0 flex-1 items-center gap-2 text-left transition-colors",
             error ? "border-destructive text-destructive" : "text-foreground"
           )}
         >
-          <ChevronDown className="mr-auto shrink-0 text-muted-foreground" />
           {selected && (
             <span
               className="h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: selected.color }}
             />
           )}
-          <span className="min-w-0 truncate">
+          <span className="min-w-0 flex-1 truncate">
             {selected ? cardLabel(selected) : "Seleccioná"}
           </span>
+          <ChevronDown className="shrink-0 text-muted-foreground" />
         </button>
       </div>
       {recurring && (
