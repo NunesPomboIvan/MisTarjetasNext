@@ -220,7 +220,7 @@ export function LoanList({ active, archived }: LoanListProps) {
 
 function StackedLoans({ items }: { items: LoanItem[] }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {items.map((it) => (
         <Link
           key={it.loan.id}
