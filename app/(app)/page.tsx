@@ -19,6 +19,7 @@ import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
 import { LockScroll } from "@/components/shared/lock-scroll";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { HOME_CARD_ORDER_COOKIE, parseHomeCardOrder, sortHomeCards } from "@/lib/home-card-order";
 import type { Card, Expense, Category } from "@/lib/supabase/database.types";
 
@@ -31,7 +32,18 @@ function greeting(hour: number): string {
   return "Buenas noches";
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ comprobante?: string }>;
+}) {
+  // El Atajo de iOS "Cargar en Tarjetas" abre `/?comprobante=<texto del PDF>`:
+  // lo mandamos directo al alta de consumo con los datos precargados.
+  const { comprobante } = await searchParams;
+  if (comprobante?.trim()) {
+    redirect(`/nuevo?comprobante=${encodeURIComponent(comprobante)}`);
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { titulares, activeId: activeTitularId, active: activeTitular } = await resolveTitulares();

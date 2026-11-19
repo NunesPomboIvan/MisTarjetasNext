@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { NewExpenseHero } from "@/components/expenses/new-expense-hero";
+import { NewExpenseHero, type ReceiptPrefill } from "@/components/expenses/new-expense-hero";
 import { LoanForm } from "@/components/loans/loan-form";
 import { StickySaveBar } from "@/components/shared/sticky-save-bar";
 import { TypeSwitch } from "@/components/shared/type-switch";
@@ -23,6 +23,8 @@ interface AddFlowProps {
   feeMode?: boolean;
   /** Arranca el consumo como "fijo mensual" (recurrente). */
   recurringMode?: boolean;
+  /** Datos de un comprobante de Mercado Pago compartido desde el Atajo de iOS. */
+  receipt?: ReceiptPrefill;
 }
 
 interface FormState {
@@ -51,6 +53,7 @@ export function AddFlow({
   globalRate,
   feeMode = false,
   recurringMode = false,
+  receipt,
 }: AddFlowProps) {
   const [mode, setMode] = React.useState<Mode>(feeMode ? "consumo" : initialMode);
 
@@ -97,6 +100,7 @@ export function AddFlow({
             feeMode={feeMode}
             recurringMode={recurringMode}
             globalRate={globalRate}
+            receipt={receipt}
             formId={CONSUMO_FORM_ID}
             onStateChange={setConsumoState}
           />

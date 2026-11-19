@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, ChevronDown, Loader2, Plus, Repeat, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, FileText, Loader2, Plus, Repeat, X } from "lucide-react";
 
 import { expenseSchema, type ExpenseFormData } from "@/lib/schemas/expense";
 import {
@@ -16,6 +16,7 @@ import {
 import { createExpense } from "@/actions/expenses";
 import { createCategory } from "@/actions/categories";
 import { useLastCard } from "@/lib/hooks/use-last-card";
+import { receiptNote, type ParsedReceipt } from "@/lib/receipts/mercadopago";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,10 +54,22 @@ import {
   FIELD_ROW,
   fieldOption,
 } from "@/components/shared/field-styles";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { cardLabel } from "@/lib/cards/card-type-label";
 import type { Card, Category } from "@/lib/supabase/database.types";
 
+/** Comprobante de Mercado Pago compartido desde el Atajo de iOS. */
+export interface ReceiptPrefill {
+  /** null si el texto no se pudo interpretar. */
+  parsed: ParsedReceipt | null;
+  /** Consumo ya cargado con el mismo n.° de operación, si existe. */
+  existing: {
+    id: string;
+    description: string;
+    total_amount: number;
+    expense_date: string;
+  } | null;
+}
 
 interface NewExpenseHeroProps {
   cards: Card[];
@@ -68,6 +81,8 @@ interface NewExpenseHeroProps {
   globalRate?: number | null;
   /** Arranca el form como "consumo fijo mensual" (recurrente) */
   recurringMode?: boolean;
+  /** Precarga importe, comercio, fecha y n.° de operación de un comprobante. */
+  receipt?: ReceiptPrefill;
   /**
    * Id del `<form>`: lo usa el botón de guardar fijo del shell (que vive fuera
    * del form) para dispararlo con `requestSubmit()`.
@@ -99,6 +114,7 @@ export function NewExpenseHero({
   feeMode = false,
   globalRate = null,
   recurringMode = false,
+  receipt,
   formId,
   onStateChange,
 }: NewExpenseHeroProps) {
@@ -149,9 +165,13 @@ export function NewExpenseHero({
       installments: 1,
       recurring: recurringMode,
       tags: [],
-      expense_date: today,
-      description: "",
+      expense_date: receipt?.parsed?.date ?? today,
+      description: receipt?.parsed?.merchant ?? "",
       category_id: feeMode ? feeCategoryId : undefined,
+      ...(receipt?.parsed?.amount ? { total_amount: receipt.parsed.amount } : {}),
+      ...(receipt?.parsed?.operationId
+        ? { notes: receiptNote(receipt.parsed.operationId) }
+        : {}),
     },
   });
 
@@ -302,6 +322,8 @@ export function NewExpenseHero({
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-3"
       >
+        {receipt && <ReceiptNotice receipt={receipt} />}
+
         {/* Importe — sin título: el elemento principal del formulario */}
         <Controller
           control={control}
@@ -1021,5 +1043,49 @@ function CategoryGrid({ categories, value, onChange, onCategoryCreated }: Catego
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+/** Aviso arriba del form cuando los datos vienen de un comprobante. */
+function ReceiptNotice({ receipt }: { receipt: ReceiptPrefill }) {
+  if (receipt.existing) {
+    const e = receipt.existing;
+    return (
+      <div className="flex gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="space-y-1">
+          <p className="font-semibold">Este comprobante ya está cargado</p>
+          <p className="text-muted-foreground">
+            {e.description} por {formatCurrency(e.total_amount)} el{" "}
+            {formatDate(e.expense_date)}.{" "}
+            <GuardedLink href={`/expenses/${e.id}`} className="font-medium text-primary underline">
+              Ver consumo
+            </GuardedLink>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!receipt.parsed) {
+    return (
+      <div className="flex gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <p className="text-muted-foreground">
+          No pude leer el comprobante. Cargá los datos a mano.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 text-sm">
+      <FileText className="mt-0.5 size-4 shrink-0 text-primary" />
+      <p className="text-muted-foreground">
+        Datos cargados desde el comprobante de Mercado Pago. Elegí la{" "}
+        <strong className="text-foreground">tarjeta</strong> y la{" "}
+        <strong className="text-foreground">categoría</strong>, y guardá.
+      </p>
+    </div>
   );
 }
