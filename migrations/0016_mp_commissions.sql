@@ -13,12 +13,9 @@ create table if not exists user_settings (
   updated_at     timestamptz not null default now()
 );
 
--- RLS: cada usuario sólo ve y modifica su propia fila. (Supabase puede
--- habilitar RLS solo al crear la tabla; sin policy, el upsert falla.)
-alter table user_settings enable row level security;
-
+-- Igual que el resto del schema en esta instancia mono-usuario: la app usa
+-- la anon key sin login (auth.uid() es null), así que una policy por
+-- usuario bloquearía todo. Supabase puede habilitar RLS solo al crear la
+-- tabla: se deshace explícitamente.
 drop policy if exists "users manage their own settings" on user_settings;
-create policy "users manage their own settings"
-  on user_settings for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+alter table user_settings disable row level security;
