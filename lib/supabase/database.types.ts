@@ -32,6 +32,8 @@ export interface Database {
           expiry: string | null;
           titular_id: string | null;
           archived: boolean;
+          /** Consumos del día de cierre: opción "resumen siguiente" marcada por defecto. */
+          close_day_next: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -53,6 +55,7 @@ export interface Database {
           expiry?: string | null;
           titular_id?: string | null;
           archived?: boolean;
+          close_day_next?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -74,6 +77,7 @@ export interface Database {
           expiry?: string | null;
           titular_id?: string | null;
           archived?: boolean;
+          close_day_next?: boolean;
           updated_at?: string;
         };
         Relationships: [];
@@ -161,6 +165,8 @@ export interface Database {
           tags: string[];
           /** Índices 0-based excluidos del cálculo (ver installment_amounts). Se usa para "eliminar solo este período" en recurrentes. */
           excluded_installments: number[];
+          /** Compra del día de cierre que el banco pasó al resumen siguiente (true). */
+          next_period: boolean | null;
           created_at: string;
           updated_at: string;
         };
@@ -185,6 +191,7 @@ export interface Database {
           notes?: string | null;
           tags?: string[];
           excluded_installments?: number[];
+          next_period?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -209,6 +216,7 @@ export interface Database {
           notes?: string | null;
           tags?: string[];
           excluded_installments?: number[];
+          next_period?: boolean | null;
           updated_at?: string;
         };
         Relationships: [

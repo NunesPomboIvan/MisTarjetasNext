@@ -47,6 +47,7 @@ import { InstallmentPresets } from "./installment-presets";
 import { DescriptionAutocomplete } from "./description-autocomplete";
 import { useLastCard } from "@/lib/hooks/use-last-card";
 import { cn, formatCurrency } from "@/lib/utils";
+import { CloseDayChoice, resolveNextPeriod } from "./close-day-choice";
 import type { Card, Category, Expense } from "@/lib/supabase/database.types";
 import { format } from "date-fns";
 
@@ -142,6 +143,7 @@ export function ExpenseForm({
           currency: expense.currency,
           notes: expense.notes ?? "",
           tags: expense.tags ?? [],
+          next_period: expense.next_period ?? false,
         }
       : {
           card_id: initialCard,
@@ -162,6 +164,9 @@ export function ExpenseForm({
   const currency = watch("currency");
   const exchangeRate = watch("exchange_rate");
   const isUsd = currency === "USD";
+  const formCardId = watch("card_id");
+  const formExpenseDate = watch("expense_date");
+  const nextPeriodChoice = watch("next_period");
   const amountPrefix = isUsd ? "US$" : "$";
 
   useUnsavedChangesGuard(isDirty && !savedOk);
@@ -240,6 +245,12 @@ export function ExpenseForm({
       ...data,
       discount_percentage: discountActive ? data.discount_percentage : null,
       discount_cap: discountActive ? data.discount_cap : null,
+      // Sólo se guarda si la compra cae el día de cierre de la tarjeta.
+      next_period: resolveNextPeriod(
+        cards.find((c) => c.id === data.card_id),
+        data.expense_date,
+        data.next_period
+      ),
     };
 
     // Al editar una cuota puntual, comparamos contra el importe actual de ESA
@@ -716,6 +727,16 @@ export function ExpenseForm({
             </div>
           )}
         </div>
+        )}
+
+        {/* Compra del día de cierre: ¿este resumen o el siguiente? */}
+        {!editingSingleInstallment && (
+          <CloseDayChoice
+            card={cards.find((c) => c.id === formCardId)}
+            date={formExpenseDate}
+            value={nextPeriodChoice}
+            onChange={(v) => setValue("next_period", v, { shouldDirty: true })}
+          />
         )}
 
         {/* Sección avanzada (collapsable) */}

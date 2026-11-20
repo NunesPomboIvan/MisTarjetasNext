@@ -23,6 +23,7 @@ import {
   parseLocalDate,
   addMonthsToKey,
   applyPeriodDatesChange,
+  getCloseDayChoice,
   type CardForPeriod,
   type Period,
 } from "@/lib/periods/calculate";
@@ -769,5 +770,49 @@ describe("consumos anclados — el cambio de fechas no re-asigna cuotas", () => 
 
     expect(expenseFallsInPeriod(exp, may)).toBe(true);
     expect(getPeriodForDate(CARD_WITH_HISTORY, d(2026, 5, 15)).key).toBe("2026-05");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Compras del día de cierre que el banco pasa al resumen siguiente
+// ─────────────────────────────────────────────────────────────
+describe("next_period — compra del día de cierre", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("sin flag, la compra del día de cierre entra en el resumen que cierra", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+    const expense = { expense_date: "2026-03-23", installments: 1 };
+    expect(getInstallmentPeriod(CARD_23_10, expense, 0).key).toBe("2026-03");
+  });
+
+  it("con next_period, arranca en el resumen siguiente con todas sus cuotas", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+    const expense = { expense_date: "2026-03-23", installments: 3, next_period: true };
+    expect(getInstallmentPeriod(CARD_23_10, expense, 0).key).toBe("2026-04");
+    expect(getInstallmentPeriod(CARD_23_10, expense, 2).key).toBe("2026-06");
+    const march = getPeriodByKey(CARD_23_10, "2026-03");
+    const april = getPeriodByKey(CARD_23_10, "2026-04");
+    expect(expenseFallsInPeriod(expense, march)).toBe(false);
+    expect(getInstallmentIndexInPeriod(expense, april)).toBe(0);
+  });
+
+  it("next_period no tiene efecto si la fecha no es el día de cierre", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+    const expense = { expense_date: "2026-03-22", installments: 1, next_period: true };
+    expect(getInstallmentPeriod(CARD_23_10, expense, 0).key).toBe("2026-03");
+  });
+
+  it("getCloseDayChoice sólo responde el día de cierre", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(d(2026, 3, 10));
+    const choice = getCloseDayChoice(CARD_23_10, d(2026, 3, 23));
+    expect(choice?.current.key).toBe("2026-03");
+    expect(choice?.next.key).toBe("2026-04");
+    expect(getCloseDayChoice(CARD_23_10, d(2026, 3, 24))).toBeNull();
+    // Cierre el 31 en un mes de 30 días: cierra el 30.
+    expect(getCloseDayChoice(CARD_31_15, d(2026, 4, 30))?.next.key).toBe("2026-05");
   });
 });

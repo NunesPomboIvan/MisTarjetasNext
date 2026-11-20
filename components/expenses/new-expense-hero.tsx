@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { DescriptionAutocomplete } from "./description-autocomplete";
+import { CloseDayChoice, resolveNextPeriod } from "./close-day-choice";
 import { AmountInput } from "./amount-input";
 import { InstallmentPresets } from "./installment-presets";
 import { AmountHero } from "@/components/shared/amount-hero";
@@ -198,7 +199,9 @@ export function NewExpenseHero({
   // Comisión de Mercado Pago (pago con tarjeta de crédito): el comprobante
   // trae el importe sin la comisión; con el tilde se suma el % de la red de la
   // tarjeta elegida. `commissionBase` = importe sin comisión (null = apagado).
-  const selectedCardType = cards.find((c) => c.id === cardId)?.type;
+  const selectedCard = cards.find((c) => c.id === cardId);
+  const selectedCardType = selectedCard?.type;
+  const nextPeriodChoice = watch("next_period");
   const commissionPct = selectedCardType ? mpCommissions?.[selectedCardType] : undefined;
   const [commissionBase, setCommissionBase] = React.useState<number | null>(null);
 
@@ -309,6 +312,12 @@ export function NewExpenseHero({
       ...data,
       discount_percentage: discountActive ? data.discount_percentage : null,
       discount_cap: discountActive ? data.discount_cap : null,
+      // Sólo se guarda si la compra cae el día de cierre de la tarjeta.
+      next_period: resolveNextPeriod(
+        cards.find((c) => c.id === data.card_id),
+        data.expense_date,
+        data.next_period
+      ),
     };
     if (commissionBase != null && commissionPct) {
       const note = `Incluye comisión Mercado Pago ${formatPct(commissionPct)} sobre ${formatCurrency(commissionBase)}`;
@@ -524,6 +533,14 @@ export function NewExpenseHero({
               <p className="mt-1.5 text-xs text-destructive">{errors.expense_date.message}</p>
             )}
           </div>
+
+          {/* Compra del día de cierre: ¿este resumen o el siguiente? */}
+          <CloseDayChoice
+            card={selectedCard}
+            date={expenseDate}
+            value={nextPeriodChoice}
+            onChange={(v) => setValue("next_period", v, { shouldDirty: true })}
+          />
 
           {/* Comisión de Mercado Pago (sólo si la red de la tarjeta tiene % en Ajustes) */}
           {commissionPct && !isUsd && (

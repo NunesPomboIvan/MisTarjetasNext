@@ -54,6 +54,7 @@ export type ParentCardOption = Pick<
   | "due_date"
   | "color"
   | "credit_limit"
+  | "close_day_next"
 >;
 
 interface CardFormProps {
@@ -113,11 +114,13 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
           holder_name: card.holder_name ?? undefined,
           expiry: card.expiry ?? undefined,
           archived: card.archived,
+          close_day_next: card.close_day_next ?? false,
         }
       : {
           color: "#6366f1",
           is_extension: false,
           archived: false,
+          close_day_next: false,
         } as Partial<CardFormData>,
   });
 
@@ -128,6 +131,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
   const dueDate = watch("due_date");
   const bankValue = watch("bank");
   const creditLimit = watch("credit_limit");
+  const closeDayNext = watch("close_day_next");
 
   /** Cuando se selecciona/cambia la tarjeta titular en modo "adicional",
    *  copiamos automáticamente banco, tipo, fechas, color, límite y vencimiento.
@@ -145,6 +149,7 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
     setValue("due_date", parent.due_date, { shouldDirty: true, shouldValidate: true });
     setValue("color", parent.color, { shouldDirty: true });
     setValue("credit_limit", parent.credit_limit ?? undefined, { shouldDirty: true });
+    setValue("close_day_next", parent.close_day_next ?? false, { shouldDirty: true });
     // last_four: en adicionales el plástico suele tener otros 4 dígitos.
     // No los copiamos: el usuario los pone manualmente.
   }, [isExtension, parentCardId, availableParents, setValue]);
@@ -434,6 +439,32 @@ export function CardForm({ card, availableParents = [], returnTo }: CardFormProp
         igual o posterior al de cierre, vence el mismo mes (ej: cierra 05, vence 19);
         si es anterior, vence el mes siguiente.
       </p>
+
+      {/* Consumos del día de cierre — heredado del titular en adicionales */}
+      <label
+        className={cn(
+          "flex cursor-pointer items-start gap-3 rounded-xl border border-border p-3",
+          isExtension && "pointer-events-none opacity-60"
+        )}
+        aria-disabled={isExtension}
+      >
+        <input
+          type="checkbox"
+          checked={closeDayNext ?? false}
+          onChange={(e) => setValue("close_day_next", e.target.checked, { shouldDirty: true })}
+          disabled={isExtension}
+          className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+        />
+        <span className="space-y-0.5">
+          <span className="block text-sm font-medium">
+            Lo que compro el día de cierre suele ir al resumen siguiente
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            Al cargar un consumo con esa fecha, vas a poder elegir el resumen. Esto define
+            qué opción viene marcada.
+          </span>
+        </span>
+      </label>
 
       {/* Color */}
       <div className="space-y-2">

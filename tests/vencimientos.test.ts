@@ -26,6 +26,7 @@ function makeCard(overrides: Partial<Card> = {}): Card {
     expiry: null,
     titular_id: null,
     archived: false,
+    close_day_next: false,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
     ...overrides,

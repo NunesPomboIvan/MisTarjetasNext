@@ -88,6 +88,9 @@ export async function updateCard(id: string, formData: CardFormData): Promise<Ac
       color: parsed.data.color,
       close_date: parsed.data.close_date,
       due_date: parsed.data.due_date,
+      ...(parsed.data.close_day_next != null
+        ? { close_day_next: parsed.data.close_day_next }
+        : {}),
     })
     .eq("parent_card_id", id)
     .eq("user_id", user.id);

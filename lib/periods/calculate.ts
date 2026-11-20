@@ -27,6 +27,7 @@ import {
   format,
   addDays,
   differenceInCalendarDays,
+  isSameDay,
 } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -81,6 +82,8 @@ export interface CardForPeriod {
   close_date: string; // YYYY-MM-DD — solo se usa el día del mes
   due_date: string;   // YYYY-MM-DD — solo se usa el día del mes
   date_overrides?: PeriodDateOverrides | null;
+  /** Consumos del día de cierre: preferencia para precargar el alta (no afecta cálculos). */
+  close_day_next?: boolean | null;
 }
 
 /** Subconjunto de Expense necesario para cálculos */
@@ -100,6 +103,11 @@ export interface ExpenseForPeriod {
   recurring?: boolean | null;
   /** Índices 0-based excluidos (ver getInstallmentIndexInPeriod). "Eliminar solo este período" en recurrentes. */
   excluded_installments?: number[] | null;
+  /**
+   * Compra hecha el DÍA DE CIERRE que el banco pasó al resumen siguiente:
+   * la cuota 0 (y con ella todas) arranca un período después.
+   */
+  next_period?: boolean | null;
 }
 
 export type PeriodStatus = "past" | "current" | "future";
@@ -418,7 +426,27 @@ function getExpenseBaseKey(card: CardForPeriod, expense: ExpenseForPeriod): stri
     typeof expense.expense_date === "string"
       ? parseLocalDate(expense.expense_date)
       : expense.expense_date;
-  return getPeriodForDate(card, expenseDate).key;
+  const period = getPeriodForDate(card, expenseDate);
+  // Sólo aplica si la compra cayó justo el día de cierre (si después se
+  // cambia la fecha o el cierre, el flag deja de tener efecto).
+  if (expense.next_period && isSameDay(expenseDate, period.end)) {
+    return addMonthsToKey(period.key, 1);
+  }
+  return period.key;
+}
+
+/**
+ * Si la fecha cae justo el día de cierre de la tarjeta, devuelve el período
+ * que cierra ese día y el siguiente (para elegir en cuál entra la compra).
+ * null si no es día de cierre.
+ */
+export function getCloseDayChoice(
+  card: CardForPeriod,
+  date: Date
+): { current: Period; next: Period } | null {
+  const current = getPeriodForDate(card, date);
+  if (!isSameDay(date, current.end)) return null;
+  return { current, next: getPeriodByKey(card, addMonthsToKey(current.key, 1)) };
 }
 
 /**

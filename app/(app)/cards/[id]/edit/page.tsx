@@ -15,7 +15,7 @@ export default async function EditCardPage({ params }: { params: Promise<{ id: s
 
   let parentsQuery = supabase
     .from("cards")
-    .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit")
+    .select("id, name, last_four, bank, type, close_date, due_date, color, credit_limit, close_day_next")
     .eq("user_id", user!.id)
     .eq("archived", false)
     .eq("is_extension", false)

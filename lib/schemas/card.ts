@@ -35,6 +35,8 @@ export const cardSchema = z.object({
     .nullable()
     .optional(),
   archived: z.boolean().default(false),
+  /** Consumos del día de cierre: opción "resumen siguiente" marcada por defecto. */
+  close_day_next: z.boolean().optional(),
 });
 
 export type CardFormData = z.infer<typeof cardSchema>;

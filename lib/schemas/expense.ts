@@ -47,6 +47,8 @@ export const expenseSchema = z
       .nullable()
       .optional(),
     notes: z.string().max(500, "Máximo 500 caracteres").nullable().optional(),
+    // Compra del día de cierre que el banco pasó al resumen siguiente.
+    next_period: z.boolean().nullable().optional(),
     tags: z.array(z.string().max(30)).max(10, "Máximo 10 tags").default([]),
   })
   .superRefine((data, ctx) => {
