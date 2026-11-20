@@ -42,8 +42,10 @@ const MONTHS: Record<string, number> = {
 // van en superíndice y el texto queda "$ 12.58000"), pero no si son el
 // comienzo de una fecha ("05/03/2026").
 const AMOUNT_RE = /\$\s*(\d{1,3}(?:[., ]\d{3})+|\d+)(?:[,\s]?(\d{2}))?(?![\d/])/;
+// "19 de noviembre de 2026, 12:03 hs." (pago) o "19/noviembre/2026 a las
+// 22:21." (transferencia).
 const LONG_DATE_RE =
-  /(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(\d{4})(?:,?\s*(\d{1,2}:\d{2}))?/i;
+  /(\d{1,2})(?:\s+de\s+|\s*\/\s*)([a-záéíóú]+)(?:\s+de\s+|\s*\/\s*)(\d{4})(?:,?\s*(?:a\s+las\s+)?(\d{1,2}:\d{2}))?/i;
 const SHORT_DATE_RE = /(\d{2})\/(\d{2})\/(\d{4})/;
 const OPERATION_RE = /operaci[oó]n[^\d]{0,40}(\d{6,})/i;
 const ID_LINE_RE = /^(CUIT|CUIL|CVU|CBU|DNI|Alias)\b/i;

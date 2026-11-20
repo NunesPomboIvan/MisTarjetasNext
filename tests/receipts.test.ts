@@ -87,6 +87,40 @@ N.° de operación de Mercado Pago
     );
   });
 
+  it("lee el comprobante de transferencia en imagen (texto reconocido)", () => {
+    const img = `mercado
+pago
+Comprobante de transferencia
+19/noviembre/2026 a las 22:21.
+$ 37.800
+Motivo: Varios
+Origen y destino
+Ivan Nunes Pombo
+Mercado Pago
+CVU: 0000003100051871641290
+CUIT/CUIL: 20-38487029-6
+Martin Acuña
+Mercado Pago
+CVU: 0000003100085186396165
+CUIT/CUIL: 20-35976005-2
+N.° de operación de Mercado Pago
+189550450163
+Mago, tu asistente
+Hacé pagos y
+transferencias por
+mensaje o audio
+Transferí $ 3.00
+para Alejandra
+Enviado!`;
+    expect(parseMercadoPagoReceipt(img)).toEqual({
+      amount: 37800,
+      merchant: "Martin Acuña",
+      date: "2026-11-19",
+      time: "22:21",
+      operationId: "189550450163",
+    });
+  });
+
   it("devuelve null si el texto no es un comprobante", () => {
     expect(parseMercadoPagoReceipt("")).toBeNull();
     expect(parseMercadoPagoReceipt("hola que tal")).toBeNull();
