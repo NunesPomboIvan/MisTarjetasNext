@@ -56,6 +56,37 @@ describe("parseMercadoPagoReceipt", () => {
     );
   });
 
+  it("lee el texto real del PDF, con los centavos pegados al importe", () => {
+    const pdf = `Comprobante de pago
+Jueves, 19 de noviembre de 2026, 19:41 hs.
+
+$ 12.58000
+Origen y destino
+
+Ivan Nunes Pombo
+CUIT: 20384870296
+Mercado Pago
+
+DIA
+CUIT: 30685849751
+Mercado Pago
+
+N.° de operación de Mercado Pago
+
+190605700184`;
+    expect(parseMercadoPagoReceipt(pdf)).toEqual({
+      amount: 12580,
+      merchant: "DIA",
+      date: "2026-11-19",
+      time: "19:41",
+      operationId: "190605700184",
+    });
+    expect(parseMercadoPagoReceipt(pdf.replace("$ 12.58000", "$ 4.60000"))?.amount).toBe(4600);
+    expect(parseMercadoPagoReceipt(pdf.replace("$ 12.58000", "$ 1.234.56750"))?.amount).toBe(
+      1234567.5,
+    );
+  });
+
   it("devuelve null si el texto no es un comprobante", () => {
     expect(parseMercadoPagoReceipt("")).toBeNull();
     expect(parseMercadoPagoReceipt("hola que tal")).toBeNull();
