@@ -337,6 +337,25 @@ export interface Database {
           }
         ];
       };
+      user_settings: {
+        Row: {
+          user_id: string;
+          /** % de comisión de Mercado Pago por red: { visa: 6.53, amex: 6.99 } */
+          mp_commissions: Partial<Record<CardType, number>>;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          mp_commissions?: Partial<Record<CardType, number>>;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          mp_commissions?: Partial<Record<CardType, number>>;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       exchange_rate_history: {
         Row: {
           id: string;

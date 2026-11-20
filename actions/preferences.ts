@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
+import { parseMpCommissions, type MpCommissions } from "@/lib/commissions/mercadopago";
 import {
   HOME_CARD_ORDERS,
   HOME_CARD_ORDER_COOKIE,
@@ -26,5 +28,27 @@ export async function setHomeCardOrder(order: HomeCardOrder): Promise<Preference
 
   revalidatePath("/");
   revalidatePath("/settings");
+  return { success: true };
+}
+
+/** Guarda los % de comisión de Mercado Pago por red de tarjeta. */
+export async function setMpCommissions(rates: MpCommissions): Promise<PreferenceResult> {
+  const clean = parseMpCommissions(rates);
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert(
+      { user_id: user.id, mp_commissions: clean, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/settings");
+  revalidatePath("/nuevo");
+  revalidatePath("/expenses/new");
   return { success: true };
 }

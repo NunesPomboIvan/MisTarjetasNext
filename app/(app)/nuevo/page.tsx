@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getActiveTitularId } from "@/lib/titulares/server";
 import { getGlobalExchangeRate } from "@/lib/exchange/server";
+import { getMpCommissions } from "@/lib/commissions/server";
 import { AddFlow } from "@/components/shared/add-flow";
 import { parseMercadoPagoReceipt, receiptNote } from "@/lib/receipts/mercadopago";
 import type { ReceiptPrefill } from "@/components/expenses/new-expense-hero";
@@ -27,7 +28,7 @@ export default async function NuevoPage({
     .order("name");
   if (activeTitularId) cardsQuery = cardsQuery.eq("titular_id", activeTitularId);
 
-  const [cardsResult, categoriesResult, globalRate] = await Promise.all([
+  const [cardsResult, categoriesResult, globalRate, mpCommissions] = await Promise.all([
     cardsQuery,
     supabase
       .from("categories")
@@ -36,6 +37,7 @@ export default async function NuevoPage({
       .order("is_preset", { ascending: false })
       .order("name"),
     getGlobalExchangeRate(),
+    getMpCommissions(),
   ]);
 
   // Comprobante compartido desde Mercado Pago (Atajo de iOS).
@@ -62,6 +64,7 @@ export default async function NuevoPage({
       categories={categoriesResult.data ?? []}
       defaultCardId={card_id}
       globalRate={globalRate?.rate ?? null}
+      mpCommissions={mpCommissions}
       receipt={receipt}
     />
   );

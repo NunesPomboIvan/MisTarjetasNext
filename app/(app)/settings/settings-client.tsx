@@ -35,6 +35,8 @@ import { setHomeCardOrder } from "@/actions/preferences";
 import { HOME_CARD_ORDERS, type HomeCardOrder } from "@/lib/home-card-order";
 import type { Category, Card } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils";
+import type { MpCommissions } from "@/lib/commissions/mercadopago";
+import { MpCommissionsSection } from "./mp-commissions-section";
 
 const THEMES = [
   { value: "light",  label: "Claro",     icon: Sun     },
@@ -124,18 +126,20 @@ function deriveColors(baseHex: string): { bg: string; text: string } {
   };
 }
 
-type ExportCard = Pick<Card, "id" | "name" | "bank" | "last_four" | "is_extension">;
+type ExportCard = Pick<Card, "id" | "name" | "bank" | "last_four" | "is_extension" | "type">;
 
 interface SettingsClientProps {
   categories: Category[];
   cards: ExportCard[];
   homeCardOrder: HomeCardOrder;
+  mpCommissions: MpCommissions;
 }
 
 export function SettingsClient({
   categories: initialCategories,
   cards,
   homeCardOrder: initialHomeCardOrder,
+  mpCommissions,
 }: SettingsClientProps) {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -456,6 +460,12 @@ export function SettingsClient({
           })}
         </div>
       </section>
+
+      {/* Comisión de Mercado Pago (pagos con tarjeta de crédito) */}
+      <MpCommissionsSection
+        initial={mpCommissions}
+        cardTypes={[...new Set(cards.map((c) => c.type))]}
+      />
 
       {/* Categorías personalizadas */}
       <section className="rounded-2xl border border-border bg-card p-4 space-y-3">

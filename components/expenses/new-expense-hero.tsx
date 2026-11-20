@@ -17,6 +17,11 @@ import { createExpense } from "@/actions/expenses";
 import { createCategory } from "@/actions/categories";
 import { useLastCard } from "@/lib/hooks/use-last-card";
 import { receiptNote, type ParsedReceipt } from "@/lib/receipts/mercadopago";
+import {
+  formatPct,
+  withCommission,
+  type MpCommissions,
+} from "@/lib/commissions/mercadopago";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,6 +88,8 @@ interface NewExpenseHeroProps {
   recurringMode?: boolean;
   /** Precarga importe, comercio, fecha y n.° de operación de un comprobante. */
   receipt?: ReceiptPrefill;
+  /** % de comisión de Mercado Pago por red (Ajustes): habilita el tilde para sumarla. */
+  mpCommissions?: MpCommissions;
   /**
    * Id del `<form>`: lo usa el botón de guardar fijo del shell (que vive fuera
    * del form) para dispararlo con `requestSubmit()`.
@@ -115,6 +122,7 @@ export function NewExpenseHero({
   globalRate = null,
   recurringMode = false,
   receipt,
+  mpCommissions,
   formId,
   onStateChange,
 }: NewExpenseHeroProps) {
@@ -187,6 +195,37 @@ export function NewExpenseHero({
   const expenseDate = watch("expense_date");
   const isUsd = currency === "USD";
 
+  // Comisión de Mercado Pago (pago con tarjeta de crédito): el comprobante
+  // trae el importe sin la comisión; con el tilde se suma el % de la red de la
+  // tarjeta elegida. `commissionBase` = importe sin comisión (null = apagado).
+  const selectedCardType = cards.find((c) => c.id === cardId)?.type;
+  const commissionPct = selectedCardType ? mpCommissions?.[selectedCardType] : undefined;
+  const [commissionBase, setCommissionBase] = React.useState<number | null>(null);
+
+  function toggleCommission(on: boolean) {
+    if (on) {
+      if (!totalAmount || !commissionPct) return;
+      setCommissionBase(totalAmount);
+      setValue("total_amount", withCommission(totalAmount, commissionPct), { shouldDirty: true });
+    } else if (commissionBase != null) {
+      setValue("total_amount", commissionBase, { shouldDirty: true });
+      setCommissionBase(null);
+    }
+  }
+
+  // Al cambiar de tarjeta con el tilde activo: se recalcula con el % de la
+  // nueva red, o se vuelve al importe original si esa red no tiene comisión.
+  React.useEffect(() => {
+    if (commissionBase == null) return;
+    if (commissionPct) {
+      setValue("total_amount", withCommission(commissionBase, commissionPct));
+    } else {
+      setValue("total_amount", commissionBase);
+      setCommissionBase(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commissionPct]);
+
   useUnsavedChangesGuard(isDirty && !savedOk);
 
   // Estado para el shell (`AddFlow`): si el botón de guardar se habilita.
@@ -213,6 +252,7 @@ export function NewExpenseHero({
 
   function toggleAmountSign() {
     if (totalAmount) setValue("total_amount", -totalAmount);
+    if (commissionBase != null) setCommissionBase(-commissionBase);
   }
 
   function toggleRecurring(next: boolean) {
@@ -270,6 +310,10 @@ export function NewExpenseHero({
       discount_percentage: discountActive ? data.discount_percentage : null,
       discount_cap: discountActive ? data.discount_cap : null,
     };
+    if (commissionBase != null && commissionPct) {
+      const note = `Incluye comisión Mercado Pago ${formatPct(commissionPct)} sobre ${formatCurrency(commissionBase)}`;
+      payload.notes = [data.notes?.trim(), note].filter(Boolean).join(" · ");
+    }
     save(payload, false);
   }
 
@@ -331,7 +375,11 @@ export function NewExpenseHero({
           render={({ field }) => (
             <AmountHero
               value={field.value}
-              onChange={(v) => field.onChange(v ?? 0)}
+              onChange={(v) => {
+                field.onChange(v ?? 0);
+                // Si se edita el importe a mano, ese es el total final.
+                if (commissionBase != null) setCommissionBase(null);
+              }}
               currency={currency}
               onCurrencyChange={changeCurrency}
               invalid={!!errors.total_amount}
@@ -476,6 +524,31 @@ export function NewExpenseHero({
               <p className="mt-1.5 text-xs text-destructive">{errors.expense_date.message}</p>
             )}
           </div>
+
+          {/* Comisión de Mercado Pago (sólo si la red de la tarjeta tiene % en Ajustes) */}
+          {commissionPct && !isUsd && (
+            <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2 px-3 py-2")}>
+              <input
+                type="checkbox"
+                checked={commissionBase != null}
+                onChange={(e) => toggleCommission(e.target.checked)}
+                disabled={!totalAmount && commissionBase == null}
+                className="h-3.5 w-3.5 rounded border-border accent-primary"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-foreground">
+                  Sumar comisión Mercado Pago ({formatPct(commissionPct)})
+                </span>
+                {commissionBase != null && (
+                  <span className="block text-xs text-muted-foreground">
+                    {formatCurrency(commissionBase)} +{" "}
+                    {formatCurrency(withCommission(commissionBase, commissionPct) - commissionBase)}{" "}
+                    de comisión
+                  </span>
+                )}
+              </span>
+            </label>
+          )}
 
           {/* Promociones y descuentos */}
           <label className={cn(FIELD_CARD, "flex cursor-pointer items-center gap-2 px-3 py-2")}>

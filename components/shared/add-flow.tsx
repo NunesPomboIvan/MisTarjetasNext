@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { NewExpenseHero, type ReceiptPrefill } from "@/components/expenses/new-expense-hero";
+import type { MpCommissions } from "@/lib/commissions/mercadopago";
 import { LoanForm } from "@/components/loans/loan-form";
 import { StickySaveBar } from "@/components/shared/sticky-save-bar";
 import { TypeSwitch } from "@/components/shared/type-switch";
@@ -25,6 +26,8 @@ interface AddFlowProps {
   recurringMode?: boolean;
   /** Datos de un comprobante de Mercado Pago compartido desde el Atajo de iOS. */
   receipt?: ReceiptPrefill;
+  /** % de comisión de Mercado Pago por red (Ajustes). */
+  mpCommissions?: MpCommissions;
 }
 
 interface FormState {
@@ -54,6 +57,7 @@ export function AddFlow({
   feeMode = false,
   recurringMode = false,
   receipt,
+  mpCommissions,
 }: AddFlowProps) {
   const [mode, setMode] = React.useState<Mode>(feeMode ? "consumo" : initialMode);
 
@@ -101,6 +105,7 @@ export function AddFlow({
             recurringMode={recurringMode}
             globalRate={globalRate}
             receipt={receipt}
+            mpCommissions={mpCommissions}
             formId={CONSUMO_FORM_ID}
             onStateChange={setConsumoState}
           />
