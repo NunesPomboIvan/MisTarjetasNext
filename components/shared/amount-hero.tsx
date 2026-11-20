@@ -62,7 +62,9 @@ function HeroAmountInput({ value, onChange, invalid, readOnly, prefix = "$" }: H
   const [display, setDisplay] = React.useState<string>(() =>
     value == null || value === 0
       ? ""
-      : formatAmountInput(String(value).replace(".", ","))
+      : formatAmountInput(
+          (Number.isInteger(value) ? String(value) : value.toFixed(2)).replace(".", ",")
+        )
   );
 
   // Sync con cambios externos (ej: reset). En modo sólo lectura (o al entrar /
