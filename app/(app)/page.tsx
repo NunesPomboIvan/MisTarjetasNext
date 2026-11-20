@@ -17,6 +17,7 @@ import { capitalize, formatDate, nowInArgentina } from "@/lib/utils";
 import { format, differenceInCalendarDays, startOfDay } from "date-fns";
 import { resolveTitulares } from "@/lib/titulares/server";
 import { TitularSwitcher } from "@/components/titulares/titular-switcher";
+import { PasteReceiptButton } from "@/components/home/paste-receipt-button";
 import { LockScroll } from "@/components/shared/lock-scroll";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -37,8 +38,10 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ comprobante?: string }>;
 }) {
-  // El Atajo de iOS "Cargar en Tarjetas" abre `/?comprobante=<texto del PDF>`:
-  // lo mandamos directo al alta de consumo con los datos precargados.
+  // El Atajo de iOS "Cargar en Tarjetas" puede abrir `/?comprobante=<texto>`
+  // (en Safari): lo mandamos directo al alta de consumo con los datos
+  // precargados. Si abre la web app instalada (`webapp://`), iOS descarta el
+  // parámetro y se usa el botón "Pegar comprobante" (PasteReceiptButton).
   const { comprobante } = await searchParams;
   if (comprobante?.trim()) {
     redirect(`/nuevo?comprobante=${encodeURIComponent(comprobante)}`);
@@ -152,9 +155,12 @@ export default async function DashboardPage({
             {displayName ? `, ${displayName}` : ""}
           </p>
         </div>
-        {titulares.length > 0 && (
-          <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {cards.length > 0 && <PasteReceiptButton />}
+          {titulares.length > 0 && (
+            <TitularSwitcher titulares={titulares} activeId={activeTitularId} />
+          )}
+        </div>
       </div>
 
       {cards.length === 0 ? (
