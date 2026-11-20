@@ -46,6 +46,16 @@ describe("parseMercadoPagoReceipt", () => {
     expect(r).toMatchObject({ amount: 1200, merchant: "Kiosco Juan", date: "2026-03-05" });
   });
 
+  it("toma los miles aunque vengan con coma o espacio", () => {
+    for (const raw of ["$ 12.580", "$ 12,580", "$ 12 580", "$12.580", "$ 12.580,00", "$ 12,580 00"]) {
+      const r = parseMercadoPagoReceipt(ROTISERIA.replace("$ 8.700 00", raw));
+      expect(r?.amount, raw).toBe(12580);
+    }
+    expect(parseMercadoPagoReceipt(ROTISERIA.replace("$ 8.700 00", "$ 1.234.567,89"))?.amount).toBe(
+      1234567.89,
+    );
+  });
+
   it("devuelve null si el texto no es un comprobante", () => {
     expect(parseMercadoPagoReceipt("")).toBeNull();
     expect(parseMercadoPagoReceipt("hola que tal")).toBeNull();

@@ -35,9 +35,12 @@ const MONTHS: Record<string, number> = {
   diciembre: 12,
 };
 
-// Los centavos pueden venir tras coma, espacio o salto de línea (superíndice
-// en el PDF), pero no si son el comienzo de una fecha ("05/03/2026").
-const AMOUNT_RE = /\$\s*(\d{1,3}(?:\.\d{3})*|\d+)(?:[,\s](\d{2}))?(?![\d/])/;
+// Los miles pueden venir separados por punto, coma o espacio (el texto
+// reconocido de una imagen a veces cambia "12.580" por "12,580" o "12 580"):
+// un grupo de exactamente 3 dígitos siempre es de miles. Los centavos pueden
+// venir tras coma, espacio o salto de línea (superíndice en el PDF), pero no
+// si son el comienzo de una fecha ("05/03/2026").
+const AMOUNT_RE = /\$\s*(\d{1,3}(?:[., ]\d{3})+|\d+)(?:[,\s](\d{2}))?(?![\d/])/;
 const LONG_DATE_RE =
   /(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(\d{4})(?:,?\s*(\d{1,2}:\d{2}))?/i;
 const SHORT_DATE_RE = /(\d{2})\/(\d{2})\/(\d{4})/;
@@ -66,7 +69,7 @@ export function parseMercadoPagoReceipt(rawText: string | null | undefined): Par
   // Importe: "$ 8.700,00", "$ 8.700 00" (centavos como superíndice) o "$8.700".
   const amountMatch = text.match(AMOUNT_RE);
   if (amountMatch) {
-    const whole = parseInt(amountMatch[1].replace(/\./g, ""), 10);
+    const whole = parseInt(amountMatch[1].replace(/[., ]/g, ""), 10);
     const cents = amountMatch[2] ? parseInt(amountMatch[2], 10) / 100 : 0;
     if (Number.isFinite(whole)) result.amount = whole + cents;
   }
